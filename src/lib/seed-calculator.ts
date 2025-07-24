@@ -65,10 +65,16 @@ export class SeedCalculator {
    */
   public getROMParameters(version: string, region: string): ROMParameters | null {
     const versionData = romParametersData[version as keyof typeof romParametersData];
-    if (!versionData) return null;
+    if (!versionData) {
+      console.error(`ROM version not found: ${version}`);
+      return null;
+    }
     
     const regionData = versionData[region as keyof typeof versionData];
-    if (!regionData) return null;
+    if (!regionData) {
+      console.error(`ROM region not found: ${region} for version ${version}`);
+      return null;
+    }
     
     return regionData as ROMParameters;
   }
