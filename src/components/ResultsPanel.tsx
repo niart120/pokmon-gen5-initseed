@@ -71,6 +71,23 @@ export function ResultsPanel() {
     return filtered;
   }, [searchResults, filterSeed, sortField, sortDirection]);
 
+  // Convert InitialSeedResult to SearchResult for export
+  const convertToSearchResults = React.useMemo(() => {
+    return filteredAndSortedResults.map((result): SearchResult => ({
+      seed: result.seed,
+      dateTime: result.datetime,
+      timer0: result.timer0,
+      vcount: result.vcount,
+      romVersion: result.conditions.romVersion,
+      romRegion: result.conditions.romRegion,
+      hardware: result.conditions.hardware,
+      macAddress: result.conditions.macAddress,
+      keyInput: result.conditions.keyInput,
+      message: result.message,
+      hash: result.sha1Hash
+    }));
+  }, [filteredAndSortedResults]);
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -80,63 +97,7 @@ export function ResultsPanel() {
     }
   };
 
-  const handleExportCSV = () => {
-    if (filteredAndSortedResults.length === 0) return;
 
-    const headers = [
-      'Seed (Hex)',
-      'Seed (Dec)',
-      'Date/Time',
-      'Timer0',
-      'VCount',
-      'ROM Version',
-      'ROM Region',
-      'Hardware',
-      'SHA1 Hash'
-    ];
-
-    const csvContent = [
-      headers.join(','),
-      ...filteredAndSortedResults.map(result => [
-        `0x${result.seed.toString(16).toUpperCase().padStart(8, '0')}`,
-        result.seed.toString(),
-        result.datetime.toISOString(),
-        result.timer0.toString(),
-        result.vcount.toString(),
-        result.conditions.romVersion,
-        result.conditions.romRegion,
-        result.conditions.hardware,
-        result.sha1Hash
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pokemon-seed-results-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleExportJSON = () => {
-    if (filteredAndSortedResults.length === 0) return;
-
-    const jsonContent = JSON.stringify(filteredAndSortedResults, null, 2);
-    const blob = new Blob([jsonContent], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pokemon-seed-results-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
 
   const formatDateTime = (date: Date) => {
     return date.toLocaleString('en-US', {
@@ -169,24 +130,10 @@ export function ResultsPanel() {
               </Badge>
             </div>
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleExportCSV}
+              <ExportButton 
+                results={convertToSearchResults}
                 disabled={filteredAndSortedResults.length === 0}
-              >
-                <Download size={16} className="mr-2" />
-                Export CSV
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleExportJSON}
-                disabled={filteredAndSortedResults.length === 0}
-              >
-                <Download size={16} className="mr-2" />
-                Export JSON
-              </Button>
+              />
               <Button 
                 variant="destructive" 
                 size="sm" 

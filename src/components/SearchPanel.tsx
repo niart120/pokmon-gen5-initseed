@@ -11,7 +11,8 @@ import { Progress } from '@/components/ui/progress';
 import { Play, Pause, Square, MagnifyingGlass } from '@phosphor-icons/react';
 import { useAppStore } from '../store/app-store';
 import { SeedCalculator } from '../lib/seed-calculator';
-import type { ROMVersion, ROMRegion, Hardware } from '../types/pokemon';
+import { getSearchWorkerManager } from '../lib/search-worker-manager';
+import type { ROMVersion, ROMRegion, Hardware, InitialSeedResult } from '../types/pokemon';
 
 const ROM_VERSIONS: { value: ROMVersion; label: string }[] = [
   { value: 'B', label: 'Black (B)' },
@@ -52,6 +53,25 @@ export function SearchPanel() {
 
   const calculator = new SeedCalculator();
 
+  // Worker management functions
+  const handlePauseSearch = () => {
+    pauseSearch();
+    const workerManager = getSearchWorkerManager();
+    workerManager.pauseSearch();
+  };
+
+  const handleResumeSearch = () => {
+    resumeSearch();
+    const workerManager = getSearchWorkerManager();
+    workerManager.resumeSearch();
+  };
+
+  const handleStopSearch = () => {
+    stopSearch();
+    const workerManager = getSearchWorkerManager();
+    workerManager.stopSearch();
+  };
+
   // Update auto-parameters when ROM version/region changes
   React.useEffect(() => {
     const params = calculator.getROMParameters(searchConditions.romVersion, searchConditions.romRegion);
@@ -88,172 +108,60 @@ export function SearchPanel() {
     startSearch();
 
     try {
-      // Get ROM parameters
-      const params = calculator.getROMParameters(searchConditions.romVersion, searchConditions.romRegion);
-      if (!params) {
-        throw new Error(`No parameters found for ${searchConditions.romVersion} ${searchConditions.romRegion}`);
-      }
-
-      console.log('🔧 ROM Parameters:', params);
-
-      // Calculate total search space
-      const timer0Range = searchConditions.timer0Range.max - searchConditions.timer0Range.min + 1;
-      const vcountRange = searchConditions.vcountRange.max - searchConditions.vcountRange.min + 1;
+      // Get the worker manager
+      const workerManager = getSearchWorkerManager();
       
-      // Date range calculation
-      const startDate = new Date(
-        searchConditions.dateRange.startYear,
-        searchConditions.dateRange.startMonth - 1,
-        searchConditions.dateRange.startDay,
-        searchConditions.dateRange.startHour,
-        searchConditions.dateRange.startMinute,
-        searchConditions.dateRange.startSecond
-      );
-      
-      const endDate = new Date(
-        searchConditions.dateRange.endYear,
-        searchConditions.dateRange.endMonth - 1,
-        searchConditions.dateRange.endDay,
-        searchConditions.dateRange.endHour,
-        searchConditions.dateRange.endMinute,
-        searchConditions.dateRange.endSecond
-      );
-
-      if (startDate > endDate) {
-        throw new Error('Start date must be before or equal to end date');
-      }
-
-      const dateRange = Math.floor((endDate.getTime() - startDate.getTime()) / 1000) + 1;
-      const totalSteps = timer0Range * vcountRange * dateRange;
-
-      console.log(`📊 Starting search with ${totalSteps.toLocaleString()} total combinations`);
-      console.log(`⏰ Timer0: ${searchConditions.timer0Range.min}-${searchConditions.timer0Range.max} (${timer0Range} values)`);
-      console.log(`📺 VCount: ${searchConditions.vcountRange.min}-${searchConditions.vcountRange.max} (${vcountRange} values)`);
-      console.log(`📅 Date range: ${startDate.toISOString()} to ${endDate.toISOString()} (${dateRange} seconds)`);
-
-      // Set initial progress
-      useAppStore.getState().setSearchProgress({
-        totalSteps,
-        currentStep: 0,
-        canPause: true,
-      });
-
-      let currentStep = 0;
-      let matchesFound = 0;
-      const startTime = Date.now();
-
-      // Convert target seeds to Set for faster lookup
-      const targetSeedSet = new Set(targetSeeds.seeds);
-      console.log('🔍 Target seed set:', Array.from(targetSeedSet).map(s => '0x' + s.toString(16).padStart(8, '0')));
-
-      // Iterate through all combinations
-      outerLoop: for (let timer0 = searchConditions.timer0Range.min; timer0 <= searchConditions.timer0Range.max; timer0++) {
-        let currentState = useAppStore.getState().searchProgress;
-        if (!currentState.isRunning) {
-          console.log('Search stopped by user');
-          break;
-        }
-
-        for (let vcount = searchConditions.vcountRange.min; vcount <= searchConditions.vcountRange.max; vcount++) {
-          currentState = useAppStore.getState().searchProgress;
-          if (!currentState.isRunning) {
-            console.log('Search stopped by user');
-            break outerLoop;
-          }
-
-          // Handle pause/resume
-          while (currentState.isPaused && currentState.isRunning) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            currentState = useAppStore.getState().searchProgress;
-          }
-
-          // Get actual VCount value with offset handling for BW2
-          const actualVCount = calculator.getVCountForTimer0(params, timer0);
-
-          for (let timestamp = startDate.getTime(); timestamp <= endDate.getTime(); timestamp += 1000) {
-            currentState = useAppStore.getState().searchProgress;
-            if (!currentState.isRunning) {
-              console.log('Search stopped by user');
-              break outerLoop;
+      // Start search with worker
+      await workerManager.startSearch(
+        searchConditions,
+        targetSeeds.seeds,
+        {
+          onProgress: (progress) => {
+            useAppStore.getState().setSearchProgress({
+              currentStep: progress.currentStep,
+              totalSteps: progress.totalSteps,
+              elapsedTime: progress.elapsedTime,
+              estimatedTimeRemaining: progress.estimatedTimeRemaining,
+              matchesFound: progress.matchesFound,
+              currentDateTime: progress.currentDateTime,
+            });
+          },
+          onResult: (result: InitialSeedResult) => {
+            console.log(`🎉 Found match from worker! Seed: 0x${result.seed.toString(16).padStart(8, '0')}`);
+            addSearchResult(result);
+          },
+          onComplete: (message: string) => {
+            console.log('✅ Search completed:', message);
+            const matchesFound = useAppStore.getState().searchProgress.matchesFound;
+            const totalSteps = useAppStore.getState().searchProgress.totalSteps;
+            
+            if (matchesFound === 0) {
+              alert(`Search completed. No matches found in ${totalSteps.toLocaleString()} combinations.\n\nTry:\n- Expanding the date range\n- Checking Timer0/VCount ranges\n- Verifying target seed format\n\nCheck browser console for detailed debug information.`);
+            } else {
+              alert(`🎉 Search completed successfully!\n\nFound ${matchesFound} matching seed${matchesFound === 1 ? '' : 's'} out of ${totalSteps.toLocaleString()} combinations.\n\nCheck the Results tab for details.`);
             }
-
-            // Handle pause/resume
-            while (currentState.isPaused && currentState.isRunning) {
-              await new Promise(resolve => setTimeout(resolve, 100));
-              currentState = useAppStore.getState().searchProgress;
-            }
-
-            const currentDateTime = new Date(timestamp);
-            currentStep++;
-
-            // Generate message and calculate seed
-            try {
-              const message = calculator.generateMessage(searchConditions, timer0, actualVCount, currentDateTime);
-              const { seed, hash } = calculator.calculateSeed(message);
-
-              // Debug: Log first few seeds being tested
-              if (currentStep <= 5) {
-                console.log(`🧪 Testing seed ${currentStep}: 0x${seed.toString(16).padStart(8, '0')} at ${currentDateTime.toISOString()}, Timer0: ${timer0}, VCount: ${actualVCount}`);
-              }
-
-              // Check if seed matches any target (using Set for O(1) lookup)
-              const isMatch = targetSeedSet.has(seed);
-
-              if (isMatch) {
-                matchesFound++;
-                console.log(`🎉 Found match! Seed: 0x${seed.toString(16).padStart(8, '0')}, Timer0: ${timer0}, VCount: ${actualVCount}, Date: ${currentDateTime.toISOString()}`);
-                
-                addSearchResult({
-                  seed,
-                  datetime: currentDateTime,
-                  timer0,
-                  vcount: actualVCount,
-                  conditions: searchConditions,
-                  message,
-                  sha1Hash: hash,
-                  isMatch: true,
-                });
-              }
-
-              // Update progress every 50 iterations for better responsiveness
-              if (currentStep % 50 === 0) {
-                const elapsedTime = Date.now() - startTime;
-                const estimatedTimeRemaining = currentStep > 0 ? elapsedTime * (totalSteps - currentStep) / currentStep : 0;
-
-                useAppStore.getState().setSearchProgress({
-                  currentStep,
-                  currentDateTime,
-                  elapsedTime,
-                  estimatedTimeRemaining,
-                  matchesFound,
-                });
-
-                // Allow UI to update more frequently
-                await new Promise(resolve => setTimeout(resolve, 1));
-              }
-            } catch (error) {
-              console.error('Error calculating seed:', error, {
-                timer0,
-                vcount: actualVCount,
-                datetime: currentDateTime.toISOString()
-              });
-            }
+            stopSearch();
+          },
+          onError: (error: string) => {
+            console.error('Search error:', error);
+            alert(`Search failed: ${error}`);
+            stopSearch();
+          },
+          onPaused: () => {
+            console.log('🔻 Search paused by worker');
+          },
+          onResumed: () => {
+            console.log('▶️ Search resumed by worker');
+          },
+          onStopped: () => {
+            console.log('⏹️ Search stopped by worker');
+            stopSearch();
           }
         }
-      }
-
-      console.log(`✅ Search completed. Found ${matchesFound} matches out of ${totalSteps} combinations.`);
-      
-      // Show completion message to user
-      if (matchesFound === 0) {
-        alert(`Search completed. No matches found in ${totalSteps.toLocaleString()} combinations.\n\nTry:\n- Expanding the date range\n- Checking Timer0/VCount ranges\n- Verifying target seed format\n\nCheck browser console for detailed debug information.`);
-      } else {
-        alert(`🎉 Search completed successfully!\n\nFound ${matchesFound} matching seed${matchesFound === 1 ? '' : 's'} out of ${totalSteps.toLocaleString()} combinations.\n\nCheck the Results tab for details.`);
-      }
+      );
     } catch (error) {
-      console.error('Search error:', error);
-      alert(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
+      console.error('Failed to start worker search:', error);
+      alert(`Failed to start search: ${error instanceof Error ? error.message : 'Unknown error'}`);
       stopSearch();
     }
   };
@@ -728,17 +636,17 @@ export function SearchPanel() {
             ) : (
               <>
                 {searchProgress.isPaused ? (
-                  <Button onClick={resumeSearch}>
+                  <Button onClick={handleResumeSearch}>
                     <Play size={16} className="mr-2" />
                     Resume
                   </Button>
                 ) : (
-                  <Button onClick={pauseSearch}>
+                  <Button onClick={handlePauseSearch}>
                     <Pause size={16} className="mr-2" />
                     Pause
                   </Button>
                 )}
-                <Button variant="destructive" onClick={stopSearch}>
+                <Button variant="destructive" onClick={handleStopSearch}>
                   <Square size={16} className="mr-2" />
                   Stop
                 </Button>
