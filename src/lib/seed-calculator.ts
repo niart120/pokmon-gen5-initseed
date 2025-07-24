@@ -50,6 +50,14 @@ export class SeedCalculator {
   }
 
   /**
+   * Get WebAssembly calculator for direct access to batch processing
+   * This method is used internally by the worker for performance optimization
+   */
+  public getWasmCalculator(): WasmSeedCalculator | null {
+    return this.wasmCalculator;
+  }
+
+  /**
    * Force enable/disable WebAssembly usage
    */
   public setUseWasm(use: boolean): void {
