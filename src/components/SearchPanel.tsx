@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { Play, Pause, Square, Search } from '@phosphor-icons/react';
+import { Play, Pause, Square, MagnifyingGlass } from '@phosphor-icons/react';
 import { useAppStore } from '../store/app-store';
 import { SeedCalculator } from '../lib/seed-calculator';
 import type { ROMVersion, ROMRegion, Hardware } from '../types/pokemon';
@@ -273,7 +273,7 @@ export function SearchPanel() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Search size={20} />
+            <MagnifyingGlass size={20} />
             ROM Configuration
           </CardTitle>
         </CardHeader>

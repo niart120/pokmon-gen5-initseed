@@ -3,30 +3,67 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Search, Target, BarChart, Info } from '@phosphor-icons/react';
+import { MagnifyingGlass, Target, ChartBar, Info } from '@phosphor-icons/react';
 import { useAppStore } from './store/app-store';
 import { SearchPanel } from './components/SearchPanel';
 import { TargetSeedsPanel } from './components/TargetSeedsPanel';
 import { ResultsPanel } from './components/ResultsPanel';
 import { verifySearchImplementation } from './lib/search-verification';
+import { verifyWebAssemblyImplementation } from './lib/wasm-verification';
 
 function App() {
   const { activeTab, setActiveTab, targetSeeds, searchResults, searchProgress } = useAppStore();
 
-  // Run verification on component mount
+  // Run verification on component mount and initialize WebAssembly
   React.useEffect(() => {
-    console.log('Running comprehensive search verification...');
-    const verificationPassed = verifySearchImplementation();
-    console.log('Verification result:', verificationPassed ? 'PASSED ✅' : 'FAILED ❌');
-    
-    if (!verificationPassed) {
-      console.warn('⚠️ Some verification tests failed. Please check the implementation.');
-    } else {
-      console.log('🎉 All verification tests passed! Search implementation is ready.');
-    }
+    const initializeApp = async () => {
+      console.log('🚀 Initializing Pokemon BW/BW2 Seed Search App...');
 
-    // Debug: Show target seeds on load
-    console.log('📋 Target seeds loaded:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
+      // Try to initialize WebAssembly for improved performance
+      let calculator: any = null;
+      let wasmSuccess = false;
+      try {
+        const { SeedCalculator } = await import('./lib/seed-calculator');
+        calculator = new SeedCalculator();
+        wasmSuccess = await calculator.initializeWasm();
+        
+        if (wasmSuccess) {
+          console.log('🦀 WebAssembly acceleration enabled!');
+        } else {
+          console.log('⚠️ Running with TypeScript implementation');
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to initialize WebAssembly, using TypeScript fallback:', error);
+      }
+
+      // Run verification tests
+      console.log('Running comprehensive search verification...');
+      const verificationPassed = verifySearchImplementation();
+      console.log('Basic verification result:', verificationPassed ? 'PASSED ✅' : 'FAILED ❌');
+      
+      // Run WebAssembly comparison tests
+      if (wasmSuccess) {
+        console.log('Running WebAssembly vs TypeScript comparison...');
+        const wasmVerificationPassed = await verifyWebAssemblyImplementation();
+        console.log('WebAssembly verification result:', wasmVerificationPassed ? 'PASSED ✅' : 'FAILED ❌');
+        
+        if (!wasmVerificationPassed) {
+          console.warn('⚠️ WebAssembly verification failed. Disabling WebAssembly for safety.');
+          calculator.setUseWasm(false);
+        }
+      }
+      
+      if (!verificationPassed) {
+        console.warn('⚠️ Some verification tests failed. Please check the implementation.');
+      } else {
+        console.log('🎉 All verification tests passed! Search implementation is ready.');
+      }
+
+      // Debug: Show target seeds on load
+      console.log('📋 Target seeds loaded:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
+    };
+
+    initializeApp();
   }, []);
 
   return (
@@ -72,7 +109,7 @@ function App() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid grid-cols-4 w-full max-w-2xl mx-auto">
             <TabsTrigger value="search" className="flex items-center gap-2">
-              <Search size={16} />
+              <MagnifyingGlass size={16} />
               Search Setup
             </TabsTrigger>
             <TabsTrigger value="targets" className="flex items-center gap-2">
@@ -85,7 +122,7 @@ function App() {
               )}
             </TabsTrigger>
             <TabsTrigger value="results" className="flex items-center gap-2">
-              <BarChart size={16} />
+              <ChartBar size={16} />
               Results
               {searchResults.length > 0 && (
                 <Badge variant="default" className="ml-1">

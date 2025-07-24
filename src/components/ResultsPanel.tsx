@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Download, SortAscending, SortDescending, Eye, Calendar, Hash } from '@phosphor-icons/react';
 import { useAppStore } from '../store/app-store';
-import type { InitialSeedResult } from '../types/pokemon';
+import { ExportButton } from './ExportButton';
+import type { InitialSeedResult, SearchResult } from '../types/pokemon';
 
 type SortField = 'seed' | 'datetime' | 'timer0' | 'vcount';
 type SortDirection = 'asc' | 'desc';

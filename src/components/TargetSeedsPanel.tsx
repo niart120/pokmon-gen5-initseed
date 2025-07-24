@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Trash, Upload, Download, AlertCircle } from '@phosphor-icons/react';
+import { Trash, Upload, Download, Warning } from '@phosphor-icons/react';
 import { useAppStore } from '../store/app-store';
 import { SeedCalculator } from '../lib/seed-calculator';
 
@@ -151,7 +151,7 @@ export function TargetSeedsPanel() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertCircle size={20} />
+              <Warning size={20} />
               Input Errors
             </CardTitle>
           </CardHeader>
@@ -201,7 +201,7 @@ export function TargetSeedsPanel() {
               
               {targetSeeds.seeds.length >= 1000 && (
                 <Alert>
-                  <AlertCircle size={16} />
+                  <Warning size={16} />
                   <AlertDescription>
                     Maximum of 1000 target seeds reached. Additional seeds will be ignored.
                   </AlertDescription>

@@ -63,6 +63,20 @@ export interface InitialSeedResult {
   isMatch: boolean;
 }
 
+export interface SearchResult {
+  seed: number;
+  dateTime: Date;
+  timer0: number;
+  vcount: number;
+  romVersion: ROMVersion;
+  romRegion: ROMRegion;
+  hardware: Hardware;
+  macAddress?: number[];
+  keyInput?: number;
+  message?: number[];
+  hash?: string;
+}
+
 export interface TargetSeedList {
   seeds: number[];
 }
