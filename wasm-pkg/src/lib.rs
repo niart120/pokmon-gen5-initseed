@@ -176,4 +176,88 @@ mod tests {
         // Should return some non-zero hashes
         assert!(result.iter().any(|&x| x != 0));
     }
+
+    #[test]
+    fn test_sha1_consistency() {
+        // 同じメッセージで複数回計算した結果が一致するかテスト
+        let message = vec![0x12345678, 0x9ABCDEF0, 0x11111111, 0x22222222,
+                          0x33333333, 0x44444444, 0x55555555, 0x66666666,
+                          0x77777777, 0x88888888, 0x99999999, 0xAAAAAAAA,
+                          0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD, 0xEEEEEEEE];
+        
+        let result1 = calculate_sha1_hash(&message);
+        let result2 = calculate_sha1_hash(&message);
+        
+        assert_eq!(result1[0], result2[0]);
+        assert_eq!(result1[1], result2[1]);
+    }
+
+    #[test]
+    fn test_sha1_different_inputs() {
+        // 異なる入力で異なる結果が得られるかテスト
+        let message1 = vec![0u32; 16];
+        let mut message2 = vec![0u32; 16];
+        message2[0] = 1; // 最初の要素だけ変更
+
+        let result1 = calculate_sha1_hash(&message1);
+        let result2 = calculate_sha1_hash(&message2);
+
+        // 異なる入力は異なる結果を生成するはず
+        assert!(result1[0] != result2[0] || result1[1] != result2[1]);
+    }
+
+    #[test]
+    fn test_batch_vs_individual() {
+        // バッチ処理と個別処理で同じ結果が得られるかテスト
+        let message1 = vec![0x12345678u32; 16];
+        let message2 = vec![0xABCDEF00u32; 16];
+        
+        // 個別処理
+        let individual1 = calculate_sha1_hash(&message1);
+        let individual2 = calculate_sha1_hash(&message2);
+        
+        // バッチ処理
+        let mut batch_messages = Vec::new();
+        batch_messages.extend_from_slice(&message1);
+        batch_messages.extend_from_slice(&message2);
+        let batch_results = calculate_sha1_batch(&batch_messages, 2);
+        
+        // 結果の比較
+        assert_eq!(individual1[0], batch_results[0]);
+        assert_eq!(individual1[1], batch_results[1]);
+        assert_eq!(individual2[0], batch_results[2]);
+        assert_eq!(individual2[1], batch_results[3]);
+    }
+
+    #[test]
+    fn test_left_rotate() {
+        // 左回転テスト
+        assert_eq!(left_rotate(0x80000000, 1), 0x00000001);
+        assert_eq!(left_rotate(0x00000001, 1), 0x00000002);
+        assert_eq!(left_rotate(0x12345678, 4), 0x23456781);
+    }
+
+    #[test]
+    fn test_add32_overflow() {
+        // 32bit加算のオーバーフローテスト
+        assert_eq!(add32(0xFFFFFFFF, 1), 0x00000000);
+        assert_eq!(add32(0x80000000, 0x80000000), 0x00000000);
+    }
+
+    #[test]
+    fn test_pokemon_specific_values() {
+        // ポケモン特有の値でのテスト（実際のゲームデータに近い値）
+        let message = vec![
+            0x12345678, 0x9ABCDEF0, 0x11111111, 0x22222222,
+            0x0A0B0C0D, 0x0E0F1011, 0x12131415, 0x16171819,
+            0x1A1B1C1D, 0x1E1F2021, 0x22232425, 0x26272829,
+            0x2A2B2C2D, 0x2E2F3031, 0x32333435, 0x36373839
+        ];
+        
+        let result = calculate_sha1_hash(&message);
+        assert_eq!(result.len(), 2);
+        
+        // 結果が有効な範囲内にあることを確認
+        assert!(result[0] != 0 || result[1] != 0);
+    }
 }

@@ -225,3 +225,70 @@ npm run dev
 WebAssembly実装やパフォーマンス最適化など、複雑な技術変更を行う際は、事前に実装方針を確認してください。
 
 このプロジェクトは高品質な実装が完成しており、WebAssembly実装により完全なMVPとして完成できる状態です。MCPツール（Playwright）による自動化テストシステムが構築され、目標性能を417倍上回る驚異的な結果を達成しています。PRD.mdとIMPLEMENTATION_STATUS.mdを常に参照し、計画的に開発を進めてください。
+
+---
+
+## 🧪 テスト戦略・品質保証 **Updated!**
+
+### WebAssembly実装の品質確認システム
+プロジェクトのコアとなるWebAssembly実装は、段階的なテスト戦略により品質が確認されています：
+
+#### 1. **Rust側Unit Test (cargo test)**
+```bash
+# Rust実装の詳細テスト (9テスト実装済み)
+cd wasm-pkg && cargo test
+```
+- ✅ SHA-1ハッシュ計算の正確性
+- ✅ バッチ処理と個別処理の結果一致
+- ✅ エンディアン変換・左回転・オーバーフロー処理
+- ✅ 同じ入力での一貫性・異なる入力での差分
+- ✅ ポケモン特有値での動作確認
+
+#### 2. **TypeScript側Unit Test (vitest)**
+```bash
+# TypeScript実装のロジックテスト
+npm run test:run src/test/calculator-logic.test.ts
+```
+- ✅ SeedCalculator初期化・実装切り替え
+- ✅ 基本シード計算・一貫性・差分
+- ✅ メッセージ生成・エラーハンドリング
+- ✅ パフォーマンス基準（250,000 calc/sec）
+
+#### 3. **統合テスト (vitest)**
+```bash
+# WebAssembly統合テスト（フォールバック含む）
+npm run test:run src/test/wasm-integration.test.ts
+```
+- ✅ WebAssembly初期化失敗時のTypeScript実装フォールバック
+- ✅ 実際のポケモンBW/BW2シナリオでの動作
+- ✅ 複数回実行での一貫性確認
+
+#### 4. **ブラウザ環境統合テスト**
+```bash
+# 開発サーバー起動後にブラウザでテスト実行
+npm run dev
+# http://localhost:5173/test-performance.html でマニュアルテスト
+```
+- 🦀 WebAssembly読み込み・基本関数・一貫性テスト
+- ⚡ 実際の探索パフォーマンステスト（スケーラビリティ・大規模ストレス）
+- 📊 進捗オーバーヘッド分析・包括的品質確認
+
+### テスト実行制限と対応策
+
+#### Node.js環境でのWebAssembly制限
+```
+⚠️ 現在の制限: vitest（Node.js）環境ではWASMファイル読み込み不可
+理由: fetch APIによるHTTPアクセスが必要（開発サーバー依存）
+対応: TypeScript実装への自動フォールバック + ブラウザ環境での確認
+```
+
+#### 推奨テスト実行順序
+1. **Rust実装確認**: `cd wasm-pkg && cargo test`
+2. **TypeScript実装確認**: `npm run test:run src/test/calculator-logic.test.ts`
+3. **統合フォールバック確認**: `npm run test:run src/test/wasm-integration.test.ts`
+4. **ブラウザ環境確認**: `http://localhost:5173/test-performance.html`
+
+### 将来のテスト改善課題
+- [ ] vitestでのWebAssembly読み込み対応（vite-plugin-wasm等を検討）
+- [ ] CI/CD環境でのブラウザテスト自動化
+- [ ] WebAssembly vs TypeScript実装の性能比較自動化

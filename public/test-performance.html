@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance Test - Pokemon BW/BW2 Initial Seed Search</title>
+    <title>Performance & WebAssembly Test - Pokemon BW/BW2 Initial Seed Search</title>
     <style>
         body { font-family: monospace; padding: 20px; background: #111; color: #fff; }
         .output { margin: 10px 0; padding: 10px; background: #222; border-radius: 4px; }
@@ -16,9 +16,17 @@
     </style>
 </head>
 <body>
-    <h1>🚀 パフォーマンステスト - ポケモンBW/BW2初期Seed探索</h1>
+    <h1>🚀 統合テスト - ポケモンBW/BW2初期Seed探索 (WebAssembly + パフォーマンス)</h1>
     
     <div>
+        <h2>🦀 WebAssembly 基本動作確認</h2>
+        <button onclick="testWasmLoading()">WebAssembly読み込みテスト</button>
+        <button onclick="testWasmFunctions()">WebAssembly基本関数テスト</button>
+        <button onclick="testWasmConsistency()">WebAssembly一貫性テスト</button>
+    </div>
+    
+    <div>
+        <h2>⚡ パフォーマンステスト</h2>
         <button onclick="runBasicTest()">基本パフォーマンステスト</button>
         <button onclick="runScalabilityTest()">スケーラビリティテスト</button>
         <button onclick="runBatchTest()">バッチ処理テスト</button>
@@ -32,8 +40,12 @@
 
     <script type="module">
         import { PerformanceAnalyzer, runPerformanceAnalysis } from '/src/lib/performance-analyzer.ts';
+        import { SeedCalculator } from '/src/lib/seed-calculator.ts';
+        import { initWasm, getWasm } from '/src/lib/wasm-interface.ts';
         
         let analyzer = null;
+        let seedCalculator = null;
+        let wasmModule = null;
         
         // Initialize analyzer
         async function initAnalyzer() {
@@ -44,6 +56,32 @@
                 log('✅ 初期化完了', 'success');
             }
             return analyzer;
+        }
+        
+        // Initialize SeedCalculator
+        async function initSeedCalculator() {
+            if (!seedCalculator) {
+                log('🔧 SeedCalculatorを初期化中...', 'info');
+                seedCalculator = new SeedCalculator();
+                const wasmInitialized = await seedCalculator.initializeWasm();
+                log(`📦 WebAssembly: ${wasmInitialized ? '有効' : '無効 (TypeScript実装を使用)'}`, wasmInitialized ? 'success' : 'warning');
+            }
+            return seedCalculator;
+        }
+        
+        // Initialize WebAssembly
+        async function initWebAssembly() {
+            if (!wasmModule) {
+                try {
+                    log('🔧 WebAssemblyモジュールを初期化中...', 'info');
+                    wasmModule = await initWasm();
+                    log('✅ WebAssemblyモジュール初期化完了', 'success');
+                } catch (error) {
+                    log(`⚠️ WebAssembly初期化失敗: ${error.message}`, 'warning');
+                    throw error;
+                }
+            }
+            return wasmModule;
         }
         
         // Logging utility
@@ -246,10 +284,107 @@
             document.getElementById('output').innerHTML = '';
         };
         
+        // WebAssembly specific test functions
+        window.testWasmLoading = async function() {
+            try {
+                log('🔧 WebAssembly読み込みテストを開始...', 'info');
+                const wasm = await initWebAssembly();
+                const calculator = await initSeedCalculator();
+                
+                if (wasm && calculator.isUsingWasm()) {
+                    const testResult = wasm.test_wasm();
+                    log(`✅ WebAssembly読み込み成功: ${testResult}`, 'success');
+                    log(`🦀 実装: WebAssembly`, 'success');
+                } else {
+                    log('⚠️ WebAssembly読み込み失敗、TypeScript実装を使用', 'warning');
+                    log(`📜 実装: TypeScript`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ WebAssembly読み込みエラー: ${error.message}`, 'error');
+            }
+        };
+        
+        window.testWasmFunctions = async function() {
+            try {
+                log('🧪 WebAssembly基本関数テストを開始...', 'info');
+                const wasm = wasmModule;
+                
+                if (!wasm) {
+                    log('❌ WebAssemblyが初期化されていません', 'error');
+                    return;
+                }
+
+                // エンディアン変換テスト
+                const endian32 = wasm.to_little_endian_32(0x12345678);
+                const endian16 = wasm.to_little_endian_16(0x1234);
+                log(`🔄 エンディアン変換: 32bit=0x${endian32.toString(16)}, 16bit=0x${endian16.toString(16)}`, 'info');
+
+                // SHA-1ハッシュテスト
+                const testMessage = new Uint32Array([0x12345678, 0x9ABCDEF0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+                const hashResult = wasm.calculate_sha1_hash(testMessage);
+                log(`🔐 SHA-1ハッシュ: [0x${hashResult[0].toString(16)}, 0x${hashResult[1].toString(16)}]`, 'info');
+
+                // バッチ計算テスト
+                const batchMessages = new Uint32Array(32); // 2メッセージ
+                batchMessages.set([0x11111111, 0x22222222, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 0);
+                batchMessages.set([0x33333333, 0x44444444, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 16);
+                const batchResult = wasm.calculate_sha1_batch(batchMessages, 2);
+                log(`📦 バッチ計算: [${batchResult.map(x => '0x' + x.toString(16)).join(', ')}]`, 'info');
+                
+                log('✅ WebAssembly基本関数テスト完了', 'success');
+            } catch (error) {
+                log(`❌ 基本関数テストエラー: ${error.message}`, 'error');
+            }
+        };
+        
+        window.testWasmConsistency = async function() {
+            try {
+                log('🔄 WebAssembly一貫性テストを開始...', 'info');
+                const calculator = await initSeedCalculator();
+                
+                const testMessage = [0x12345678, 0x9ABCDEF0, 0x11111111, 0x22222222,
+                                   0x33333333, 0x44444444, 0x55555555, 0x66666666,
+                                   0x77777777, 0x88888888, 0x99999999, 0xAAAAAAAA,
+                                   0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD, 0xEEEEEEEE];
+
+                // 10回計算して結果の一貫性をチェック
+                const results = [];
+                for (let i = 0; i < 10; i++) {
+                    const result = calculator.calculateSeed(testMessage);
+                    results.push(`${result.seed}-${result.hash}`);
+                }
+                
+                const uniqueResults = new Set(results);
+                if (uniqueResults.size === 1) {
+                    log(`✅ 一貫性テスト成功: 10回の計算で同じ結果`, 'success');
+                    log(`📊 結果: ${results[0]}`, 'info');
+                    log(`🔧 実装: ${calculator.isUsingWasm() ? 'WebAssembly' : 'TypeScript'}`, 'info');
+                } else {
+                    log(`❌ 一貫性テスト失敗: ${uniqueResults.size}種類の異なる結果`, 'error');
+                    uniqueResults.forEach(result => log(`   ${result}`, 'error'));
+                }
+                
+                // パフォーマンス測定
+                const iterations = 5000;
+                const startTime = performance.now();
+                for (let i = 0; i < iterations; i++) {
+                    calculator.calculateSeed(testMessage);
+                }
+                const endTime = performance.now();
+                const calcPerSec = Math.round(iterations / (endTime - startTime) * 1000);
+                
+                log(`⚡ 性能: ${calcPerSec.toLocaleString()} calc/sec (${calculator.isUsingWasm() ? 'WebAssembly' : 'TypeScript'})`, 'success');
+                
+            } catch (error) {
+                log(`❌ 一貫性テストエラー: ${error.message}`, 'error');
+            }
+        };
+        
         // Auto-initialize on page load
         document.addEventListener('DOMContentLoaded', async () => {
-            log('🚀 パフォーマンステストページが読み込まれました', 'success');
+            log('🚀 統合パフォーマンス・WebAssemblyテストページが読み込まれました', 'success');
             log('上記のボタンをクリックしてテストを実行してください', 'info');
+            log('💡 推奨順序: WebAssembly読み込み → 基本関数 → 一貫性 → パフォーマンステスト', 'info');
         });
     </script>
 </body>
