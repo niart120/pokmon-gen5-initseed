@@ -7,6 +7,8 @@ import { DateRangeCard } from './search/DateRangeCard';
 import { MACAddressCard } from './search/MACAddressCard';
 import { SearchProgressCard } from './search/SearchProgressCard';
 import { SearchControlCard } from './search/SearchControlCard';
+import { PresetManager } from './search/PresetManager';
+import { SearchHistory } from './search/SearchHistory';
 
 export function SearchPanel() {
   const { searchConditions, setSearchConditions } = useAppStore();
@@ -37,6 +39,8 @@ export function SearchPanel() {
 
   return (
     <div className="space-y-6">
+      <PresetManager />
+      <SearchHistory />
       <ROMConfigurationCard />
       <Timer0VCountCard />
       <DateRangeCard />

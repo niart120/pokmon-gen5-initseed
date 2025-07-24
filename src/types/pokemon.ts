@@ -103,6 +103,15 @@ export interface SearchProgress {
   isPaused: boolean;
 }
 
+export interface SearchPreset {
+  id: string;
+  name: string;
+  description?: string;
+  conditions: SearchConditions;
+  createdAt: Date;
+  lastUsed?: Date;
+}
+
 export const KEY_MAPPINGS = {
   A: 0,
   B: 1,

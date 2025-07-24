@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { SearchConditions, InitialSeedResult, TargetSeedList, SearchProgress, ROMVersion, ROMRegion, Hardware } from '../types/pokemon';
+import type { SearchConditions, InitialSeedResult, TargetSeedList, SearchProgress, SearchPreset, ROMVersion, ROMRegion, Hardware } from '../types/pokemon';
 import { generateTestSeeds } from '../lib/generate-test-seeds';
 
 interface AppStore {
@@ -37,6 +37,13 @@ interface AppStore {
   // Raw target seed input
   targetSeedInput: string;
   setTargetSeedInput: (input: string) => void;
+
+  // Presets
+  presets: SearchPreset[];
+  setPresets: (presets: SearchPreset[]) => void;
+  addPreset: (preset: SearchPreset) => void;
+  removePreset: (presetId: string) => void;
+  loadPreset: (presetId: string) => void;
 }
 
 const defaultSearchConditions: SearchConditions = {
@@ -169,6 +176,31 @@ export const useAppStore = create<AppStore>()(
       // Raw target seed input
       targetSeedInput: testSeeds.map(s => '0x' + s.toString(16).padStart(8, '0')).join('\n'),
       setTargetSeedInput: (input) => set({ targetSeedInput: input }),
+
+      // Presets
+      presets: [],
+      setPresets: (presets) => set({ presets }),
+      addPreset: (preset) =>
+        set((state) => ({
+          presets: [...state.presets, preset],
+        })),
+      removePreset: (presetId) =>
+        set((state) => ({
+          presets: state.presets.filter((p) => p.id !== presetId),
+        })),
+      loadPreset: (presetId) =>
+        set((state) => {
+          const preset = state.presets.find((p) => p.id === presetId);
+          if (preset) {
+            return {
+              searchConditions: preset.conditions,
+              presets: state.presets.map((p) =>
+                p.id === presetId ? { ...p, lastUsed: new Date() } : p
+              ),
+            };
+          }
+          return state;
+        }),
     }),
     {
       name: 'pokemon-seed-app',
@@ -176,6 +208,7 @@ export const useAppStore = create<AppStore>()(
         searchConditions: state.searchConditions,
         targetSeeds: state.targetSeeds,
         targetSeedInput: state.targetSeedInput,
+        presets: state.presets,
       }),
     }
   )
