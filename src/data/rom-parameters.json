@@ -1,0 +1,194 @@
+{
+  "BW": {
+    "JPN": {
+      "nazo": [0x02215D1A, 0x02015F4A, 0x020159E6, 0x02215E6A, 0x02015F9A],
+      "defaultVCount": 95,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "KOR": {
+      "nazo": [0x022B5D9A, 0x020B5F4A, 0x020B59E6, 0x022B5EEA, 0x020B5F9A],
+      "defaultVCount": 95,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "USA": {
+      "nazo": [0x02205D1A, 0x02005F4A, 0x020059E6, 0x02205E6A, 0x02005F9A],
+      "defaultVCount": 95,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "GER": {
+      "nazo": [0x02215D1A, 0x02015F4A, 0x020159E6, 0x02215E6A, 0x02015F9A],
+      "defaultVCount": 95,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "FRA": {
+      "nazo": [0x02215D1A, 0x02015F4A, 0x020159E6, 0x02215E6A, 0x02015F9A],
+      "defaultVCount": 95,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "SPA": {
+      "nazo": [0x02215D1A, 0x02015F4A, 0x020159E6, 0x02215E6A, 0x02015F9A],
+      "defaultVCount": 95,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "ITA": {
+      "nazo": [0x02215D1A, 0x02015F4A, 0x020159E6, 0x02215E6A, 0x02015F9A],
+      "defaultVCount": 95,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    }
+  },
+  "W": {
+    "JPN": {
+      "nazo": [0x02215D1A, 0x02015F4A, 0x020159E6, 0x02215E6A, 0x02015F9A],
+      "defaultVCount": 96,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "KOR": {
+      "nazo": [0x022B5D9A, 0x020B5F4A, 0x020B59E6, 0x022B5EEA, 0x020B5F9A],
+      "defaultVCount": 96,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "USA": {
+      "nazo": [0x02205D1A, 0x02005F4A, 0x020059E6, 0x02205E6A, 0x02005F9A],
+      "defaultVCount": 96,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "GER": {
+      "nazo": [0x02215D1A, 0x02015F4A, 0x020159E6, 0x02215E6A, 0x02015F9A],
+      "defaultVCount": 96,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "FRA": {
+      "nazo": [0x02215D1A, 0x02015F4A, 0x020159E6, 0x02215E6A, 0x02015F9A],
+      "defaultVCount": 96,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "SPA": {
+      "nazo": [0x02215D1A, 0x02015F4A, 0x020159E6, 0x02215E6A, 0x02015F9A],
+      "defaultVCount": 96,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "ITA": {
+      "nazo": [0x02215D1A, 0x02015F4A, 0x020159E6, 0x02215E6A, 0x02015F9A],
+      "defaultVCount": 96,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    }
+  },
+  "B2": {
+    "JPN": {
+      "nazo": [0x0225D1DA, 0x0205F40A, 0x020598A6, 0x0225D32A, 0x0205F45A],
+      "defaultVCount": 129,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "KOR": {
+      "nazo": [0x022FD25A, 0x020FF40A, 0x020F98A6, 0x022FD3AA, 0x020FF45A],
+      "defaultVCount": 129,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "USA": {
+      "nazo": [0x02245D1A, 0x0204F40A, 0x020498A6, 0x02245E6A, 0x0204F45A],
+      "defaultVCount": 129,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "GER": {
+      "nazo": [0x0225517A, 0x0205F40A, 0x020598A6, 0x0225D32A, 0x0205F45A],
+      "defaultVCount": 129,
+      "timer0Min": 4325,
+      "timer0Max": 4332,
+      "vcountOffset": [
+        { "timer0Min": 4325, "timer0Max": 4328, "vcountValue": 129 },
+        { "timer0Min": 4329, "timer0Max": 4332, "vcountValue": 130 }
+      ]
+    },
+    "FRA": {
+      "nazo": [0x0225D1DA, 0x0205F40A, 0x020598A6, 0x0225D32A, 0x0205F45A],
+      "defaultVCount": 129,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "SPA": {
+      "nazo": [0x0225D1DA, 0x0205F40A, 0x020598A6, 0x0225D32A, 0x0205F45A],
+      "defaultVCount": 129,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "ITA": {
+      "nazo": [0x0225D1DA, 0x0205F40A, 0x020598A6, 0x0225D32A, 0x0205F45A],
+      "defaultVCount": 130,
+      "timer0Min": 4359,
+      "timer0Max": 4365,
+      "vcountOffset": [
+        { "timer0Min": 4359, "timer0Max": 4361, "vcountValue": 130 },
+        { "timer0Min": 4362, "timer0Max": 4365, "vcountValue": 131 }
+      ]
+    }
+  },
+  "W2": {
+    "JPN": {
+      "nazo": [0x0225D1DA, 0x0205F40A, 0x020598A6, 0x0225D32A, 0x0205F45A],
+      "defaultVCount": 130,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "KOR": {
+      "nazo": [0x022FD25A, 0x020FF40A, 0x020F98A6, 0x022FD3AA, 0x020FF45A],
+      "defaultVCount": 130,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "USA": {
+      "nazo": [0x02245D1A, 0x0204F40A, 0x020498A6, 0x02245E6A, 0x0204F45A],
+      "defaultVCount": 130,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "GER": {
+      "nazo": [0x0225517A, 0x0205F40A, 0x020598A6, 0x0225D32A, 0x0205F45A],
+      "defaultVCount": 130,
+      "timer0Min": 4325,
+      "timer0Max": 4332,
+      "vcountOffset": [
+        { "timer0Min": 4325, "timer0Max": 4328, "vcountValue": 130 },
+        { "timer0Min": 4329, "timer0Max": 4332, "vcountValue": 131 }
+      ]
+    },
+    "FRA": {
+      "nazo": [0x0225D1DA, 0x0205F40A, 0x020598A6, 0x0225D32A, 0x0205F45A],
+      "defaultVCount": 130,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "SPA": {
+      "nazo": [0x0225D1DA, 0x0205F40A, 0x020598A6, 0x0225D32A, 0x0205F45A],
+      "defaultVCount": 130,
+      "timer0Min": 3193,
+      "timer0Max": 3194
+    },
+    "ITA": {
+      "nazo": [0x0225D1DA, 0x0205F40A, 0x020598A6, 0x0225D32A, 0x0205F45A],
+      "defaultVCount": 131,
+      "timer0Min": 4359,
+      "timer0Max": 4365,
+      "vcountOffset": [
+        { "timer0Min": 4359, "timer0Max": 4361, "vcountValue": 131 },
+        { "timer0Min": 4362, "timer0Max": 4365, "vcountValue": 132 }
+      ]
+    }
+  }
+}
