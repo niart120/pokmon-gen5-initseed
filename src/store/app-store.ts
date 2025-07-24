@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SearchConditions, InitialSeedResult, TargetSeedList, SearchProgress, ROMVersion, ROMRegion, Hardware } from '../types/pokemon';
+import { generateTestSeeds } from '../lib/generate-test-seeds';
 
 interface AppStore {
   // Search conditions
@@ -58,20 +59,20 @@ const defaultSearchConditions: SearchConditions = {
   dateRange: {
     startYear: 2023,
     endYear: 2023,
-    startMonth: 1,
-    endMonth: 12,
-    startDay: 1,
-    endDay: 31,
-    startHour: 0,
-    endHour: 23,
+    startMonth: 6,
+    endMonth: 6,
+    startDay: 15,
+    endDay: 15,
+    startHour: 12,
+    endHour: 12,
     startMinute: 0,
-    endMinute: 59,
+    endMinute: 5,
     startSecond: 0,
     endSecond: 59,
   },
   
   keyInput: 0x2FFF, // Default: no keys pressed
-  macAddress: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+  macAddress: [0x00, 0x1B, 0x2C, 0x3D, 0x4E, 0x5F],
 };
 
 const defaultSearchProgress: SearchProgress = {
@@ -86,6 +87,10 @@ const defaultSearchProgress: SearchProgress = {
   isPaused: false,
 };
 
+// Generate realistic test seeds for the default date range
+const testSeeds = generateTestSeeds();
+console.log('Generated test seeds for demo:', testSeeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
+
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
@@ -99,7 +104,7 @@ export const useAppStore = create<AppStore>()(
         set({ searchConditions: defaultSearchConditions }),
 
       // Target seeds
-      targetSeeds: { seeds: [] },
+      targetSeeds: { seeds: testSeeds },
       setTargetSeeds: (seeds) => set({ targetSeeds: { seeds } }),
       addTargetSeed: (seed) =>
         set((state) => ({
@@ -162,7 +167,7 @@ export const useAppStore = create<AppStore>()(
       setActiveTab: (tab) => set({ activeTab: tab }),
       
       // Raw target seed input
-      targetSeedInput: '',
+      targetSeedInput: testSeeds.map(s => '0x' + s.toString(16).padStart(8, '0')).join('\n'),
       setTargetSeedInput: (input) => set({ targetSeedInput: input }),
     }),
     {

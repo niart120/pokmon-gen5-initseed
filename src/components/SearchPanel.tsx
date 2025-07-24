@@ -81,8 +81,8 @@ export function SearchPanel() {
       return;
     }
 
-    console.log('Starting search with conditions:', searchConditions);
-    console.log('Target seeds:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
+    console.log('🚀 Starting search with conditions:', searchConditions);
+    console.log('🎯 Target seeds:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
 
     clearSearchResults();
     startSearch();
@@ -93,6 +93,8 @@ export function SearchPanel() {
       if (!params) {
         throw new Error(`No parameters found for ${searchConditions.romVersion} ${searchConditions.romRegion}`);
       }
+
+      console.log('🔧 ROM Parameters:', params);
 
       // Calculate total search space
       const timer0Range = searchConditions.timer0Range.max - searchConditions.timer0Range.min + 1;
@@ -124,11 +126,10 @@ export function SearchPanel() {
       const dateRange = Math.floor((endDate.getTime() - startDate.getTime()) / 1000) + 1;
       const totalSteps = timer0Range * vcountRange * dateRange;
 
-      console.log(`Starting search with ${totalSteps.toLocaleString()} total combinations`);
-      console.log(`Timer0: ${searchConditions.timer0Range.min}-${searchConditions.timer0Range.max} (${timer0Range} values)`);
-      console.log(`VCount: ${searchConditions.vcountRange.min}-${searchConditions.vcountRange.max} (${vcountRange} values)`);
-      console.log(`Date range: ${startDate.toISOString()} to ${endDate.toISOString()} (${dateRange} seconds)`);
-      console.log(`ROM parameters:`, params);
+      console.log(`📊 Starting search with ${totalSteps.toLocaleString()} total combinations`);
+      console.log(`⏰ Timer0: ${searchConditions.timer0Range.min}-${searchConditions.timer0Range.max} (${timer0Range} values)`);
+      console.log(`📺 VCount: ${searchConditions.vcountRange.min}-${searchConditions.vcountRange.max} (${vcountRange} values)`);
+      console.log(`📅 Date range: ${startDate.toISOString()} to ${endDate.toISOString()} (${dateRange} seconds)`);
 
       // Set initial progress
       useAppStore.getState().setSearchProgress({
@@ -143,6 +144,7 @@ export function SearchPanel() {
 
       // Convert target seeds to Set for faster lookup
       const targetSeedSet = new Set(targetSeeds.seeds);
+      console.log('🔍 Target seed set:', Array.from(targetSeedSet).map(s => '0x' + s.toString(16).padStart(8, '0')));
 
       // Iterate through all combinations
       outerLoop: for (let timer0 = searchConditions.timer0Range.min; timer0 <= searchConditions.timer0Range.max; timer0++) {
@@ -189,12 +191,17 @@ export function SearchPanel() {
               const message = calculator.generateMessage(searchConditions, timer0, actualVCount, currentDateTime);
               const { seed, hash } = calculator.calculateSeed(message);
 
+              // Debug: Log first few seeds being tested
+              if (currentStep <= 5) {
+                console.log(`🧪 Testing seed ${currentStep}: 0x${seed.toString(16).padStart(8, '0')} at ${currentDateTime.toISOString()}, Timer0: ${timer0}, VCount: ${actualVCount}`);
+              }
+
               // Check if seed matches any target (using Set for O(1) lookup)
               const isMatch = targetSeedSet.has(seed);
 
               if (isMatch) {
                 matchesFound++;
-                console.log(`Found match! Seed: 0x${seed.toString(16).padStart(8, '0')}, Timer0: ${timer0}, VCount: ${actualVCount}, Date: ${currentDateTime.toISOString()}`);
+                console.log(`🎉 Found match! Seed: 0x${seed.toString(16).padStart(8, '0')}, Timer0: ${timer0}, VCount: ${actualVCount}, Date: ${currentDateTime.toISOString()}`);
                 
                 addSearchResult({
                   seed,
@@ -235,13 +242,13 @@ export function SearchPanel() {
         }
       }
 
-      console.log(`Search completed. Found ${matchesFound} matches out of ${totalSteps} combinations.`);
+      console.log(`✅ Search completed. Found ${matchesFound} matches out of ${totalSteps} combinations.`);
       
       // Show completion message to user
       if (matchesFound === 0) {
-        alert(`Search completed. No matches found in ${totalSteps.toLocaleString()} combinations.\n\nTry:\n- Expanding the date range\n- Checking Timer0/VCount ranges\n- Verifying target seed format`);
+        alert(`Search completed. No matches found in ${totalSteps.toLocaleString()} combinations.\n\nTry:\n- Expanding the date range\n- Checking Timer0/VCount ranges\n- Verifying target seed format\n\nCheck browser console for detailed debug information.`);
       } else {
-        alert(`Search completed successfully!\n\nFound ${matchesFound} matching seed${matchesFound === 1 ? '' : 's'} out of ${totalSteps.toLocaleString()} combinations.\n\nCheck the Results tab for details.`);
+        alert(`🎉 Search completed successfully!\n\nFound ${matchesFound} matching seed${matchesFound === 1 ? '' : 's'} out of ${totalSteps.toLocaleString()} combinations.\n\nCheck the Results tab for details.`);
       }
     } catch (error) {
       console.error('Search error:', error);

@@ -24,6 +24,9 @@ function App() {
     } else {
       console.log('🎉 All verification tests passed! Search implementation is ready.');
     }
+
+    // Debug: Show target seeds on load
+    console.log('📋 Target seeds loaded:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
   }, []);
 
   return (
