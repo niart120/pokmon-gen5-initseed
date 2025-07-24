@@ -51,6 +51,105 @@ async function initializeCalculator() {
   }
 }
 
+/**
+ * Process batch using WebAssembly for maximum performance
+ */
+async function processBatchWebAssembly(
+  timestamps: number[],
+  conditions: SearchConditions,
+  timer0: number,
+  actualVCount: number,
+  targetSeedSet: Set<number>,
+  calculator: SeedCalculator,
+  onResult: (result: InitialSeedResult) => void
+): Promise<void> {
+  // Generate all messages for the batch
+  const messages: number[][] = [];
+  const datetimes: Date[] = [];
+  
+  for (const timestamp of timestamps) {
+    const datetime = new Date(timestamp);
+    const message = calculator.generateMessage(conditions, timer0, actualVCount, datetime);
+    messages.push(message);
+    datetimes.push(datetime);
+  }
+
+  // Get WebAssembly calculator for batch processing
+  const wasmCalculator = calculator.getWasmCalculator();
+  if (wasmCalculator && wasmCalculator.calculateSeedBatch) {
+    try {
+      // Use WebAssembly batch calculation
+      const results = wasmCalculator.calculateSeedBatch(messages);
+      
+      // Process results
+      for (let i = 0; i < results.length; i++) {
+        const { seed, hash } = results[i];
+        
+        if (targetSeedSet.has(seed)) {
+          const result: InitialSeedResult = {
+            seed,
+            datetime: datetimes[i],
+            timer0,
+            vcount: actualVCount,
+            conditions,
+            message: messages[i],
+            sha1Hash: hash,
+            isMatch: true,
+          };
+          onResult(result);
+        }
+      }
+    } catch (error) {
+      console.error('WebAssembly batch processing failed, falling back to individual:', error);
+      // Fallback to individual processing
+      await processBatchIndividual(timestamps, conditions, timer0, actualVCount, targetSeedSet, calculator, onResult);
+    }
+  } else {
+    // Fallback to individual processing
+    await processBatchIndividual(timestamps, conditions, timer0, actualVCount, targetSeedSet, calculator, onResult);
+  }
+}
+
+/**
+ * Process batch using individual calculations (fallback method)
+ */
+async function processBatchIndividual(
+  timestamps: number[],
+  conditions: SearchConditions,
+  timer0: number,
+  actualVCount: number,
+  targetSeedSet: Set<number>,
+  calculator: SeedCalculator,
+  onResult: (result: InitialSeedResult) => void
+): Promise<void> {
+  for (const timestamp of timestamps) {
+    const currentDateTime = new Date(timestamp);
+    
+    try {
+      // Generate message and calculate seed
+      const message = calculator.generateMessage(conditions, timer0, actualVCount, currentDateTime);
+      const { seed, hash } = calculator.calculateSeed(message);
+
+      // Check if seed matches any target
+      if (targetSeedSet.has(seed)) {
+        const result: InitialSeedResult = {
+          seed,
+          datetime: currentDateTime,
+          timer0,
+          vcount: actualVCount,
+          conditions,
+          message,
+          sha1Hash: hash,
+          isMatch: true,
+        };
+        onResult(result);
+      }
+    } catch (error) {
+      console.error('Error calculating seed:', error);
+    }
+  }
+}
+
 // Main search function
 async function performSearch(conditions: SearchConditions, targetSeeds: number[]) {
   try {
@@ -98,14 +197,28 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
     let matchesFound = 0;
     const startTime = Date.now();
 
-    // Search loop
+    // Batch processing configuration - Optimized for performance
+    const BATCH_SIZE = calculator.isUsingWasm() ? 10000 : 2000; // Significantly larger batches for better performance
+    const PROGRESS_UPDATE_INTERVAL = Math.max(Math.floor(BATCH_SIZE * 5), 5000); // Update every 5 batches or 5000+ calculations
+    console.log(`🚀 Using batch size: ${BATCH_SIZE} (WebAssembly: ${calculator.isUsingWasm()})`);
+    console.log(`📊 Progress update interval: ${PROGRESS_UPDATE_INTERVAL} calculations`);
+
+    // Pre-calculate timestamps for better performance
+    const timestamps: number[] = [];
+    for (let timestamp = startDate.getTime(); timestamp <= endDate.getTime(); timestamp += 1000) {
+      timestamps.push(timestamp);
+    }
+    console.log(`📅 Pre-calculated ${timestamps.length} timestamps`);
+
+    // Search loop with batch processing
     outerLoop: for (let timer0 = conditions.timer0Range.min; timer0 <= conditions.timer0Range.max; timer0++) {
       if (searchState.shouldStop) break;
       
       // Get actual VCount value with offset handling for BW2
       const actualVCount = calculator.getVCountForTimer0(params, timer0);
       
-      for (let timestamp = startDate.getTime(); timestamp <= endDate.getTime(); timestamp += 1000) {
+      // Process timestamps in batches
+      for (let timestampStart = 0; timestampStart < timestamps.length; timestampStart += BATCH_SIZE) {
         if (searchState.shouldStop) break outerLoop;
         
         // Handle pause
@@ -115,40 +228,35 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
         
         if (searchState.shouldStop) break outerLoop;
 
-        const currentDateTime = new Date(timestamp);
-        currentStep++;
-
+        const timestampEnd = Math.min(timestampStart + BATCH_SIZE, timestamps.length);
+        const batchTimestamps = timestamps.slice(timestampStart, timestampEnd);
+        
         try {
-          // Generate message and calculate seed
-          const message = calculator.generateMessage(conditions, timer0, actualVCount, currentDateTime);
-          const { seed, hash } = calculator.calculateSeed(message);
-
-          // Check if seed matches any target
-          const isMatch = targetSeedSet.has(seed);
-
-          if (isMatch) {
-            matchesFound++;
-            
-            // Send result immediately
-            const result: InitialSeedResult = {
-              seed,
-              datetime: currentDateTime,
-              timer0,
-              vcount: actualVCount,
-              conditions,
-              message,
-              sha1Hash: hash,
-              isMatch: true,
-            };
-
-            postMessage({
-              type: 'RESULT',
-              result
-            } as WorkerResponse);
+          if (calculator.isUsingWasm() && batchTimestamps.length > 10) {
+            // Use WebAssembly batch processing for significant speedup
+            await processBatchWebAssembly(
+              batchTimestamps, conditions, timer0, actualVCount, 
+              targetSeedSet, calculator, (result) => {
+                matchesFound++;
+                postMessage({ type: 'RESULT', result } as WorkerResponse);
+              }
+            );
+          } else {
+            // Use individual processing for smaller batches or TypeScript fallback
+            await processBatchIndividual(
+              batchTimestamps, conditions, timer0, actualVCount,
+              targetSeedSet, calculator, (result) => {
+                matchesFound++;
+                postMessage({ type: 'RESULT', result } as WorkerResponse);
+              }
+            );
           }
 
-          // Send progress update every 100 iterations for better performance
-          if (currentStep % 100 === 0) {
+          currentStep += batchTimestamps.length;
+
+          // Send progress update based on optimized interval (not every batch)
+          if (currentStep % PROGRESS_UPDATE_INTERVAL < batchTimestamps.length || 
+              timestampEnd >= timestamps.length) { // Also update on completion
             const elapsedTime = Date.now() - startTime;
             const estimatedTimeRemaining = currentStep > 0 ? 
               elapsedTime * (totalSteps - currentStep) / currentStep : 0;
@@ -161,15 +269,19 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
                 elapsedTime,
                 estimatedTimeRemaining,
                 matchesFound,
-                currentDateTime: currentDateTime.toISOString()
+                currentDateTime: new Date(batchTimestamps[batchTimestamps.length - 1]).toISOString()
               }
             } as WorkerResponse);
+          }
 
-            // Small yield to allow message processing
+          // Reduced yield frequency for better performance
+          if (currentStep % (BATCH_SIZE * 10) === 0) {
             await new Promise(resolve => setTimeout(resolve, 1));
           }
+
         } catch (error) {
-          console.error('Error calculating seed in worker:', error);
+          console.error('Error processing batch in worker:', error);
+          // Continue with next batch instead of stopping completely
         }
       }
     }

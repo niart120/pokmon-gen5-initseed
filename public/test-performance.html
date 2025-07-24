@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Test - Pokemon BW/BW2 Initial Seed Search</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #111; color: #fff; }
+        .output { margin: 10px 0; padding: 10px; background: #222; border-radius: 4px; }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .warning { color: #ff0; }
+        .info { color: #0af; }
+        button { padding: 10px 20px; margin: 5px; background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #555; }
+    </style>
+</head>
+<body>
+    <h1>🚀 パフォーマンステスト - ポケモンBW/BW2初期Seed探索</h1>
+    
+    <div>
+        <button onclick="runBasicTest()">基本パフォーマンステスト</button>
+        <button onclick="runScalabilityTest()">スケーラビリティテスト</button>
+        <button onclick="runBatchTest()">バッチ処理テスト</button>
+        <button onclick="runMassiveTest()">大規模ストレステスト (100万計算)</button>
+        <button onclick="runProgressOverheadTest()">進捗オーバーヘッドテスト</button>
+        <button onclick="runComprehensiveTest()">包括的テスト</button>
+        <button onclick="clearOutput()">クリア</button>
+    </div>
+    
+    <div id="output"></div>
+
+    <script type="module">
+        import { PerformanceAnalyzer, runPerformanceAnalysis } from '/src/lib/performance-analyzer.ts';
+        
+        let analyzer = null;
+        
+        // Initialize analyzer
+        async function initAnalyzer() {
+            if (!analyzer) {
+                log('🔧 パフォーマンスアナライザーを初期化中...', 'info');
+                analyzer = new PerformanceAnalyzer();
+                await analyzer.initialize();
+                log('✅ 初期化完了', 'success');
+            }
+            return analyzer;
+        }
+        
+        // Logging utility
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `output ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+        
+        window.runBasicTest = async function() {
+            try {
+                log('📊 基本パフォーマンステスト（リアルワークフロー）を開始...', 'info');
+                log('⚠️ メッセージ生成・計算・目標照合の全てを含む実際の探索と同じ処理', 'warning');
+                const analyzer = await initAnalyzer();
+                const metrics = await analyzer.measureBasicPerformance(10000);
+                
+                log(`✅ テスト完了`, 'success');
+                log(`   計算速度: ${metrics.calculationsPerSecond.toFixed(0)} calc/sec`, 'info');
+                log(`   実行時間: ${metrics.totalTime.toFixed(2)}ms`, 'info');
+                log(`   メモリ使用量: ${(metrics.memoryUsage / 1024 / 1024).toFixed(2)}MB`, 'info');
+                
+                if (metrics.bottlenecks.length > 0) {
+                    log(`⚠️ ボトルネック検出:`, 'warning');
+                    metrics.bottlenecks.forEach(b => log(`   • ${b}`, 'warning'));
+                }
+                
+                const recommendations = analyzer.generateRecommendations(metrics);
+                if (recommendations.length > 0) {
+                    log(`💡 推奨事項:`, 'info');
+                    recommendations.forEach(r => log(`   ${r}`, 'info'));
+                }
+                
+            } catch (error) {
+                log(`❌ テスト失敗: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+        
+        window.runScalabilityTest = async function() {
+            try {
+                log('📈 スケーラビリティテストを開始...', 'info');
+                const analyzer = await initAnalyzer();
+                const results = await analyzer.testScalability(50000);
+                
+                log(`✅ スケーラビリティテスト完了`, 'success');
+                results.forEach(r => {
+                    log(`Batch ${r.batchSize.toLocaleString()}: ${r.performance.calculationsPerSecond.toFixed(0)} calc/s, Stability: ${r.stabilityScore.toFixed(1)}`, 'info');
+                });
+                
+            } catch (error) {
+                log(`❌ テスト失敗: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+        
+        window.runBatchTest = async function() {
+            try {
+                log('🔄 バッチ処理テスト（リアルワークフロー）を開始...', 'info');
+                log('⚠️ 実際の探索と同じ処理：メッセージ生成→計算→目標照合', 'warning');
+                const analyzer = await initAnalyzer();
+                
+                const testConditions = {
+                    romVersion: 'B',
+                    romRegion: 'JPN',
+                    hardware: 'DS',
+                    macAddress: [0x00, 0x16, 0x56, 0xAE, 0xBB, 0xCC],
+                    keyInput: 0x02000000,
+                    timer0Range: { min: 4320, max: 4320, useAutoRange: false },
+                    vcountRange: { min: 128, max: 128, useAutoRange: false },
+                    dateRange: {
+                        startYear: 2023, startMonth: 12, startDay: 31,
+                        startHour: 23, startMinute: 59, startSecond: 59,
+                        endYear: 2023, endMonth: 12, endDay: 31,
+                        endHour: 23, endMinute: 59, endSecond: 59
+                    }
+                };
+                
+                const batchSizes = [100, 500, 1000, 2000, 5000, 10000];
+                
+                for (const batchSize of batchSizes) {
+                    log(`Testing batch size: ${batchSize.toLocaleString()}...`, 'info');
+                    const metrics = await analyzer.measureBatchPerformance(testConditions, batchSize);
+                    log(`   Speed: ${metrics.calculationsPerSecond.toFixed(0)} calc/sec`, 'info');
+                    log(`   Time: ${metrics.calculationTime.toFixed(2)}ms`, 'info');
+                    
+                    if (metrics.bottlenecks.length > 0) {
+                        log(`   Bottlenecks: ${metrics.bottlenecks.join(', ')}`, 'warning');
+                    }
+                }
+                
+                log(`✅ バッチ処理テスト完了`, 'success');
+                
+            } catch (error) {
+                log(`❌ テスト失敗: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+        
+        window.runMassiveTest = async function() {
+            try {
+                log('🔥 大規模ストレステスト (100万計算・リアルワークフロー) を開始...', 'info');
+                log('⚠️ 注意: このテストは実際の探索と同じ処理で数分かかる場合があります', 'warning');
+                log('📊 メッセージ生成・計算・目標照合を全て含む完全なワークフロー', 'info');
+                const analyzer = await initAnalyzer();
+                
+                const metrics = await analyzer.measureMassiveBatchPerformance(1000000);
+                
+                log(`✅ 大規模ストレステスト完了`, 'success');
+                log(`   計算数: 1,000,000`, 'info');
+                log(`   速度: ${metrics.calculationsPerSecond.toFixed(0)} calc/sec`, 'info');
+                log(`   実行時間: ${(metrics.totalTime / 1000).toFixed(2)}秒`, 'info');
+                log(`   メモリ使用量: ${(metrics.memoryUsage / 1024 / 1024).toFixed(2)}MB`, 'info');
+                
+                // Calculate time for 1 million calculations
+                const timeFor1Million = (1000000 / metrics.calculationsPerSecond) / 60;
+                const target = 10; // 10 minutes
+                
+                if (timeFor1Million <= target) {
+                    log(`🟢 目標達成! 100万計算: ${timeFor1Million.toFixed(1)}分 (目標: ${target}分以内)`, 'success');
+                } else {
+                    log(`🔴 目標未達成! 100万計算: ${timeFor1Million.toFixed(1)}分 (目標: ${target}分以内)`, 'error');
+                }
+                
+                if (metrics.bottlenecks.length > 0) {
+                    log(`⚠️ 問題点:`, 'warning');
+                    metrics.bottlenecks.forEach(b => log(`   • ${b}`, 'warning'));
+                }
+                
+                const recommendations = analyzer.generateRecommendations(metrics);
+                if (recommendations.length > 0) {
+                    log(`💡 推奨事項:`, 'info');
+                    recommendations.forEach(r => log(`   ${r}`, 'info'));
+                }
+                
+            } catch (error) {
+                log(`❌ テスト失敗: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+        
+        window.runComprehensiveTest = async function() {
+            try {
+                log('🎯 包括的パフォーマンステストを開始...', 'info');
+                await runPerformanceAnalysis();
+                log(`✅ 包括的テスト完了`, 'success');
+                
+            } catch (error) {
+                log(`❌ テスト失敗: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        window.runProgressOverheadTest = async function() {
+            try {
+                log('📊 進捗更新オーバーヘッドテストを開始...', 'info');
+                log('⚠️ 実際のE2E検索でのパフォーマンス低下原因を調査', 'warning');
+                const analyzer = await initAnalyzer();
+                
+                // Test 1: Pure computation (no progress updates)
+                log('🔧 テスト1: 純粋な計算処理（進捗更新なし）', 'info');
+                const pureMetrics = await analyzer.measureBasicPerformance(50000);
+                log(`   純粋計算速度: ${pureMetrics.calculationsPerSecond.toFixed(0)} calc/sec`, 'info');
+                
+                // Test 2: With simulated progress updates
+                log('🔧 テスト2: 進捗更新シミュレーション付き', 'info');
+                const progressMetrics = await analyzer.measureWithProgressOverhead(50000, 1000); // 1000計算毎に更新
+                log(`   進捗更新付き速度: ${progressMetrics.calculationsPerSecond.toFixed(0)} calc/sec`, 'info');
+                
+                // Test 3: With frequent progress updates (like E2E)
+                log('🔧 テスト3: 頻繁な進捗更新（E2E相当）', 'info');
+                const frequentMetrics = await analyzer.measureWithProgressOverhead(50000, 100); // 100計算毎に更新
+                log(`   頻繁更新付き速度: ${frequentMetrics.calculationsPerSecond.toFixed(0)} calc/sec`, 'info');
+                
+                // Calculate overhead
+                const progressOverhead = ((pureMetrics.calculationsPerSecond - progressMetrics.calculationsPerSecond) / pureMetrics.calculationsPerSecond * 100);
+                const frequentOverhead = ((pureMetrics.calculationsPerSecond - frequentMetrics.calculationsPerSecond) / pureMetrics.calculationsPerSecond * 100);
+                
+                log('📈 オーバーヘッド分析:', 'info');
+                log(`   進捗更新オーバーヘッド: ${progressOverhead.toFixed(1)}%`, 'warning');
+                log(`   頻繁更新オーバーヘッド: ${frequentOverhead.toFixed(1)}%`, 'warning');
+                
+                if (frequentOverhead > 30) {
+                    log('⚠️ 重大: 頻繁な進捗更新が30%以上のパフォーマンス低下を引き起こしています', 'error');
+                    log('💡 推奨: バッチサイズを増やすか、進捗更新頻度を下げてください', 'info');
+                }
+                
+                log('✅ 進捗オーバーヘッドテスト完了', 'success');
+                
+            } catch (error) {
+                log(`❌ テスト失敗: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+        
+        window.clearOutput = function() {
+            document.getElementById('output').innerHTML = '';
+        };
+        
+        // Auto-initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            log('🚀 パフォーマンステストページが読み込まれました', 'success');
+            log('上記のボタンをクリックしてテストを実行してください', 'info');
+        });
+    </script>
+</body>
+</html>
