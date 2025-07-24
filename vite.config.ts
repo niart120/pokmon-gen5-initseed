@@ -17,4 +17,18 @@ export default defineConfig({
       '@': resolve(projectRoot, 'src')
     }
   },
+  worker: {
+    format: 'es',
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['react', 'react-dom'],
+          'ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-card'],
+          'utils': ['date-fns', 'zustand']
+        }
+      }
+    }
+  }
 });

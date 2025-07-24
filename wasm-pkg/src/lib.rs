@@ -39,12 +39,42 @@ pub fn calculate_sha1_hash(message: &[u32]) -> Vec<u32> {
         return vec![0, 0];
     }
 
+    let (h0, h1) = calculate_sha1_internal(message);
+    vec![h0, h1]
+}
+
+/// Batch SHA-1 calculation for improved performance
+/// Takes multiple messages (batch_size * 16 words) and returns seeds
+/// Reduces TypeScript ↔ WebAssembly communication overhead
+#[wasm_bindgen]
+pub fn calculate_sha1_batch(messages: &[u32], batch_size: u32) -> Vec<u32> {
+    let expected_len = (batch_size as usize) * 16;
+    if messages.len() != expected_len {
+        console_log!("Error: Expected {} words for {} messages", expected_len, batch_size);
+        return vec![];
+    }
+
+    let mut results = Vec::with_capacity(batch_size as usize * 2);
+    
+    for i in 0..batch_size {
+        let start_idx = (i as usize) * 16;
+        let message_slice = &messages[start_idx..start_idx + 16];
+        let (h0, h1) = calculate_sha1_internal(message_slice);
+        results.push(h0);
+        results.push(h1);
+    }
+    
+    results
+}
+
+/// Internal SHA-1 calculation (shared by single and batch functions)
+fn calculate_sha1_internal(message: &[u32]) -> (u32, u32) {
     // Initialize hash values (SHA-1 standard)
     let mut h0: u32 = 0x67452301;
     let mut h1: u32 = 0xEFCDAB89;
-    let mut h2: u32 = 0x98BADCFE;
-    let mut h3: u32 = 0x10325476;
-    let mut h4: u32 = 0xC3D2E1F0;
+    let h2: u32 = 0x98BADCFE;
+    let h3: u32 = 0x10325476;
+    let h4: u32 = 0xC3D2E1F0;
 
     // Extend the 16 words to 80 words
     let mut w = [0u32; 80];
@@ -93,11 +123,11 @@ pub fn calculate_sha1_hash(message: &[u32]) -> Vec<u32> {
     // Add this chunk's hash to result
     h0 = add32(h0, a);
     h1 = add32(h1, b);
-    h2 = add32(h2, c);
-    h3 = add32(h3, d);
-    h4 = add32(h4, e);
+    let _h2 = add32(h2, c);
+    let _h3 = add32(h3, d);
+    let _h4 = add32(h4, e);
 
-    vec![h0, h1]
+    (h0, h1)
 }
 
 /// 32-bit left rotation
@@ -135,5 +165,15 @@ mod tests {
         assert_eq!(result.len(), 2);
         // Should return some non-zero hash for all-zero input
         assert!(result[0] != 0 || result[1] != 0);
+    }
+
+    #[test]
+    fn test_sha1_batch() {
+        let batch_size = 3;
+        let messages = vec![0u32; 16 * batch_size];
+        let result = calculate_sha1_batch(&messages, batch_size as u32);
+        assert_eq!(result.len(), batch_size * 2);
+        // Should return some non-zero hashes
+        assert!(result.iter().any(|&x| x != 0));
     }
 }
