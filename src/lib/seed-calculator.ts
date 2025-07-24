@@ -89,16 +89,21 @@ export class SeedCalculator {
     const data7 = macUpper ^ gxStat ^ frame;
     message[7] = this.toLittleEndian32(data7);
     
-    // data[8]: Date and day of week (YYMMDDWW format, decimal→hex conversion, no endian conversion)
+    // data[8]: Date and day of week (YYMMDDWW format, 10進数→16進数変換, no endian conversion)
     const year = datetime.getFullYear() % 100;
     const month = datetime.getMonth() + 1;
     const day = datetime.getDate();
     const dayOfWeek = this.getDayOfWeek(datetime.getFullYear(), month, day);
     
-    const dateValue = parseInt(`${year.toString().padStart(2, '0')}${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}${dayOfWeek.toString().padStart(2, '0')}`);
-    message[8] = parseInt(dateValue.toString(), 16);
+    // Build BCD-like decimal representation then treat as hex
+    // Example: 2023/12/31 Sunday → 23123100 (decimal) → 0x160D05C4 (hex)
+    const yyBCD = Math.floor(year / 10) * 16 + (year % 10);
+    const mmBCD = Math.floor(month / 10) * 16 + (month % 10);
+    const ddBCD = Math.floor(day / 10) * 16 + (day % 10);
+    const wwBCD = Math.floor(dayOfWeek / 10) * 16 + (dayOfWeek % 10);
+    message[8] = (yyBCD << 24) | (mmBCD << 16) | (ddBCD << 8) | wwBCD;
     
-    // data[9]: Time (HHMMSS00 format, DS/DS Lite adds 0x40 for PM, decimal→hex conversion, no endian conversion)
+    // data[9]: Time (HHMMSS00 format, DS/DS Lite adds 0x40 for PM, 10進数→16進数変換, no endian conversion)
     let hour = datetime.getHours();
     const minute = datetime.getMinutes();
     const second = datetime.getSeconds();
@@ -108,8 +113,12 @@ export class SeedCalculator {
       hour += 0x40;
     }
     
-    const timeValue = parseInt(`${hour.toString().padStart(2, '0')}${minute.toString().padStart(2, '0')}${second.toString().padStart(2, '0')}00`);
-    message[9] = parseInt(timeValue.toString(), 16);
+    // Build BCD-like decimal representation then treat as hex
+    // Example: 23:59:59 → 63595900 (DS/DS Lite PM) → 0x3C98BC04 (hex)
+    const hhBCD = Math.floor(hour / 10) * 16 + (hour % 10);
+    const minBCD = Math.floor(minute / 10) * 16 + (minute % 10);
+    const secBCD = Math.floor(second / 10) * 16 + (second % 10);
+    message[9] = (hhBCD << 24) | (minBCD << 16) | (secBCD << 8) | 0x00;
     
     // data[10-11]: Fixed values 0x00000000
     message[10] = 0x00000000;

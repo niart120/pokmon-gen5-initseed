@@ -8,16 +8,22 @@ import { useAppStore } from './store/app-store';
 import { SearchPanel } from './components/SearchPanel';
 import { TargetSeedsPanel } from './components/TargetSeedsPanel';
 import { ResultsPanel } from './components/ResultsPanel';
-import { testSeedCalculation } from './lib/test-calculator';
+import { verifySearchImplementation } from './lib/search-verification';
 
 function App() {
   const { activeTab, setActiveTab, targetSeeds, searchResults, searchProgress } = useAppStore();
 
-  // Run test on component mount
+  // Run verification on component mount
   React.useEffect(() => {
-    console.log('Running seed calculator test...');
-    const testPassed = testSeedCalculation();
-    console.log('Test result:', testPassed ? 'PASSED' : 'FAILED');
+    console.log('Running comprehensive search verification...');
+    const verificationPassed = verifySearchImplementation();
+    console.log('Verification result:', verificationPassed ? 'PASSED ✅' : 'FAILED ❌');
+    
+    if (!verificationPassed) {
+      console.warn('⚠️ Some verification tests failed. Please check the implementation.');
+    } else {
+      console.log('🎉 All verification tests passed! Search implementation is ready.');
+    }
   }, []);
 
   return (

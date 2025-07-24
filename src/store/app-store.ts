@@ -143,7 +143,7 @@ export const useAppStore = create<AppStore>()(
         })),
       pauseSearch: () =>
         set((state) => ({
-          searchProgress: { ...state.searchProgress, isPaused: true },
+          searchProgress: { ...state.searchProgress, isPaused: true, canPause: true },
         })),
       resumeSearch: () =>
         set((state) => ({

@@ -81,10 +81,19 @@ export function SearchPanel() {
       return;
     }
 
+    console.log('Starting search with conditions:', searchConditions);
+    console.log('Target seeds:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
+
     clearSearchResults();
     startSearch();
 
     try {
+      // Get ROM parameters
+      const params = calculator.getROMParameters(searchConditions.romVersion, searchConditions.romRegion);
+      if (!params) {
+        throw new Error(`No parameters found for ${searchConditions.romVersion} ${searchConditions.romRegion}`);
+      }
+
       // Calculate total search space
       const timer0Range = searchConditions.timer0Range.max - searchConditions.timer0Range.min + 1;
       const vcountRange = searchConditions.vcountRange.max - searchConditions.vcountRange.min + 1;
@@ -108,8 +117,18 @@ export function SearchPanel() {
         searchConditions.dateRange.endSecond
       );
 
+      if (startDate > endDate) {
+        throw new Error('Start date must be before or equal to end date');
+      }
+
       const dateRange = Math.floor((endDate.getTime() - startDate.getTime()) / 1000) + 1;
       const totalSteps = timer0Range * vcountRange * dateRange;
+
+      console.log(`Starting search with ${totalSteps.toLocaleString()} total combinations`);
+      console.log(`Timer0: ${searchConditions.timer0Range.min}-${searchConditions.timer0Range.max} (${timer0Range} values)`);
+      console.log(`VCount: ${searchConditions.vcountRange.min}-${searchConditions.vcountRange.max} (${vcountRange} values)`);
+      console.log(`Date range: ${startDate.toISOString()} to ${endDate.toISOString()} (${dateRange} seconds)`);
+      console.log(`ROM parameters:`, params);
 
       // Set initial progress
       useAppStore.getState().setSearchProgress({
@@ -122,24 +141,45 @@ export function SearchPanel() {
       let matchesFound = 0;
       const startTime = Date.now();
 
-      // Iterate through all combinations
-      for (let timer0 = searchConditions.timer0Range.min; timer0 <= searchConditions.timer0Range.max; timer0++) {
-        const currentState = useAppStore.getState().searchProgress;
-        if (!currentState.isRunning) break;
+      // Convert target seeds to Set for faster lookup
+      const targetSeedSet = new Set(targetSeeds.seeds);
 
-        const params = calculator.getROMParameters(searchConditions.romVersion, searchConditions.romRegion);
-        if (!params) continue;
+      // Iterate through all combinations
+      outerLoop: for (let timer0 = searchConditions.timer0Range.min; timer0 <= searchConditions.timer0Range.max; timer0++) {
+        let currentState = useAppStore.getState().searchProgress;
+        if (!currentState.isRunning) {
+          console.log('Search stopped by user');
+          break;
+        }
 
         for (let vcount = searchConditions.vcountRange.min; vcount <= searchConditions.vcountRange.max; vcount++) {
-          const currentState = useAppStore.getState().searchProgress;
-          if (!currentState.isRunning) break;
+          currentState = useAppStore.getState().searchProgress;
+          if (!currentState.isRunning) {
+            console.log('Search stopped by user');
+            break outerLoop;
+          }
 
-          // Get actual VCount value with offset handling
+          // Handle pause/resume
+          while (currentState.isPaused && currentState.isRunning) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            currentState = useAppStore.getState().searchProgress;
+          }
+
+          // Get actual VCount value with offset handling for BW2
           const actualVCount = calculator.getVCountForTimer0(params, timer0);
 
           for (let timestamp = startDate.getTime(); timestamp <= endDate.getTime(); timestamp += 1000) {
-            const currentState = useAppStore.getState().searchProgress;
-            if (!currentState.isRunning) break;
+            currentState = useAppStore.getState().searchProgress;
+            if (!currentState.isRunning) {
+              console.log('Search stopped by user');
+              break outerLoop;
+            }
+
+            // Handle pause/resume
+            while (currentState.isPaused && currentState.isRunning) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+              currentState = useAppStore.getState().searchProgress;
+            }
 
             const currentDateTime = new Date(timestamp);
             currentStep++;
@@ -149,11 +189,13 @@ export function SearchPanel() {
               const message = calculator.generateMessage(searchConditions, timer0, actualVCount, currentDateTime);
               const { seed, hash } = calculator.calculateSeed(message);
 
-              // Check if seed matches any target
-              const isMatch = targetSeeds.seeds.includes(seed);
+              // Check if seed matches any target (using Set for O(1) lookup)
+              const isMatch = targetSeedSet.has(seed);
 
               if (isMatch) {
                 matchesFound++;
+                console.log(`Found match! Seed: 0x${seed.toString(16).padStart(8, '0')}, Timer0: ${timer0}, VCount: ${actualVCount}, Date: ${currentDateTime.toISOString()}`);
+                
                 addSearchResult({
                   seed,
                   datetime: currentDateTime,
@@ -166,8 +208,8 @@ export function SearchPanel() {
                 });
               }
 
-              // Update progress every 1000 iterations
-              if (currentStep % 1000 === 0) {
+              // Update progress every 50 iterations for better responsiveness
+              if (currentStep % 50 === 0) {
                 const elapsedTime = Date.now() - startTime;
                 const estimatedTimeRemaining = currentStep > 0 ? elapsedTime * (totalSteps - currentStep) / currentStep : 0;
 
@@ -179,17 +221,31 @@ export function SearchPanel() {
                   matchesFound,
                 });
 
-                // Allow UI to update
-                await new Promise(resolve => setTimeout(resolve, 0));
+                // Allow UI to update more frequently
+                await new Promise(resolve => setTimeout(resolve, 1));
               }
             } catch (error) {
-              console.error('Error calculating seed:', error);
+              console.error('Error calculating seed:', error, {
+                timer0,
+                vcount: actualVCount,
+                datetime: currentDateTime.toISOString()
+              });
             }
           }
         }
       }
+
+      console.log(`Search completed. Found ${matchesFound} matches out of ${totalSteps} combinations.`);
+      
+      // Show completion message to user
+      if (matchesFound === 0) {
+        alert(`Search completed. No matches found in ${totalSteps.toLocaleString()} combinations.\n\nTry:\n- Expanding the date range\n- Checking Timer0/VCount ranges\n- Verifying target seed format`);
+      } else {
+        alert(`Search completed successfully!\n\nFound ${matchesFound} matching seed${matchesFound === 1 ? '' : 's'} out of ${totalSteps.toLocaleString()} combinations.\n\nCheck the Results tab for details.`);
+      }
     } catch (error) {
       console.error('Search error:', error);
+      alert(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       stopSearch();
     }
@@ -620,10 +676,15 @@ export function SearchPanel() {
                 <div className="font-mono">
                   {searchProgress.currentStep.toLocaleString()} / {searchProgress.totalSteps.toLocaleString()}
                 </div>
+                <div className="text-xs text-muted-foreground">
+                  {((searchProgress.currentStep / searchProgress.totalSteps) * 100).toFixed(2)}%
+                </div>
               </div>
               <div>
                 <div className="text-muted-foreground">Matches Found</div>
-                <Badge variant="secondary">{searchProgress.matchesFound}</Badge>
+                <Badge variant={searchProgress.matchesFound > 0 ? "default" : "secondary"}>
+                  {searchProgress.matchesFound}
+                </Badge>
               </div>
               <div>
                 <div className="text-muted-foreground">Elapsed Time</div>
@@ -631,9 +692,19 @@ export function SearchPanel() {
               </div>
               <div>
                 <div className="text-muted-foreground">Est. Remaining</div>
-                <div className="font-mono">{Math.floor(searchProgress.estimatedTimeRemaining / 1000)}s</div>
+                <div className="font-mono">
+                  {searchProgress.estimatedTimeRemaining > 0 ? `${Math.floor(searchProgress.estimatedTimeRemaining / 1000)}s` : '--'}
+                </div>
               </div>
             </div>
+            {searchProgress.currentDateTime && (
+              <div className="mt-4 p-3 bg-muted rounded text-sm">
+                <div className="text-muted-foreground mb-1">Currently Testing:</div>
+                <div className="font-mono">
+                  {searchProgress.currentDateTime.toLocaleString()} 
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
