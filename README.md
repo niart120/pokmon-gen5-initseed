@@ -41,6 +41,27 @@ npm run build
 npm test
 ```
 
+## GitHub Copilot対応
+
+このプロジェクトはGitHub Copilotの最適化された設定を含んでいます：
+
+- `.github/copilot-instructions.md`: 基本的なプロジェクト情報
+- `.github/instructions/`: ファイル固有の開発指示
+- `.github/prompts/`: 再利用可能なプロンプト（実験的機能）
+- `.github/copilot-meta.md`: AI Agent向けメンテナンス情報
+
+### Copilot設定の構造
+```
+.github/
+├── copilot-instructions.md        # リポジトリ全体の基本指示
+├── instructions/                   # ファイル固有の指示（自動適用）
+│   ├── development.instructions.md
+│   ├── testing.instructions.md
+│   └── debugging.instructions.md
+└── prompts/                       # 手動選択可能なプロンプト
+    └── *.prompt.md
+```
+
 ## 使用方法
 
 1. ROMバージョン・リージョン・ハードウェアを選択
