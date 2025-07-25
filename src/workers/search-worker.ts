@@ -4,6 +4,7 @@
  */
 
 import { SeedCalculator } from '../lib/core/seed-calculator';
+import { ProductionPerformanceMonitor } from '../lib/core/performance-monitor';
 import type { SearchConditions, InitialSeedResult } from '../types/pokemon';
 
 // Worker message types

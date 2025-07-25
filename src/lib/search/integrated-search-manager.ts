@@ -4,6 +4,7 @@
  */
 
 import { initWasm } from '../core/wasm-interface';
+import { ProductionPerformanceMonitor } from '../core/performance-monitor';
 
 // WebAssembly統合実装のインターフェース
 export interface IntegratedSeedSearcher {
@@ -53,6 +54,11 @@ export interface SearchPerformanceMetrics {
 export class IntegratedSearchManager {
   private wasmModule: any = null;
   private initialized = false;
+  private performanceMonitor: ProductionPerformanceMonitor;
+
+  constructor() {
+    this.performanceMonitor = new ProductionPerformanceMonitor();
+  }
 
   /**
    * WebAssemblyモジュールの初期化

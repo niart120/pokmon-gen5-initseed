@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SearchConditions, InitialSeedResult, TargetSeedList, SearchProgress, SearchPreset, ROMVersion, ROMRegion, Hardware } from '../types/pokemon';
-import { generateTestSeeds } from '../test-utils/data-generation/generate-test-seeds';
+import { DEMO_TARGET_SEEDS } from '../data/default-seeds';
 
 interface AppStore {
   // Search conditions
@@ -94,9 +94,8 @@ const defaultSearchProgress: SearchProgress = {
   isPaused: false,
 };
 
-// Generate realistic test seeds for the default date range
-const testSeeds = generateTestSeeds();
-console.log('Generated test seeds for demo:', testSeeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
+// Use demo seeds for initial setup
+console.log('Using demo target seeds:', DEMO_TARGET_SEEDS.map(s => '0x' + s.toString(16).padStart(8, '0')));
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -111,7 +110,7 @@ export const useAppStore = create<AppStore>()(
         set({ searchConditions: defaultSearchConditions }),
 
       // Target seeds
-      targetSeeds: { seeds: testSeeds },
+      targetSeeds: { seeds: DEMO_TARGET_SEEDS },
       setTargetSeeds: (seeds) => set({ targetSeeds: { seeds } }),
       addTargetSeed: (seed) =>
         set((state) => ({
@@ -174,7 +173,7 @@ export const useAppStore = create<AppStore>()(
       setActiveTab: (tab) => set({ activeTab: tab }),
       
       // Raw target seed input
-      targetSeedInput: testSeeds.map(s => '0x' + s.toString(16).padStart(8, '0')).join('\n'),
+      targetSeedInput: DEMO_TARGET_SEEDS.map(s => '0x' + s.toString(16).padStart(8, '0')).join('\n'),
       setTargetSeedInput: (input) => set({ targetSeedInput: input }),
 
       // Presets
