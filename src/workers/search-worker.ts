@@ -7,6 +7,9 @@ import { SeedCalculator } from '../lib/core/seed-calculator';
 import { ProductionPerformanceMonitor } from '../lib/core/performance-monitor';
 import type { SearchConditions, InitialSeedResult } from '../types/pokemon';
 
+// Performance optimization: Use larger batch sizes for better WASM utilization
+const BATCH_SIZE_SECONDS = 86400; // 1 day = 86,400 seconds (24x larger than previous 1-hour batches)
+
 // Worker message types
 export interface WorkerRequest {
   type: 'START_SEARCH' | 'PAUSE_SEARCH' | 'RESUME_SEARCH' | 'STOP_SEARCH';
@@ -239,8 +242,8 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
       // Get actual VCount value with offset handling for BW2
       const actualVCount = calculator.getVCountForTimer0(params, timer0);
       
-      // Process in time ranges using integrated search
-      const timeRangeSize = Math.min(3600, dateRange); // 1 hour chunks or smaller
+      // Process in time ranges using integrated search with optimized batch size
+      const timeRangeSize = Math.min(BATCH_SIZE_SECONDS, dateRange);
       
       for (let timeStart = 0; timeStart < dateRange; timeStart += timeRangeSize) {
         if (searchState.shouldStop) break;
