@@ -95,16 +95,30 @@ import { useAppStore } from '@/store/app-store';
 ### ファイル構造の維持
 ```
 src/
-├── wasm/              # WebAssemblyモジュール (完成済み)
+├── wasm/              # WebAssemblyモジュール (自動生成・gitignore対象)
 ├── lib/               # 計算ロジック (完成済み)
 ├── components/        # UI コンポーネント (完成済み)
 ├── store/            # 状態管理 (完成済み)
 └── types/            # TypeScript型定義 (完成済み)
 
+public/
+└── wasm/             # WebAssemblyモジュール (静的配信用・自動生成)
+
 wasm-pkg/             # Rust WebAssemblyソース (完成済み)
 ├── src/              # Rust実装
+├── pkg/              # wasm-pack生成物 (gitignore対象)
 └── Cargo.toml        # 依存関係
+
+scripts/
+└── copy-wasm-files.js # WASM自動配置スクリプト
 ```
+
+### 統合ビルドシステム
+- ✅ **ワンコマンドビルド**: `npm run build` でWASM+TypeScript統合
+- ✅ **自動ファイル配置**: WASMファイルが `src/wasm/` と `public/wasm/` に自動配置
+- ✅ **開発効率向上**: 手動コピー作業が不要
+- ✅ **CI/CD対応**: スクリプト化により自動化可能
+- ✅ **最適化済みgitignore**: Rust+WebAssembly+Node.jsエコシステムに完全対応
 
 ### テスト・検証の継続実行
 ```typescript
@@ -143,7 +157,29 @@ testSeedCalculation()          // 基本計算テスト
 
 ### 開発サーバー起動
 ```powershell
-if (-not (Get-NetTCPConnection -LocalPort 5174 -ErrorAction SilentlyContinue)) { npm run dev }
+# 通常の開発サーバー
+npm run dev
+
+# WASM更新付き開発サーバー（推奨）
+npm run dev:wasm
+```
+
+### ビルド実行（統合ビルドシステム）
+```powershell
+# 本番ビルド（WASM + TypeScript統合）
+npm run build
+
+# WASMのみビルド
+npm run build:wasm
+
+# WASMビルド + ファイルコピー
+npm run build:copy-wasm
+
+# TypeScriptのみビルド  
+npm run build:ts
+
+# クリーンビルド
+npm run clean && npm run build
 ```
 
 ### テスト実行（品質保証）

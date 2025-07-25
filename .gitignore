@@ -7,11 +7,17 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Production builds
 dist
 dist-ssr
 *-dist
+
+# Environment
 *.local
+.env
 
 # Editor directories and files
 .vscode/*
@@ -24,8 +30,26 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
+# Build artifacts
 **/agent-eval-report*
 packages
 .file-manifest
 .devcontainer/
+
+# ====================
+# Rust + WebAssembly
+# ====================
+
+# Rust build artifacts
+wasm-pkg/target/
+
+# wasm-pack 生成物 (自動コピーされるため除外)
+wasm-pkg/pkg/
+
+# 自動配置されるWASMファイル (scripts/copy-wasm-files.js により配置)
+# ディレクトリ内の全てのファイルを除外するが、.gitignoreは保持
+src/wasm/*
+!src/wasm/.gitignore
+
+public/wasm/*
+!public/wasm/.gitignore

@@ -5,14 +5,10 @@
 
 // WebAssembly module interface
 interface WasmModule {
-  to_little_endian_32(value: number): number;
-  to_little_endian_16(value: number): number;
+  to_little_endian_32_wasm(value: number): number;
+  to_little_endian_16_wasm(value: number): number;
   calculate_sha1_hash(message: Uint32Array): Uint32Array;
   calculate_sha1_batch(messages: Uint32Array, batch_size: number): Uint32Array;
-  test_wasm(): string;
-  
-  // Phase 2B: Precalculated datetime optimization functions
-  test_precalculated_codes(): any[];
   
   // Phase 2B: Integrated seed searcher class
   IntegratedSeedSearcher: new (
@@ -61,29 +57,20 @@ export async function initWasm(): Promise<WasmModule> {
       await module.default();
       
       wasmModule = {
-        to_little_endian_32: module.to_little_endian_32,
-        to_little_endian_16: module.to_little_endian_16,
+        to_little_endian_32_wasm: module.to_little_endian_32_wasm,
+        to_little_endian_16_wasm: module.to_little_endian_16_wasm,
         calculate_sha1_hash: module.calculate_sha1_hash,
         calculate_sha1_batch: module.calculate_sha1_batch,
-        test_wasm: module.test_wasm,
-        
-        // Phase 2B functions
-        test_precalculated_codes: module.test_precalculated_codes,
         IntegratedSeedSearcher: module.IntegratedSeedSearcher,
       };
 
-      console.log('🦀 WebAssembly module loaded:', wasmModule.test_wasm());
-      
-      // Test Phase 2B functions
-      try {
-        console.log('🚀 Phase 2B functions available:', wasmModule.test_precalculated_codes());
-      } catch (error) {
-        console.log('⚠️ Phase 2B functions test failed:', error);
-      }
+      console.log('🦀 WebAssembly module loaded successfully');
       
       return wasmModule;
     } catch (error) {
       console.error('Failed to load WebAssembly module:', error);
+      wasmModule = null;
+      wasmPromise = null;
       throw error;
     }
   })();
@@ -122,14 +109,14 @@ export class WasmSeedCalculator {
    * Convert 32-bit value to little-endian
    */
   toLittleEndian32(value: number): number {
-    return this.wasm.to_little_endian_32(value);
+    return this.wasm.to_little_endian_32_wasm(value);
   }
 
   /**
    * Convert 16-bit value to little-endian
    */
   toLittleEndian16(value: number): number {
-    return this.wasm.to_little_endian_16(value);
+    return this.wasm.to_little_endian_16_wasm(value);
   }
 
   /**

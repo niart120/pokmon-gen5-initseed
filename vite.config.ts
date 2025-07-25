@@ -25,7 +25,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor': ['react', 'react-dom'],
-          'ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-card'],
+          'ui': ['@radix-ui/react-dialog', '@radix-ui/react-select'],
           'utils': ['date-fns', 'zustand']
         }
       }

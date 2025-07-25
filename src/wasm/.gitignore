@@ -1,0 +1,5 @@
+# 自動生成されるWASMファイル
+# これらは `npm run build:copy-wasm` で自動的に配置されます
+
+*
+!.gitignore
