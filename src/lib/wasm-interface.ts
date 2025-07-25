@@ -10,6 +10,33 @@ interface WasmModule {
   calculate_sha1_hash(message: Uint32Array): Uint32Array;
   calculate_sha1_batch(messages: Uint32Array, batch_size: number): Uint32Array;
   test_wasm(): string;
+  
+  // Phase 2B: Precalculated datetime optimization functions
+  test_precalculated_codes(): any[];
+  
+  // Phase 2B: Integrated seed searcher class
+  IntegratedSeedSearcher: new (
+    mac: Uint8Array,
+    nazo: Uint32Array,
+    version: number,
+    frame: number
+  ) => {
+    search_seeds_integrated(
+      year_start: number,
+      month_start: number,
+      date_start: number,
+      hour_start: number,
+      minute_start: number,
+      second_start: number,
+      range_seconds: number,
+      timer0_min: number,
+      timer0_max: number,
+      vcount_min: number,
+      vcount_max: number,
+      target_seeds: Uint32Array
+    ): any[];
+    free(): void;
+  };
 }
 
 let wasmModule: WasmModule | null = null;
@@ -39,9 +66,21 @@ export async function initWasm(): Promise<WasmModule> {
         calculate_sha1_hash: module.calculate_sha1_hash,
         calculate_sha1_batch: module.calculate_sha1_batch,
         test_wasm: module.test_wasm,
+        
+        // Phase 2B functions
+        test_precalculated_codes: module.test_precalculated_codes,
+        IntegratedSeedSearcher: module.IntegratedSeedSearcher,
       };
 
       console.log('🦀 WebAssembly module loaded:', wasmModule.test_wasm());
+      
+      // Test Phase 2B functions
+      try {
+        console.log('🚀 Phase 2B functions available:', wasmModule.test_precalculated_codes());
+      } catch (error) {
+        console.log('⚠️ Phase 2B functions test failed:', error);
+      }
+      
       return wasmModule;
     } catch (error) {
       console.error('Failed to load WebAssembly module:', error);

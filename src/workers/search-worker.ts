@@ -197,10 +197,11 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
     let matchesFound = 0;
     const startTime = Date.now();
 
-    // Batch processing configuration - Optimized for performance
-    const BATCH_SIZE = calculator.isUsingWasm() ? 10000 : 2000; // Significantly larger batches for better performance
-    const PROGRESS_UPDATE_INTERVAL = Math.max(Math.floor(BATCH_SIZE * 5), 5000); // Update every 5 batches or 5000+ calculations
-    console.log(`🚀 Using batch size: ${BATCH_SIZE} (WebAssembly: ${calculator.isUsingWasm()})`);
+    // Batch processing configuration - Memory-optimized for maximum performance
+    // Memory usage estimation: ~7MB for 50,000 batch (messages + dates + results)
+    const BATCH_SIZE = calculator.isUsingWasm() ? 50000 : 2500; // Large batches for optimal WebAssembly communication
+    const PROGRESS_UPDATE_INTERVAL = Math.max(Math.floor(BATCH_SIZE * 16), 20000); // Update every 4 batches or 20000+ calculations
+    console.log(`🚀 Using memory-optimized batch size: ${BATCH_SIZE} (WebAssembly: ${calculator.isUsingWasm()})`);
     console.log(`📊 Progress update interval: ${PROGRESS_UPDATE_INTERVAL} calculations`);
 
     // Pre-calculate timestamps for better performance

@@ -26,6 +26,14 @@
     </div>
     
     <div>
+        <h2>🔥 Phase 2A: メッセージ生成ボトルネック検証</h2>
+        <button onclick="runPhase2AVerification()">Phase 2A包括検証</button>
+        <button onclick="runMessageGenerationProfiler()">メッセージ生成プロファイリング</button>
+        <button onclick="runMassiveMessageGeneration()">200万件メッセージ生成テスト</button>
+        <button onclick="runMessageVsCalculationComparison()">メッセージ生成 vs SHA-1比較</button>
+    </div>
+
+    <div>
         <h2>⚡ パフォーマンステスト</h2>
         <button onclick="runBasicTest()">基本パフォーマンステスト</button>
         <button onclick="runScalabilityTest()">スケーラビリティテスト</button>
@@ -380,6 +388,131 @@
             }
         };
         
+        // Auto-initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            log('🚀 統合パフォーマンス・WebAssemblyテストページが読み込まれました', 'success');
+            log('🔥 Phase 2A: メッセージ生成ボトルネック検証機能が利用可能です', 'info');
+            log('上記のボタンをクリックしてテストを実行してください', 'info');
+            log('💡 推奨順序: WebAssembly読み込み → Phase 2A包括検証', 'info');
+        });
+
+        // Phase 2A専用テスト関数群
+        window.runPhase2AVerification = async function() {
+            try {
+                log('🚀 Phase 2A: メッセージ生成ボトルネック仮説検証を開始...', 'info');
+                log('⚠️ この検証は200万件処理を含むため10分程度かかる場合があります', 'warning');
+                const analyzer = await initAnalyzer();
+                
+                const results = await analyzer.runPhase2AVerification();
+                
+                log('✅ Phase 2A検証完了', 'success');
+                log(`📊 基本メッセージ生成速度: ${results.messageGenerationMetrics.generationsPerSecond.toFixed(0)} gen/sec`, 'info');
+                log(`📊 200万件処理速度: ${results.massiveMessageMetrics.generationsPerSecond.toFixed(0)} gen/sec`, 'info');
+                log(`⚖️ メッセージ生成割合: ${results.comparisonResult.messageGenPercentage.toFixed(1)}%`, 'info');
+                
+                if (results.bottleneckAnalysis.length > 0) {
+                    log('🔍 ボトルネック分析:', 'warning');
+                    results.bottleneckAnalysis.forEach(analysis => log(`   ${analysis}`, 'warning'));
+                }
+                
+                if (results.recommendations.length > 0) {
+                    log('💡 最適化推奨事項:', 'info');
+                    results.recommendations.forEach(rec => log(`   ${rec}`, 'info'));
+                }
+                
+            } catch (error) {
+                log(`❌ Phase 2A検証エラー: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        window.runMessageGenerationProfiler = async function() {
+            try {
+                log('🔍 メッセージ生成プロファイリングを開始...', 'info');
+                const analyzer = await initAnalyzer();
+                
+                const metrics = await analyzer.messageProfiler.profileMessageGeneration(100000);
+                
+                log('✅ メッセージ生成プロファイリング完了', 'success');
+                log(`   生成速度: ${metrics.generationsPerSecond.toFixed(0)} gen/sec`, 'info');
+                log(`   1回あたり: ${(metrics.averageTimePerGeneration * 1000).toFixed(3)}μs`, 'info');
+                log(`   メモリ使用量: ${(metrics.memoryUsage / 1024 / 1024).toFixed(2)}MB`, 'info');
+                
+                log('🔍 処理時間内訳:', 'info');
+                const total = metrics.totalTime;
+                log(`   セットアップ: ${(metrics.breakdown.setupTime/total*100).toFixed(1)}%`, 'info');
+                log(`   nazo変換: ${(metrics.breakdown.nazoConversion/total*100).toFixed(1)}%`, 'info');
+                log(`   MAC処理: ${(metrics.breakdown.macProcessing/total*100).toFixed(1)}%`, 'info');
+                log(`   日時・BCD変換: ${(metrics.breakdown.dateTimeProcessing/total*100).toFixed(1)}%`, 'info');
+                log(`   配列操作: ${(metrics.breakdown.arrayOperations/total*100).toFixed(1)}%`, 'info');
+                
+                if (metrics.bottlenecks.length > 0) {
+                    log('⚠️ 検出されたボトルネック:', 'warning');
+                    metrics.bottlenecks.forEach(b => log(`   • ${b}`, 'warning'));
+                }
+                
+            } catch (error) {
+                log(`❌ プロファイリングエラー: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        window.runMassiveMessageGeneration = async function() {
+            try {
+                log('🔥 200万件メッセージ生成テストを開始...', 'info');
+                log('⚠️ 大規模処理のため5-10分程度かかります', 'warning');
+                const analyzer = await initAnalyzer();
+                
+                const metrics = await analyzer.messageProfiler.profileMassiveMessageGeneration(2000000);
+                
+                log('✅ 200万件メッセージ生成テスト完了', 'success');
+                log(`   処理件数: 2,000,000件`, 'info');
+                log(`   総時間: ${(metrics.totalTime / 1000).toFixed(2)}秒`, 'info');
+                log(`   生成速度: ${metrics.generationsPerSecond.toFixed(0)} gen/sec`, 'info');
+                log(`   メモリ使用量: ${(metrics.memoryUsage / 1024 / 1024).toFixed(2)}MB`, 'info');
+                
+                const timeFor2Million = (2000000 / metrics.generationsPerSecond) / 60;
+                if (timeFor2Million <= 1) {
+                    log(`🟢 目標達成! 200万件処理: ${timeFor2Million.toFixed(1)}分 (目標: 1分以内)`, 'success');
+                } else {
+                    log(`🔴 目標未達成! 200万件処理: ${timeFor2Million.toFixed(1)}分 (目標: 1分以内)`, 'error');
+                }
+                
+                if (metrics.bottlenecks.length > 0) {
+                    log('⚠️ 大規模処理での問題点:', 'warning');
+                    metrics.bottlenecks.forEach(b => log(`   • ${b}`, 'warning'));
+                }
+                
+            } catch (error) {
+                log(`❌ 大規模テストエラー: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        window.runMessageVsCalculationComparison = async function() {
+            try {
+                log('⚖️ メッセージ生成 vs SHA-1計算 時間比較を開始...', 'info');
+                const analyzer = await initAnalyzer();
+                
+                const result = await analyzer.messageProfiler.compareMessageGenerationVsCalculation(50000);
+                
+                log('✅ 時間比較完了', 'success');
+                log(`📊 メッセージ生成: ${result.messageGenTime.toFixed(2)}ms (${result.messageGenPercentage.toFixed(1)}%)`, 'info');
+                log(`📊 SHA-1計算: ${result.sha1CalcTime.toFixed(2)}ms (${(100 - result.messageGenPercentage).toFixed(1)}%)`, 'info');
+                log(`📊 合計時間: ${result.totalTime.toFixed(2)}ms`, 'info');
+                
+                if (result.messageGenPercentage > 20) {
+                    log(`⚠️ メッセージ生成が全体時間の${result.messageGenPercentage.toFixed(1)}%を占有（最適化対象）`, 'warning');
+                } else {
+                    log(`🟢 メッセージ生成の時間割合は許容範囲内 (${result.messageGenPercentage.toFixed(1)}%)`, 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ 比較テストエラー: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
         // Auto-initialize on page load
         document.addEventListener('DOMContentLoaded', async () => {
             log('🚀 統合パフォーマンス・WebAssemblyテストページが読み込まれました', 'success');

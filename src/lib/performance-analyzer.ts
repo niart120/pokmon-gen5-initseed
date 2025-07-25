@@ -4,6 +4,7 @@
  */
 
 import { SeedCalculator } from './seed-calculator';
+import { MessageGenerationProfiler, type MessageGenerationMetrics } from './message-generation-profiler';
 import type { SearchConditions } from '../types/pokemon';
 
 export interface PerformanceMetrics {
@@ -24,9 +25,11 @@ export interface ScalabilityTest {
 
 export class PerformanceAnalyzer {
   private calculator: SeedCalculator;
+  private messageProfiler: MessageGenerationProfiler;
   
   constructor() {
     this.calculator = new SeedCalculator();
+    this.messageProfiler = new MessageGenerationProfiler();
   }
 
   /**
@@ -42,6 +45,89 @@ export class PerformanceAnalyzer {
     } else {
       console.log('⚠️ WebAssembly unavailable, testing TypeScript only');
     }
+  }
+
+  /**
+   * Phase 2A: メッセージ生成ボトルネック仮説検証
+   * 200万件での大規模メッセージ生成性能測定
+   */
+  async runPhase2AVerification(): Promise<{
+    messageGenerationMetrics: MessageGenerationMetrics;
+    massiveMessageMetrics: MessageGenerationMetrics;
+    comparisonResult: {
+      messageGenTime: number;
+      sha1CalcTime: number;
+      messageGenPercentage: number;
+      totalTime: number;
+    };
+    bottleneckAnalysis: string[];
+    recommendations: string[];
+  }> {
+    console.log('🚀 Phase 2A: メッセージ生成ボトルネック仮説検証開始');
+    
+    const bottleneckAnalysis: string[] = [];
+    const recommendations: string[] = [];
+
+    // 1. 基本メッセージ生成プロファイリング
+    console.log('\n📊 Step 1: 基本メッセージ生成プロファイリング');
+    const messageGenerationMetrics = await this.messageProfiler.profileMessageGeneration(100000);
+
+    // 2. メッセージ生成 vs SHA-1計算の時間比較
+    console.log('\n⚖️ Step 2: メッセージ生成 vs SHA-1計算 時間比較');
+    const comparisonResult = await this.messageProfiler.compareMessageGenerationVsCalculation(50000);
+
+    // 3. 200万件大規模テスト
+    console.log('\n🔥 Step 3: 200万件大規模メッセージ生成テスト');
+    const massiveMessageMetrics = await this.messageProfiler.profileMassiveMessageGeneration(2000000);
+
+    // ボトルネック分析
+    if (comparisonResult.messageGenPercentage > 30) {
+      bottleneckAnalysis.push(`🔴 メッセージ生成が全体時間の${comparisonResult.messageGenPercentage.toFixed(1)}%を占有（高い割合）`);
+      recommendations.push('メッセージ生成のRust実装を優先的に検討');
+    }
+
+    if (messageGenerationMetrics.generationsPerSecond < 100000) {
+      bottleneckAnalysis.push(`🔴 メッセージ生成速度が低い: ${messageGenerationMetrics.generationsPerSecond.toFixed(0)} gen/sec`);
+      recommendations.push('BCD変換・エンディアン変換の最適化が必要');
+    }
+
+    if (messageGenerationMetrics.breakdown.dateTimeProcessing > messageGenerationMetrics.totalTime * 0.4) {
+      bottleneckAnalysis.push('🔴 日時・BCD変換処理が40%以上の時間を消費');
+      recommendations.push('日時処理のRust実装を最優先で検討');
+    }
+
+    if (massiveMessageMetrics.generationsPerSecond < 50000) {
+      bottleneckAnalysis.push(`🔴 大規模処理で性能劣化: ${massiveMessageMetrics.generationsPerSecond.toFixed(0)} gen/sec`);
+      recommendations.push('大規模処理でのメモリ管理・GC影響の最適化が必要');
+    }
+
+    const timeFor2Million = (2000000 / massiveMessageMetrics.generationsPerSecond) / 60;
+    if (timeFor2Million > 1) {
+      bottleneckAnalysis.push(`🔴 200万件処理に${timeFor2Million.toFixed(1)}分必要（目標: 1分以内）`);
+      recommendations.push('統合バッチ処理（メッセージ生成+SHA-1）の実装が効果的');
+    }
+
+    // 最適化効果の見積もり
+    const currentTotalSpeed = 50000 / (comparisonResult.messageGenTime + comparisonResult.sha1CalcTime) * 1000;
+    const optimizedMessageGenTime = comparisonResult.messageGenTime * 0.1; // 10倍高速化想定
+    const projectedSpeed = 50000 / (optimizedMessageGenTime + comparisonResult.sha1CalcTime) * 1000;
+    const improvementRatio = projectedSpeed / currentTotalSpeed;
+
+    recommendations.push(`📈 予想改善効果: メッセージ生成10倍高速化で全体${improvementRatio.toFixed(1)}倍向上`);
+
+    console.log('\n🎯 Phase 2A検証結果:');
+    console.log(`   メッセージ生成速度: ${messageGenerationMetrics.generationsPerSecond.toFixed(0)} gen/sec`);
+    console.log(`   メッセージ生成割合: ${comparisonResult.messageGenPercentage.toFixed(1)}%`);
+    console.log(`   200万件処理時間: ${timeFor2Million.toFixed(1)}分`);
+    console.log(`   予想改善倍率: ${improvementRatio.toFixed(1)}倍`);
+
+    return {
+      messageGenerationMetrics,
+      massiveMessageMetrics,
+      comparisonResult,
+      bottleneckAnalysis,
+      recommendations
+    };
   }
 
   /**
