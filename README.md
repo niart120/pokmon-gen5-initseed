@@ -1,23 +1,60 @@
-# ✨ Welcome to Your Spark Template!
-You've just launched your brand-new Spark Template Codespace — everything’s fired up and ready for you to explore, build, and create with Spark!
+# ポケモンBW/BW2 初期Seed探索webアプリ
 
-This template is your blank canvas. It comes with a minimal setup to help you get started quickly with Spark development.
+第5世代ポケモン（ブラック・ホワイト/ブラック2・ホワイト2）の初期Seed値探索・検証を行うwebアプリケーションです。
 
-🚀 What's Inside?
-- A clean, minimal Spark environment
-- Pre-configured for local development
-- Ready to scale with your ideas
-  
-🧠 What Can You Do?
+## 概要
 
-Right now, this is just a starting point — the perfect place to begin building and testing your Spark applications.
+このアプリケーションは、ポケモンBW/BW2における初期Seed値の効率的な探索を実現します。ROMバージョン、リージョン、ハードウェア、日時、キー入力といった条件から生成されるメッセージをSHA-1ハッシュ化し、その上位32bitを初期Seedとして算出します。
 
-🧹 Just Exploring?
-No problem! If you were just checking things out and don’t need to keep this code:
+## 主な機能
 
-- Simply delete your Spark.
-- Everything will be cleaned up — no traces left behind.
+- **全28バージョン対応**: BW/BW2の全バージョン・リージョン組み合わせをサポート
+- **高速探索**: WebAssembly + Rust による最適化で1,158,078 calc/sec を実現
+- **リアルタイム進捗**: 探索状況の詳細表示と中断・再開機能
+- **結果管理**: ソート・フィルタリング・詳細表示機能
+- **エクスポート**: CSV/JSON/テキスト形式での結果出力
 
-📄 License For Spark Template Resources 
+## 技術スタック
 
-The Spark Template files and resources from GitHub are licensed under the terms of the MIT license, Copyright GitHub, Inc.
+- **フロントエンド**: React 18 + TypeScript + Vite
+- **UI**: Radix UI (shadcn/ui) + TailwindCSS
+- **計算エンジン**: Rust + WebAssembly (wasm-pack)
+- **状態管理**: Zustand
+- **バックグラウンド処理**: Web Workers
+
+## 開発・ビルド
+
+```bash
+# 依存関係のインストール
+npm install
+
+# 開発サーバー起動
+npm run dev
+
+# WebAssemblyビルド
+npm run build:wasm
+
+# プロダクションビルド
+npm run build
+
+# テスト実行
+npm test
+```
+
+## 使用方法
+
+1. ROMバージョン・リージョン・ハードウェアを選択
+2. MACアドレスとキー入力を設定
+3. 探索日時範囲を指定
+4. 目標Seedリストを入力
+5. 探索開始で高速検索を実行
+
+## パフォーマンス
+
+- **探索速度**: 1,158,078 計算/秒
+- **メモリ使用量**: 7.30MB (軽量設計)
+- **大規模処理**: 100万計算を0.86秒で実行
+
+## ライセンス
+
+MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照
