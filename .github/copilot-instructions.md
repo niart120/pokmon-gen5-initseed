@@ -151,11 +151,13 @@ testSeedCalculation()          // 基本計算テスト
 ## 🎯 具体的な作業指示
 
 ### MCPツール（Playwright）でのテスト実行 **New!**
-```bash
-# 開発サーバー起動
-npm run dev
+```powershell
+if (-not (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue)) { npm run dev }
+```
 
-# MCPツール（Playwright）で自動テスト実行:
+
+#### MCPツール（Playwright）で自動テスト実行:
+```
 # 1. ブラウザでhttp://localhost:5173/test-performance.html にアクセス
 # 2. 以下のコマンドで各テストを自動実行:
 #    - mcp_playwright_browser_click("基本パフォーマンステスト")

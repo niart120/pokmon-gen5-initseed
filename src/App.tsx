@@ -29,6 +29,12 @@ function App() {
         
         if (wasmSuccess) {
           console.log('🦀 WebAssembly acceleration enabled!');
+          
+          // Test integrated search availability
+          const wasmModule = calculator.getWasmModule();
+          if (wasmModule && wasmModule.IntegratedSeedSearcher) {
+            console.log('🚀 Integrated search available for optimal performance');
+          }
         } else {
           console.log('⚠️ Running with TypeScript implementation');
         }

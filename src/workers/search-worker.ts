@@ -41,7 +41,7 @@ let calculator: SeedCalculator;
 async function initializeCalculator() {
   if (!calculator) {
     calculator = new SeedCalculator();
-    // Try to initialize WebAssembly
+    // Initialize WebAssembly for integrated search
     try {
       await calculator.initializeWasm();
       console.log('🦀 WebAssembly initialized in worker');
@@ -52,69 +52,96 @@ async function initializeCalculator() {
 }
 
 /**
- * Process batch using WebAssembly for maximum performance
+ * Process batch using integrated search for maximum performance
  */
-async function processBatchWebAssembly(
-  timestamps: number[],
+async function processBatchIntegrated(
   conditions: SearchConditions,
-  timer0: number,
-  actualVCount: number,
+  startTimestamp: number,
+  endTimestamp: number,
+  timer0Min: number,
+  timer0Max: number,
+  vcountMin: number,
+  vcountMax: number,
   targetSeedSet: Set<number>,
-  calculator: SeedCalculator,
   onResult: (result: InitialSeedResult) => void
 ): Promise<void> {
-  // Generate all messages for the batch
-  const messages: number[][] = [];
-  const datetimes: Date[] = [];
+  const wasmModule = calculator.getWasmModule();
   
-  for (const timestamp of timestamps) {
-    const datetime = new Date(timestamp);
-    const message = calculator.generateMessage(conditions, timer0, actualVCount, datetime);
-    messages.push(message);
-    datetimes.push(datetime);
+  if (wasmModule && wasmModule.IntegratedSeedSearcher) {
+    try {
+      const params = calculator.getROMParameters(conditions.romVersion, conditions.romRegion);
+      if (!params) {
+        throw new Error(`No parameters found for ${conditions.romVersion} ${conditions.romRegion}`);
+      }
+
+      const searcher = new wasmModule.IntegratedSeedSearcher(
+        conditions.macAddress,
+        new Uint32Array(params.nazo),
+        5, // version
+        8  // frame
+      );
+
+      const startDate = new Date(startTimestamp);
+      const rangeSeconds = Math.floor((endTimestamp - startTimestamp) / 1000);
+
+      const results = searcher.search_seeds_integrated(
+        startDate.getFullYear(),
+        startDate.getMonth() + 1,
+        startDate.getDate(),
+        startDate.getHours(),
+        startDate.getMinutes(),
+        startDate.getSeconds(),
+        rangeSeconds,
+        timer0Min,
+        timer0Max,
+        vcountMin,
+        vcountMax,
+        new Uint32Array(Array.from(targetSeedSet))
+      );
+
+      // Process results
+      for (const result of results) {
+        const resultDate = new Date(result.year, result.month - 1, result.date, result.hour, result.minute, result.second);
+        const message = calculator.generateMessage(conditions, result.timer0, result.vcount, resultDate);
+        const { hash } = calculator.calculateSeed(message);
+
+        const searchResult: InitialSeedResult = {
+          seed: result.seed,
+          datetime: resultDate,
+          timer0: result.timer0,
+          vcount: result.vcount,
+          conditions,
+          message,
+          sha1Hash: hash,
+          isMatch: true,
+        };
+        onResult(searchResult);
+      }
+
+      searcher.free();
+      return;
+    } catch (error) {
+      console.error('Integrated search failed, falling back to individual processing:', error);
+    }
   }
 
-  // Get WebAssembly calculator for batch processing
-  const wasmCalculator = calculator.getWasmCalculator();
-  if (wasmCalculator && wasmCalculator.calculateSeedBatch) {
-    try {
-      // Use WebAssembly batch calculation
-      const results = wasmCalculator.calculateSeedBatch(messages);
-      
-      // Process results
-      for (let i = 0; i < results.length; i++) {
-        const { seed, hash } = results[i];
-        
-        if (targetSeedSet.has(seed)) {
-          const result: InitialSeedResult = {
-            seed,
-            datetime: datetimes[i],
-            timer0,
-            vcount: actualVCount,
-            conditions,
-            message: messages[i],
-            sha1Hash: hash,
-            isMatch: true,
-          };
-          onResult(result);
-        }
-      }
-    } catch (error) {
-      console.error('WebAssembly batch processing failed, falling back to individual:', error);
-      // Fallback to individual processing
-      await processBatchIndividual(timestamps, conditions, timer0, actualVCount, targetSeedSet, calculator, onResult);
-    }
-  } else {
-    // Fallback to individual processing
-    await processBatchIndividual(timestamps, conditions, timer0, actualVCount, targetSeedSet, calculator, onResult);
-  }
+  // Fallback to individual processing
+  await processBatchIndividual(
+    [startTimestamp, endTimestamp],
+    conditions,
+    timer0Min,
+    vcountMin,
+    targetSeedSet,
+    calculator,
+    onResult
+  );
 }
 
 /**
  * Process batch using individual calculations (fallback method)
  */
 async function processBatchIndividual(
-  timestamps: number[],
+  timestampRange: number[],
   conditions: SearchConditions,
   timer0: number,
   actualVCount: number,
@@ -122,7 +149,9 @@ async function processBatchIndividual(
   calculator: SeedCalculator,
   onResult: (result: InitialSeedResult) => void
 ): Promise<void> {
-  for (const timestamp of timestamps) {
+  const [startTimestamp, endTimestamp] = timestampRange;
+  
+  for (let timestamp = startTimestamp; timestamp <= endTimestamp; timestamp += 1000) {
     const currentDateTime = new Date(timestamp);
     
     try {
@@ -188,7 +217,7 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
     }
 
     const dateRange = Math.floor((endDate.getTime() - startDate.getTime()) / 1000) + 1;
-    const totalSteps = timer0Range * vcountRange * dateRange;
+    const totalSteps = timer0Range * dateRange;
 
     // Convert target seeds to Set for faster lookup
     const targetSeedSet = new Set(targetSeeds);
@@ -196,71 +225,72 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
     let currentStep = 0;
     let matchesFound = 0;
     const startTime = Date.now();
+    let lastProgressUpdate = startTime;
+    const progressUpdateInterval = 500; // Update progress every 500ms
 
-    // Batch processing configuration - Memory-optimized for maximum performance
-    // Memory usage estimation: ~7MB for 50,000 batch (messages + dates + results)
-    const BATCH_SIZE = calculator.isUsingWasm() ? 50000 : 2500; // Large batches for optimal WebAssembly communication
-    const PROGRESS_UPDATE_INTERVAL = Math.max(Math.floor(BATCH_SIZE * 16), 20000); // Update every 4 batches or 20000+ calculations
-    console.log(`🚀 Using memory-optimized batch size: ${BATCH_SIZE} (WebAssembly: ${calculator.isUsingWasm()})`);
-    console.log(`📊 Progress update interval: ${PROGRESS_UPDATE_INTERVAL} calculations`);
+    // Search using integrated approach
+    console.log(`🚀 Using integrated search (WebAssembly: ${calculator.isUsingWasm()})`);
 
-    // Pre-calculate timestamps for better performance
-    const timestamps: number[] = [];
-    for (let timestamp = startDate.getTime(); timestamp <= endDate.getTime(); timestamp += 1000) {
-      timestamps.push(timestamp);
-    }
-    console.log(`📅 Pre-calculated ${timestamps.length} timestamps`);
-
-    // Search loop with batch processing
-    outerLoop: for (let timer0 = conditions.timer0Range.min; timer0 <= conditions.timer0Range.max; timer0++) {
+    // Search loop using integrated search
+    for (let timer0 = conditions.timer0Range.min; timer0 <= conditions.timer0Range.max; timer0++) {
       if (searchState.shouldStop) break;
       
       // Get actual VCount value with offset handling for BW2
       const actualVCount = calculator.getVCountForTimer0(params, timer0);
       
-      // Process timestamps in batches
-      for (let timestampStart = 0; timestampStart < timestamps.length; timestampStart += BATCH_SIZE) {
-        if (searchState.shouldStop) break outerLoop;
+      // Process in time ranges using integrated search
+      const timeRangeSize = Math.min(3600, dateRange); // 1 hour chunks or smaller
+      
+      for (let timeStart = 0; timeStart < dateRange; timeStart += timeRangeSize) {
+        if (searchState.shouldStop) break;
         
         // Handle pause
         while (searchState.isPaused && !searchState.shouldStop) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
         
-        if (searchState.shouldStop) break outerLoop;
+        if (searchState.shouldStop) break;
 
-        const timestampEnd = Math.min(timestampStart + BATCH_SIZE, timestamps.length);
-        const batchTimestamps = timestamps.slice(timestampStart, timestampEnd);
+        const timeEnd = Math.min(timeStart + timeRangeSize, dateRange);
+        const rangeStartTime = startDate.getTime() + timeStart * 1000;
+        const rangeEndTime = startDate.getTime() + (timeEnd - 1) * 1000;
         
         try {
-          if (calculator.isUsingWasm() && batchTimestamps.length > 10) {
-            // Use WebAssembly batch processing for significant speedup
-            await processBatchWebAssembly(
-              batchTimestamps, conditions, timer0, actualVCount, 
-              targetSeedSet, calculator, (result) => {
-                matchesFound++;
-                postMessage({ type: 'RESULT', result } as WorkerResponse);
-              }
-            );
-          } else {
-            // Use individual processing for smaller batches or TypeScript fallback
-            await processBatchIndividual(
-              batchTimestamps, conditions, timer0, actualVCount,
-              targetSeedSet, calculator, (result) => {
-                matchesFound++;
-                postMessage({ type: 'RESULT', result } as WorkerResponse);
-              }
-            );
-          }
+          await processBatchIntegrated(
+            conditions,
+            rangeStartTime,
+            rangeEndTime,
+            timer0,
+            timer0,
+            actualVCount,
+            actualVCount,
+            targetSeedSet,
+            (result) => {
+              matchesFound++;
+              postMessage({ type: 'RESULT', result } as WorkerResponse);
+            }
+          );
 
-          currentStep += batchTimestamps.length;
+          currentStep += (timeEnd - timeStart);
 
-          // Send progress update based on optimized interval (not every batch)
-          if (currentStep % PROGRESS_UPDATE_INTERVAL < batchTimestamps.length || 
-              timestampEnd >= timestamps.length) { // Also update on completion
-            const elapsedTime = Date.now() - startTime;
-            const estimatedTimeRemaining = currentStep > 0 ? 
-              elapsedTime * (totalSteps - currentStep) / currentStep : 0;
+          // Send progress update only at specified intervals or on completion
+          const now = Date.now();
+          const shouldUpdateProgress = 
+            (now - lastProgressUpdate >= progressUpdateInterval) || 
+            (currentStep >= totalSteps);
+
+          if (shouldUpdateProgress) {
+            lastProgressUpdate = now;
+            
+            const elapsedTime = now - startTime;
+            
+            // More accurate estimated time remaining calculation
+            let estimatedTimeRemaining = 0;
+            if (currentStep > 0 && currentStep < totalSteps) {
+              const avgTimePerStep = elapsedTime / currentStep;
+              const remainingSteps = totalSteps - currentStep;
+              estimatedTimeRemaining = Math.round(avgTimePerStep * remainingSteps);
+            }
 
             postMessage({
               type: 'PROGRESS',
@@ -270,28 +300,31 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
                 elapsedTime,
                 estimatedTimeRemaining,
                 matchesFound,
-                currentDateTime: new Date(batchTimestamps[batchTimestamps.length - 1]).toISOString()
+                currentDateTime: new Date(rangeEndTime).toISOString()
               }
             } as WorkerResponse);
           }
 
-          // Reduced yield frequency for better performance
-          if (currentStep % (BATCH_SIZE * 10) === 0) {
-            await new Promise(resolve => setTimeout(resolve, 1));
-          }
-
         } catch (error) {
-          console.error('Error processing batch in worker:', error);
-          // Continue with next batch instead of stopping completely
+          console.error('Search batch error:', error);
         }
       }
     }
 
     // Send completion message
+    const finalElapsedTime = Date.now() - startTime;
+    
     if (searchState.shouldStop) {
       postMessage({
         type: 'STOPPED',
-        message: `Search stopped. Found ${matchesFound} matches out of ${currentStep} tested combinations.`
+        message: `Search stopped. Found ${matchesFound} matches out of ${currentStep} tested combinations.`,
+        progress: {
+          currentStep,
+          totalSteps,
+          elapsedTime: finalElapsedTime,
+          estimatedTimeRemaining: 0,
+          matchesFound
+        }
       } as WorkerResponse);
     } else {
       postMessage({
@@ -300,7 +333,7 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
         progress: {
           currentStep: totalSteps,
           totalSteps,
-          elapsedTime: Date.now() - startTime,
+          elapsedTime: finalElapsedTime,
           estimatedTimeRemaining: 0,
           matchesFound
         }

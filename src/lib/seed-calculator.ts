@@ -58,6 +58,13 @@ export class SeedCalculator {
   }
 
   /**
+   * Get WebAssembly module for integrated search
+   */
+  public getWasmModule(): any {
+    return getWasm();
+  }
+
+  /**
    * Force enable/disable WebAssembly usage
    */
   public setUseWasm(use: boolean): void {

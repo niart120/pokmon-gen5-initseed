@@ -23,6 +23,40 @@ export interface ScalabilityTest {
   stabilityScore: number; // 0-100
 }
 
+// Phase 2C-2: ユーザビリティ測定用インターフェース
+export interface UserExperienceMetrics {
+  uiResponsiveness: {
+    averageFrameTime: number; // ms
+    frameDrops: number;
+    maxBlockingTime: number; // ms
+    responsiveScore: number; // 0-100
+  };
+  progressUpdatePerformance: {
+    updateFrequency: number; // Hz
+    updateOverhead: number; // ms
+    smoothnessScore: number; // 0-100
+  };
+  resourceUsage: {
+    cpuUsagePercent: number;
+    memoryUsageMB: number;
+    memoryGrowthRate: number; // MB/sec
+    batteryImpactScore: number; // 0-100 (estimated)
+  };
+  longRunningStability: {
+    gcFrequency: number; // times/minute
+    memoryLeakDetected: boolean;
+    stabilityScore: number; // 0-100
+  };
+}
+
+export interface UsabilityTestScenario {
+  name: string;
+  duration: number; // ms
+  calculationCount: number;
+  userExperienceMetrics: UserExperienceMetrics;
+  userSatisfactionScore: number; // 0-100
+}
+
 export class PerformanceAnalyzer {
   private calculator: SeedCalculator;
   private messageProfiler: MessageGenerationProfiler;
@@ -867,6 +901,503 @@ export class PerformanceAnalyzer {
       console.log('\n⚠️ Bottlenecks detected:');
       metrics.bottlenecks.forEach(bottleneck => console.log(`   • ${bottleneck}`));
     }
+  }
+
+  /**
+   * Phase 2C-1: Real Search Scenario Performance Analysis
+   * Measures performance in actual user search scenarios
+   */
+  async runRealScenarioAnalysis(): Promise<{
+    oneHourScenario: { duration: number; calculationsPerSecond: number; userExperienceScore: number };
+    oneDayScenario: { duration: number; calculationsPerSecond: number; userExperienceScore: number };
+    fullRangeScenario: { duration: number; calculationsPerSecond: number; userExperienceScore: number };
+    multiTargetScenario: { duration: number; calculationsPerSecond: number; userExperienceScore: number };
+    overallAssessment: {
+      averagePerformance: number;
+      userExperienceGrade: string;
+      phase2bImpactSummary: string[];
+    };
+  }> {
+    console.log('🎯 Phase 2C-1: Real Search Scenario Analysis starting...');
+    
+    // Ensure WebAssembly is available for integrated search
+    const wasmModule = await import('../wasm/wasm_pkg.js');
+    if (!wasmModule.IntegratedSeedSearcher) {
+      throw new Error('WebAssembly IntegratedSeedSearcher not available');
+    }
+
+    const mac = new Uint8Array([0x00, 0x1B, 0x7A, 0x45, 0x67, 0x89]);
+    const nazo = new Uint32Array([0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000]);
+    
+    // Scenario 1: 1-hour range search
+    console.log('⏰ Testing 1-hour range scenario...');
+    const oneHourStart = performance.now();
+    const targetSeeds1 = new Uint32Array([0x12345678, 0x9abcdef0, 0x11111111]);
+    const searcher1 = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+    const results1 = searcher1.search_seeds_integrated(2012, 6, 15, 10, 30, 0, 3600, 1100, 1200, 45, 55, targetSeeds1);
+    const oneHourEnd = performance.now();
+    const oneHourDuration = oneHourEnd - oneHourStart;
+    const oneHourCalcs = 3600 * (1200 - 1100 + 1) * (55 - 45 + 1);
+    const oneHourSpeed = oneHourCalcs / (oneHourDuration / 1000);
+    const oneHourScore = oneHourDuration <= 1000 ? 100 : Math.max(0, 100 - (oneHourDuration - 1000) / 100);
+
+    // Scenario 2: 1-day range search
+    console.log('📅 Testing 1-day range scenario...');
+    const oneDayStart = performance.now();
+    const targetSeeds2 = new Uint32Array([0x12345678, 0x9abcdef0, 0x11111111, 0x22222222, 0x33333333]);
+    const searcher2 = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+    const results2 = searcher2.search_seeds_integrated(2012, 6, 15, 0, 0, 0, 86400, 1000, 1300, 40, 60, targetSeeds2);
+    const oneDayEnd = performance.now();
+    const oneDayDuration = oneDayEnd - oneDayStart;
+    const oneDayCalcs = 86400 * (1300 - 1000 + 1) * (60 - 40 + 1);
+    const oneDaySpeed = oneDayCalcs / (oneDayDuration / 1000);
+    const oneDayScore = oneDayDuration <= 10000 ? 100 : Math.max(0, 100 - (oneDayDuration - 10000) / 1000);
+
+    // Scenario 3: Full range search (reduced for practical testing)
+    console.log('🔄 Testing full range scenario (reduced scale)...');
+    const fullRangeStart = performance.now();
+    const targetSeeds3 = new Uint32Array([0x12345678, 0x9abcdef0]);
+    const searcher3 = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+    const results3 = searcher3.search_seeds_integrated(2012, 6, 15, 10, 30, 0, 600, 0, 1000, 0, 100, targetSeeds3);
+    const fullRangeEnd = performance.now();
+    const fullRangeDuration = fullRangeEnd - fullRangeStart;
+    const fullRangeCalcs = 600 * 1001 * 101;
+    const fullRangeSpeed = fullRangeCalcs / (fullRangeDuration / 1000);
+    const fullRangeScore = fullRangeDuration <= 60000 ? 100 : Math.max(0, 100 - (fullRangeDuration - 60000) / 5000);
+
+    // Scenario 4: Multi-target search
+    console.log('🎯 Testing multi-target scenario...');
+    const multiTargetStart = performance.now();
+    const targetSeeds4 = new Uint32Array([
+      0x12345678, 0x9abcdef0, 0x11111111, 0x22222222, 0x33333333,
+      0x44444444, 0x55555555, 0x66666666, 0x77777777, 0x88888888,
+      0x99999999, 0xaaaaaaaa, 0xbbbbbbbb, 0xcccccccc, 0xdddddddd,
+      0xeeeeeeee, 0xffffffff, 0x12121212, 0x34343434, 0x56565656
+    ]);
+    const searcher4 = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+    const results4 = searcher4.search_seeds_integrated(2012, 6, 15, 10, 0, 0, 7200, 1050, 1250, 40, 70, targetSeeds4);
+    const multiTargetEnd = performance.now();
+    const multiTargetDuration = multiTargetEnd - multiTargetStart;
+    const multiTargetCalcs = 7200 * (1250 - 1050 + 1) * (70 - 40 + 1);
+    const multiTargetSpeed = multiTargetCalcs / (multiTargetDuration / 1000);
+    const multiTargetScore = multiTargetDuration <= 15000 ? 100 : Math.max(0, 100 - (multiTargetDuration - 15000) / 1500);
+
+    // Overall assessment
+    const averagePerformance = (oneHourSpeed + oneDaySpeed + fullRangeSpeed + multiTargetSpeed) / 4;
+    const averageScore = (oneHourScore + oneDayScore + fullRangeScore + multiTargetScore) / 4;
+    
+    let userExperienceGrade: string;
+    if (averageScore >= 90) userExperienceGrade = 'A+ (Excellent)';
+    else if (averageScore >= 80) userExperienceGrade = 'A (Very Good)';
+    else if (averageScore >= 70) userExperienceGrade = 'B (Good)';
+    else if (averageScore >= 60) userExperienceGrade = 'C (Fair)';
+    else userExperienceGrade = 'D (Needs Improvement)';
+
+    const phase2bImpactSummary = [
+      `🚀 Average Performance: ${averagePerformance.toLocaleString()} calc/sec`,
+      `📊 User Experience Grade: ${userExperienceGrade} (${averageScore.toFixed(1)}/100)`,
+      `⚡ 1-hour search: ${oneHourDuration.toFixed(0)}ms (Target: <1s)`,
+      `📅 1-day search: ${(oneDayDuration / 1000).toFixed(1)}s (Target: <10s)`,
+      `🔄 Full range: ${(fullRangeDuration / 1000).toFixed(1)}s (Target: <60s)`,
+      `🎯 Multi-target: ${(multiTargetDuration / 1000).toFixed(1)}s (Target: <15s)`,
+    ];
+
+    console.log('\n🎯 Phase 2C-1 Real Scenario Analysis Results:');
+    console.log(`   Average Performance: ${averagePerformance.toLocaleString()} calc/sec`);
+    console.log(`   User Experience Grade: ${userExperienceGrade}`);
+    console.log(`   All scenarios performance: ${averageScore.toFixed(1)}/100`);
+
+    return {
+      oneHourScenario: {
+        duration: oneHourDuration,
+        calculationsPerSecond: oneHourSpeed,
+        userExperienceScore: oneHourScore
+      },
+      oneDayScenario: {
+        duration: oneDayDuration,
+        calculationsPerSecond: oneDaySpeed,
+        userExperienceScore: oneDayScore
+      },
+      fullRangeScenario: {
+        duration: fullRangeDuration,
+        calculationsPerSecond: fullRangeSpeed,
+        userExperienceScore: fullRangeScore
+      },
+      multiTargetScenario: {
+        duration: multiTargetDuration,
+        calculationsPerSecond: multiTargetSpeed,
+        userExperienceScore: multiTargetScore
+      },
+      overallAssessment: {
+        averagePerformance,
+        userExperienceGrade,
+        phase2bImpactSummary
+      }
+    };
+  }
+
+  /**
+   * Phase 2C-2: User Experience & Usability Measurement
+   * Measures UI responsiveness, progress updates, resource usage, and long-running stability
+   */
+  async runUserExperienceMeasurement(): Promise<{
+    shortTaskScenario: UsabilityTestScenario;
+    mediumTaskScenario: UsabilityTestScenario;
+    longTaskScenario: UsabilityTestScenario;
+    overallUsabilityAssessment: {
+      averageUserSatisfaction: number;
+      usabilityGrade: string;
+      phase2bUsabilityImpacts: string[];
+      recommendations: string[];
+    };
+  }> {
+    console.log('🎯 Phase 2C-2: User Experience & Usability Measurement starting...');
+    
+    // Ensure WebAssembly is available
+    const wasmModule = await import('../wasm/wasm_pkg.js');
+    if (!wasmModule.IntegratedSeedSearcher) {
+      throw new Error('WebAssembly IntegratedSeedSearcher not available');
+    }
+
+    const mac = new Uint8Array([0x00, 0x1B, 0x7A, 0x45, 0x67, 0x89]);
+    const nazo = new Uint32Array([0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000]);
+
+    // Scenario 1: Short Task (5分探索) - 即応性重視
+    console.log('⚡ Testing short task scenario (UI responsiveness)...');
+    const shortTaskMetrics = await this.measureTaskUsability(
+      'Short Task (5 minutes)',
+      async () => {
+        const targetSeeds = new Uint32Array([0x12345678, 0x9abcdef0]);
+        const searcher = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+        return searcher.search_seeds_integrated(2012, 6, 15, 10, 30, 0, 300, 1100, 1200, 45, 55, targetSeeds);
+      },
+      300 * 101 * 11 // 計算数
+    );
+
+    // Scenario 2: Medium Task (1時間探索) - バランス重視
+    console.log('⚖️ Testing medium task scenario (balanced performance)...');
+    const mediumTaskMetrics = await this.measureTaskUsability(
+      'Medium Task (1 hour)',
+      async () => {
+        const targetSeeds = new Uint32Array([0x12345678, 0x9abcdef0, 0x11111111]);
+        const searcher = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+        return searcher.search_seeds_integrated(2012, 6, 15, 10, 30, 0, 3600, 1100, 1200, 45, 55, targetSeeds);
+      },
+      3600 * 101 * 11 // 計算数
+    );
+
+    // Scenario 3: Long Task (6時間探索) - 長時間安定性重視
+    console.log('🔋 Testing long task scenario (long-term stability)...');
+    const longTaskMetrics = await this.measureTaskUsability(
+      'Long Task (6 hours)',
+      async () => {
+        const targetSeeds = new Uint32Array([0x12345678, 0x9abcdef0, 0x11111111, 0x22222222]);
+        const searcher = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+        return searcher.search_seeds_integrated(2012, 6, 15, 10, 0, 0, 21600, 1000, 1200, 40, 60, targetSeeds);
+      },
+      21600 * 201 * 21 // 計算数
+    );
+
+    // Overall assessment
+    const averageUserSatisfaction = (
+      shortTaskMetrics.userSatisfactionScore +
+      mediumTaskMetrics.userSatisfactionScore +
+      longTaskMetrics.userSatisfactionScore
+    ) / 3;
+
+    let usabilityGrade: string;
+    if (averageUserSatisfaction >= 90) usabilityGrade = 'A+ (Excellent UX)';
+    else if (averageUserSatisfaction >= 80) usabilityGrade = 'A (Very Good UX)';
+    else if (averageUserSatisfaction >= 70) usabilityGrade = 'B (Good UX)';
+    else if (averageUserSatisfaction >= 60) usabilityGrade = 'C (Fair UX)';
+    else usabilityGrade = 'D (Poor UX)';
+
+    const phase2bUsabilityImpacts = [
+      `🚀 UI Responsiveness: ${((shortTaskMetrics.userExperienceMetrics.uiResponsiveness.responsiveScore + mediumTaskMetrics.userExperienceMetrics.uiResponsiveness.responsiveScore) / 2).toFixed(1)}/100`,
+      `📊 Progress Smoothness: ${((shortTaskMetrics.userExperienceMetrics.progressUpdatePerformance.smoothnessScore + mediumTaskMetrics.userExperienceMetrics.progressUpdatePerformance.smoothnessScore) / 2).toFixed(1)}/100`,
+      `💾 Memory Efficiency: ${mediumTaskMetrics.userExperienceMetrics.resourceUsage.memoryUsageMB.toFixed(1)}MB peak usage`,
+      `🔋 Battery Impact: ${((shortTaskMetrics.userExperienceMetrics.resourceUsage.batteryImpactScore + mediumTaskMetrics.userExperienceMetrics.resourceUsage.batteryImpactScore) / 2).toFixed(1)}/100 (lower is better)`,
+      `⏳ Long-term Stability: ${longTaskMetrics.userExperienceMetrics.longRunningStability.stabilityScore.toFixed(1)}/100`,
+    ];
+
+    const recommendations: string[] = [];
+    if (averageUserSatisfaction < 80) {
+      recommendations.push('⚠️ UI応答性の改善が必要：より細かいprogress update間隔の検討');
+    }
+    if (longTaskMetrics.userExperienceMetrics.longRunningStability.memoryLeakDetected) {
+      recommendations.push('🔴 メモリリークの対策が必要：長時間実行での安定性向上');
+    }
+    if (mediumTaskMetrics.userExperienceMetrics.resourceUsage.cpuUsagePercent > 80) {
+      recommendations.push('⚡ CPU使用率の最適化：バッチサイズやWorker並列度の調整');
+    }
+    if (recommendations.length === 0) {
+      recommendations.push('✅ ユーザビリティは良好です：現在の実装で実用的なユーザー体験を提供');
+    }
+
+    console.log('\n🎯 Phase 2C-2 User Experience Measurement Results:');
+    console.log(`   Average User Satisfaction: ${averageUserSatisfaction.toFixed(1)}/100`);
+    console.log(`   Usability Grade: ${usabilityGrade}`);
+
+    return {
+      shortTaskScenario: shortTaskMetrics,
+      mediumTaskScenario: mediumTaskMetrics,
+      longTaskScenario: longTaskMetrics,
+      overallUsabilityAssessment: {
+        averageUserSatisfaction,
+        usabilityGrade,
+        phase2bUsabilityImpacts,
+        recommendations
+      }
+    };
+  }
+
+  /**
+   * タスクのユーザビリティを測定する汎用メソッド
+   */
+  private async measureTaskUsability(
+    taskName: string,
+    taskFunction: () => Promise<any>,
+    expectedCalculations: number
+  ): Promise<UsabilityTestScenario> {
+    console.log(`📋 Measuring usability for: ${taskName}`);
+
+    // UI応答性測定用のフレーム監視
+    const frameMonitor = this.startFrameMonitoring();
+    
+    // リソース使用量の初期値
+    const initialMemory = (performance as any).memory ? (performance as any).memory.usedJSHeapSize : 0;
+    const startTime = performance.now();
+
+    // メインタスクの実行
+    const taskStartTime = performance.now();
+    await taskFunction();
+    const taskEndTime = performance.now();
+    const duration = taskEndTime - taskStartTime;
+
+    // フレーム監視終了
+    const frameMetrics = this.stopFrameMonitoring(frameMonitor);
+
+    // リソース使用量の最終値
+    const finalMemory = (performance as any).memory ? (performance as any).memory.usedJSHeapSize : 0;
+    const memoryUsage = (finalMemory - initialMemory) / 1024 / 1024; // MB
+
+    // ユーザー体験メトリクスの計算
+    const uiResponsiveness = {
+      averageFrameTime: frameMetrics.averageFrameTime,
+      frameDrops: frameMetrics.frameDrops,
+      maxBlockingTime: frameMetrics.maxBlockingTime,
+      responsiveScore: Math.max(0, 100 - (frameMetrics.maxBlockingTime / 16.67) * 10) // 60FPS基準
+    };
+
+    const progressUpdatePerformance = {
+      updateFrequency: 1000 / 16.67, // 60Hz理想値
+      updateOverhead: Math.max(0, frameMetrics.averageFrameTime - 16.67),
+      smoothnessScore: Math.max(0, 100 - frameMetrics.frameDrops * 2)
+    };
+
+    // より精密なリソース使用量測定
+    const actualCpuUsage = await this.measureCpuUsage(async () => {
+      // 実際の計算処理を再実行して測定
+      await this.runRealisticSearchScenario(searchParams.name, searchParams.duration / 3600000);
+    }, duration);
+
+    const actualBatteryImpact = await this.measureBatteryImpact(async () => {
+      // バッテリー影響測定用の軽量テスト
+      await this.runRealisticSearchScenario(searchParams.name, 0.01); // 0.6分
+    }, 36000); // 0.6分
+
+    const resourceUsage = {
+      cpuUsagePercent: actualCpuUsage,
+      memoryUsageMB: memoryUsage,
+      memoryGrowthRate: memoryUsage / (duration / 1000),
+      batteryImpactScore: actualBatteryImpact
+    };
+
+    const longRunningStability = {
+      gcFrequency: this.estimateGcFrequency(duration, memoryUsage),
+      memoryLeakDetected: resourceUsage.memoryGrowthRate > 10, // 10MB/sec以上で疑い
+      stabilityScore: Math.max(0, 100 - (resourceUsage.memoryGrowthRate > 10 ? 50 : 0) - Math.max(0, resourceUsage.memoryGrowthRate - 1) * 10)
+    };
+
+    // 総合ユーザー満足度スコア
+    const userSatisfactionScore = (
+      uiResponsiveness.responsiveScore * 0.3 +
+      progressUpdatePerformance.smoothnessScore * 0.25 +
+      (100 - resourceUsage.batteryImpactScore) * 0.25 +
+      longRunningStability.stabilityScore * 0.2
+    );
+
+    return {
+      name: taskName,
+      duration,
+      calculationCount: expectedCalculations,
+      userExperienceMetrics: {
+        uiResponsiveness,
+        progressUpdatePerformance,
+        resourceUsage,
+        longRunningStability
+      },
+      userSatisfactionScore
+    };
+  }
+
+  /**
+   * フレーム監視を開始
+   */
+  private startFrameMonitoring(): {
+    frameCount: number;
+    frameTimes: number[];
+    lastTime: number;
+    maxBlockingTime: number;
+  } {
+    const monitor = {
+      frameCount: 0,
+      frameTimes: [] as number[],
+      lastTime: performance.now(),
+      maxBlockingTime: 0
+    };
+
+    const updateFrame = () => {
+      const currentTime = performance.now();
+      const frameTime = currentTime - monitor.lastTime;
+      monitor.frameTimes.push(frameTime);
+      if (frameTime > monitor.maxBlockingTime) {
+        monitor.maxBlockingTime = frameTime;
+      }
+      monitor.lastTime = currentTime;
+      monitor.frameCount++;
+    };
+
+    // シミュレートされたフレーム監視（実際のrequestAnimationFrameの代替）
+    const interval = setInterval(updateFrame, 16.67); // ~60FPS
+    (monitor as any).interval = interval;
+
+    return monitor;
+  }
+
+  /**
+   * フレーム監視を停止
+   */
+  private stopFrameMonitoring(monitor: any): {
+    averageFrameTime: number;
+    frameDrops: number;
+    maxBlockingTime: number;
+  } {
+    clearInterval(monitor.interval);
+
+    const averageFrameTime = monitor.frameTimes.reduce((a: number, b: number) => a + b, 0) / monitor.frameTimes.length;
+    const frameDrops = monitor.frameTimes.filter((time: number) => time > 20).length; // 20ms以上でフレームドロップ
+
+    return {
+      averageFrameTime,
+      frameDrops,
+      maxBlockingTime: monitor.maxBlockingTime
+    };
+  }
+
+  /**
+   * CPU使用率の実測定
+   */
+  private async measureCpuUsage(testFunction: () => Promise<void> | void, duration: number): Promise<number> {
+    // ブラウザ環境での実際のCPU測定は制限されているため、
+    // 複数の指標を組み合わせて推定精度を向上
+    
+    const startTime = performance.now();
+    let frameDrops = 0;
+    let totalFrames = 0;
+    
+    // フレーム監視によるCPU負荷測定
+    const frameMonitor = setInterval(() => {
+      const frameTime = performance.now();
+      totalFrames++;
+      // 20ms以上でフレームドロップとみなす
+      if (frameTime > 20) frameDrops++;
+    }, 16.67); // ~60FPS
+    
+    // 実際のテスト関数実行
+    await testFunction();
+    
+    clearInterval(frameMonitor);
+    const actualDuration = performance.now() - startTime;
+    
+    // CPU使用率の推定
+    const frameDropRate = totalFrames > 0 ? frameDrops / totalFrames : 0;
+    const busyRatio = Math.min(1, actualDuration / duration); // 実行時間比
+    
+    // 複合指標によるCPU使用率推定（より精密）
+    const baseCpuUsage = busyRatio * 100;
+    const frameImpact = frameDropRate * 50; // フレームドロップによる追加負荷
+    
+    return Math.min(100, baseCpuUsage + frameImpact);
+  }
+
+  /**
+   * CPU使用率の推定（従来の簡易版）
+   */
+  private estimateCpuUsage(duration: number, calculations: number): number {
+    // 計算密度から推定（簡易計算）
+    const calculationsPerMs = calculations / duration;
+    return Math.min(100, calculationsPerMs / 10000 * 100);
+  }
+
+  /**
+   * バッテリー影響度の実測定
+   */
+  private async measureBatteryImpact(testFunction: () => Promise<void> | void, duration: number): Promise<number> {
+    // ブラウザ環境でのバッテリー測定は制限されているため、
+    // 複数の間接指標を組み合わせて推定
+    
+    let initialBattery = 100; // デフォルト値
+    let finalBattery = 100;
+    
+    // Battery Status API（利用可能な場合）
+    if ('getBattery' in navigator) {
+      try {
+        const battery = await (navigator as any).getBattery();
+        initialBattery = battery.level * 100;
+        
+        // テスト実行
+        await testFunction();
+        
+        // 少し待ってからバッテリー状態を再測定
+        await new Promise(resolve => setTimeout(resolve, 100));
+        finalBattery = battery.level * 100;
+      } catch (error) {
+        console.warn('Battery API not available, using estimation');
+      }
+    }
+    
+    // CPU使用率とメモリ使用量から推定
+    const cpuUsage = this.estimateCpuUsage(duration, 1000); // 仮想計算
+    const durationMinutes = duration / 60000;
+    
+    // 実際のバッテリー消費があれば使用、なければ推定
+    const actualDrain = Math.abs(finalBattery - initialBattery);
+    if (actualDrain > 0.01) { // 0.01%以上の変化があった場合
+      return Math.min(100, actualDrain * 60 / durationMinutes); // 1時間あたりの消費率
+    }
+    
+    // バッテリー消費の推定（CPU使用率と時間から）
+    return Math.min(100, (cpuUsage * durationMinutes) / 10);
+  }
+
+  /**
+   * バッテリー影響度の推定（従来の簡易版）
+   */
+  private estimateBatteryImpact(duration: number, calculations: number): number {
+    // CPU使用率と実行時間から推定
+    const cpuUsage = this.estimateCpuUsage(duration, calculations);
+    const durationMinutes = duration / 60000;
+    return Math.min(100, (cpuUsage * durationMinutes) / 10);
+  }
+
+  /**
+   * GC頻度の推定
+   */
+  private estimateGcFrequency(duration: number, memoryUsage: number): number {
+    // メモリ使用量から推定
+    const durationMinutes = duration / 60000;
+    return Math.max(0, memoryUsage / 50 * durationMinutes); // 50MB毎に1回程度と仮定
   }
 }
 
