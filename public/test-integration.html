@@ -375,14 +375,12 @@
     <script type="module">
         import { initWasm } from '/src/lib/core/wasm-interface.ts';
         import { SeedCalculator } from '/src/lib/core/seed-calculator.ts';
-        import { IntegratedSearchManager } from '/src/lib/search/integrated-search-manager.ts';
         import { ProductionPerformanceMonitor } from '/src/lib/core/performance-monitor.ts';
         import { DevelopmentPerformanceAnalyzer } from '/src/test-utils/profiling/development-analyzer.ts';
 
         // Global state
         let wasmModule = null;
         let seedCalculator = null;
-        let searchManager = null;
         let productionMonitor = null;
         let developmentAnalyzer = null;
         let testResults = new Map();
@@ -470,7 +468,8 @@
                 const iterations = 10000;
                 
                 for (let i = 0; i < iterations; i++) {
-                    const testMessage = new Uint8Array(64).fill(i % 256);
+                    // Create proper 16-word (64-byte) message for SHA-1
+                    const testMessage = Array.from({ length: 16 }, (_, j) => (i + j) % 0xFFFFFFFF);
                     seedCalculator.calculateSeed(testMessage);
                 }
                 
@@ -526,21 +525,27 @@
             const originalText = showSpinner(button);
             
             try {
-                addResult('search-results', '🔄 Testing Integrated Search Manager...', 'info');
+                addResult('search-results', '🔄 Testing Direct WebAssembly Search...', 'info');
                 
-                if (!searchManager) {
-                    searchManager = new IntegratedSearchManager();
-                    await searchManager.initialize();
+                if (!wasmModule) {
+                    wasmModule = await initWasm();
                 }
                 
-                addResult('search-results', '✅ Search Manager initialized successfully', 'success');
+                // Test direct WebAssembly search integration
+                const mac = new Uint8Array([0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC]);
+                const nazo = new Uint32Array([0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000]);
+                
+                const searcher = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+                searcher.free(); // Test cleanup
+                
+                addResult('search-results', '✅ Direct WebAssembly search test passed', 'success');
                 addResult('search-results', 'Ready for search operations', 'info');
                 
                 updateStatus('search-status', true);
                 testResults.set('search-manager', true);
                 
             } catch (error) {
-                addResult('search-results', `❌ Search Manager test failed: ${error.message}`, 'error');
+                addResult('search-results', `❌ Direct WebAssembly search test failed: ${error.message}`, 'error');
                 updateStatus('search-status', false, false, true);
                 testResults.set('search-manager', false);
             } finally {

@@ -135,8 +135,8 @@
                 <button class="btn-success" onclick="testProductionPerformanceMonitor()">
                     Production Performance Monitor
                 </button>
-                <button class="btn-success" onclick="testIntegratedSearchManager()">
-                    Integrated Search Manager
+                <button class="btn-success" onclick="testIntegratedSeedSearcher()">
+                    Integrated Seed Searcher (WebAssembly)
                 </button>
                 <button class="btn-success" onclick="testSeedCalculator()">
                     Seed Calculator (WebAssembly + TypeScript)
@@ -167,9 +167,6 @@
                 </button>
                 <button class="btn-warning" onclick="runScalabilityAnalysis()">
                     Scalability Analysis
-                </button>
-                <button class="btn-warning" onclick="runBottleneckAnalysis()">
-                    Bottleneck Analysis
                 </button>
             </div>
         </div>
@@ -237,14 +234,12 @@
         import { DevelopmentPerformanceAnalyzer } from '/src/test-utils/profiling/development-analyzer.ts';
         import { ProductionPerformanceMonitor } from '/src/lib/core/performance-monitor.ts';
         import { SeedCalculator } from '/src/lib/core/seed-calculator.ts';
-        import { IntegratedSearchManager } from '/src/lib/search/integrated-search-manager.ts';
         import { initWasm } from '/src/lib/core/wasm-interface.ts';
 
         // Global test state
         let developmentAnalyzer = null;
         let productionMonitor = null;
         let seedCalculator = null;
-        let searchManager = null;
         let wasmModule = null;
         let testsPassed = 0;
         const totalTests = 8;
@@ -319,20 +314,37 @@
             }
         };
 
-        window.testIntegratedSearchManager = async function() {
+        window.testIntegratedSeedSearcher = async function() {
             try {
-                log('🔄 Testing IntegratedSearchManager...', 'info');
+                log('🔄 Testing IntegratedSeedSearcher (WebAssembly)...', 'info');
                 
-                if (!searchManager) {
-                    searchManager = new IntegratedSearchManager();
-                    await searchManager.initialize();
+                if (!wasmModule) {
+                    wasmModule = await initWasm();
                 }
                 
-                log('✅ IntegratedSearchManager initialized successfully', 'success');
+                // Test IntegratedSeedSearcher directly
+                const mac = new Uint8Array([0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC]);
+                const nazo = new Uint32Array([0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000]);
+                
+                const searcher = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+                
+                // Test small search
+                const results = searcher.search_seeds_integrated(
+                    2012, 6, 15, 10, 30, 0, // Start datetime
+                    10, // Range seconds  
+                    1120, 1125, // Timer0 range
+                    40, 45, // VCount range
+                    new Uint32Array([0x12345678]) // Target seeds
+                );
+                
+                searcher.free();
+                
+                log('✅ IntegratedSeedSearcher test passed', 'success');
+                log(`   Results found: ${results.length}`, 'info');
                 incrementTestsPassed();
                 
             } catch (error) {
-                log(`❌ IntegratedSearchManager test failed: ${error.message}`, 'error');
+                log(`❌ IntegratedSeedSearcher test failed: ${error.message}`, 'error');
             }
         };
 
@@ -460,33 +472,6 @@
             }
         };
 
-        window.runBottleneckAnalysis = async function() {
-            try {
-                log('🔄 Running bottleneck analysis...', 'info');
-                
-                if (!developmentAnalyzer) {
-                    developmentAnalyzer = new DevelopmentPerformanceAnalyzer();
-                    await developmentAnalyzer.initialize();
-                }
-                
-                const metrics = await developmentAnalyzer.measureBasicPerformance(25000);
-                const recommendations = developmentAnalyzer.generateRecommendations(metrics);
-                
-                log('✅ Bottleneck analysis completed', 'success');
-                if (recommendations.length > 0) {
-                    log('💡 Recommendations:', 'warning');
-                    recommendations.forEach(rec => log(`   • ${rec}`, 'warning'));
-                } else {
-                    log('   No performance issues detected', 'success');
-                }
-                
-                incrementTestsPassed();
-                
-            } catch (error) {
-                log(`❌ Bottleneck analysis failed: ${error.message}`, 'error');
-            }
-        };
-
         // WebAssembly Integration Tests
         window.testWebAssemblyIntegration = async function() {
             try {
@@ -502,17 +487,6 @@
             } catch (error) {
                 log(`❌ WebAssembly integration test failed: ${error.message}`, 'error');
                 updateStatus('production-status', 'WebAssembly: ❌ Failed', 'error');
-            }
-        };
-
-        window.testIntegratedSeedSearcher = async function() {
-            try {
-                log('🔄 Testing IntegratedSeedSearcher...', 'info');
-                log('✅ IntegratedSeedSearcher test passed (simulation)', 'success');
-                log('   Note: Full integration test requires complex setup', 'info');
-                
-            } catch (error) {
-                log(`❌ IntegratedSeedSearcher test failed: ${error.message}`, 'error');
             }
         };
 
@@ -535,12 +509,12 @@
             
             const tests = [
                 testProductionPerformanceMonitor,
+                testIntegratedSeedSearcher,
                 testSeedCalculator,
                 testSearchWorker,
                 testDevelopmentAnalyzer,
                 runMessageGenerationProfiling,
                 runScalabilityAnalysis,
-                runBottleneckAnalysis,
                 testWebAssemblyIntegration
             ];
             
