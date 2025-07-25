@@ -11,11 +11,24 @@ applyTo: "src/**/*.{ts,tsx}"
 // ✅ 推奨: 既存の統合システムを活用
 import { integratedSearchManager } from '@/lib/integrated-search-manager';
 import { useAppStore } from '@/store/app-store';
+
+// ✅ 本番用パフォーマンス監視
+import { ProductionPerformanceMonitor } from '@/lib/core/performance-monitor';
+
+// ✅ 開発用詳細分析（開発環境のみ）
+import { DevelopmentPerformanceAnalyzer } from '@/test-utils/profiling/development-analyzer';
 ```
+
+### アーキテクチャ分離の原則
+- **本番コード**: `src/lib/core/` - 軽量・高速・本番最適化
+- **開発ツール**: `src/test-utils/` - 詳細分析・デバッグ支援
+- **循環依存禁止**: 本番コードは開発ツールに依存させない
 
 ### 禁止事項
 - コア計算処理の新規TypeScript実装（WebAssembly使用必須）
 - 既存の検証システムの無効化
+- 本番コードから`src/test-utils/`への依存
+- テストコードから本番状態への影響
 
 ## WebAssembly統合
 - 高性能計算処理はWebAssemblyを活用
