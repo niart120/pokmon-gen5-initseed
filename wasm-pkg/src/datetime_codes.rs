@@ -1,8 +1,6 @@
 /// 日時コード事前計算システム
 /// ポケモンBW/BW2の日時メッセージ生成における最大のボトルネック（BCD変換）を
 /// 事前計算テーブルで解決し、劇的な性能向上を実現する
-use wasm_bindgen::prelude::*;
-
 /// 時刻コード事前計算テーブル (86,400エントリ = 24*60*60秒)
 /// 全ての時:分:秒の組み合わせを事前計算
 pub struct TimeCodeGenerator;
@@ -100,8 +98,8 @@ impl DateCodeGenerator {
                     // 日付のBCDエンコーディング
                     let d_code = ((day / 10) << 20) | ((day % 10) << 16);
                     let m_code = ((month / 10) << 12) | ((month % 10) << 8);
-                    let y_ones = (year % 10) as u32;
-                    let y_tens = ((year / 10) % 10) as u32;
+                    let y_ones = year % 10;
+                    let y_tens = (year / 10) % 10;
                     let y_code = (y_tens << 4) | y_ones;
                     
                     // 統合日付コード
@@ -146,7 +144,7 @@ impl DateCodeGenerator {
     /// 日付コードを高速取得（O(1)）
     #[inline]
     pub fn get_date_code(year: u32, month: u32, day: u32) -> u32 {
-        if year >= 2000 && year < 2100 && month >= 1 && month <= 12 {
+        if (2000..2100).contains(&year) && (1..=12).contains(&month) {
             let index = Self::days_since_2000(year, month, day) as usize;
             if index < Self::DATE_CODES.len() {
                 return Self::DATE_CODES[index];

@@ -34,6 +34,7 @@ pub struct SearchResult {
 #[wasm_bindgen]
 impl SearchResult {
     #[wasm_bindgen(constructor)]
+    #[allow(clippy::too_many_arguments)]  // WebAssembly constructor requires all parameters
     pub fn new(seed: u32, year: u32, month: u32, date: u32, hour: u32, minute: u32, second: u32, timer0: u32, vcount: u32) -> SearchResult {
         SearchResult { seed, year, month, date, hour, minute, second, timer0, vcount }
     }
@@ -62,10 +63,14 @@ impl SearchResult {
 /// 固定パラメータを事前計算し、日時範囲を高速探索する
 #[wasm_bindgen]
 pub struct IntegratedSeedSearcher {
-    // 事前計算された固定パラメータ
+    // 事前計算された固定パラメータ（将来の拡張用に保持）
+    #[allow(dead_code)]
     mac_le: [u32; 2],
+    #[allow(dead_code)]
     nazo: [u32; 5],
+    #[allow(dead_code)]
     version: u32,
+    #[allow(dead_code)]
     frame: u32,
     
     // キャッシュされた基本メッセージ
@@ -100,9 +105,7 @@ impl IntegratedSeedSearcher {
         let mut base_message = [0u32; 16];
         
         // 固定部分をセット
-        for i in 0..5 {
-            base_message[i] = nazo_array[i];
-        }
+        base_message[..5].copy_from_slice(&nazo_array);
         base_message[5] = mac_le[0];
         base_message[6] = mac_le[1];
         // インデックス7, 8は日時で動的に設定
@@ -127,6 +130,7 @@ impl IntegratedSeedSearcher {
     /// 統合シード探索メイン関数
     /// 日時範囲とTimer0/VCount範囲を指定して一括探索
     #[wasm_bindgen]
+    #[allow(clippy::too_many_arguments)]  // Search function requires comprehensive parameters
     pub fn search_seeds_integrated(
         &self,
         year_start: u32,
@@ -145,7 +149,7 @@ impl IntegratedSeedSearcher {
         console_log!("🔥 統合シード探索開始: {}秒範囲", range_seconds);
         
         let start_time = js_sys::Date::now();
-        let mut results = js_sys::Array::new();
+        let results = js_sys::Array::new();
 
         // 日時範囲の探索
         for second_offset in 0..range_seconds {
@@ -154,8 +158,8 @@ impl IntegratedSeedSearcher {
             let mut current_minute = minute_start;
             let mut current_hour = hour_start;
             let mut current_date = date_start;
-            let mut current_month = month_start;
-            let mut current_year = year_start;
+            let current_month = month_start;
+            let current_year = year_start;
 
             // 時刻の正規化
             if current_second >= 60 {

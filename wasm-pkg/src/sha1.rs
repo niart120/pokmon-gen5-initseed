@@ -1,7 +1,6 @@
 /// ポケモンBW/BW2特化SHA-1実装
 /// 高速なシード計算のためにカスタム最適化されたSHA-1関数
 use wasm_bindgen::prelude::*;
-use byteorder::{LittleEndian, ByteOrder};
 
 /// ポケモンBW/BW2のSHA-1実装
 /// 16個の32bit値を受け取り、H0+A, H1+Bを返す
@@ -15,17 +14,15 @@ pub fn calculate_pokemon_sha1(message: &[u32; 16]) -> (u32, u32) {
     // SHA-1初期値
     let mut h0: u32 = 0x67452301;
     let mut h1: u32 = 0xEFCDAB89;
-    let mut h2: u32 = 0x98BADCFE;
-    let mut h3: u32 = 0x10325476;
-    let mut h4: u32 = 0xC3D2E1F0;
+    let h2: u32 = 0x98BADCFE;
+    let h3: u32 = 0x10325476;
+    let h4: u32 = 0xC3D2E1F0;
 
     // 80ワードのメッセージスケジュール配列
     let mut w = [0u32; 80];
     
     // 最初の16ワードをコピー
-    for i in 0..16 {
-        w[i] = message[i];
-    }
+    w[..16].copy_from_slice(message);
     
     // 残りの64ワードを計算
     for i in 16..80 {
@@ -39,7 +36,7 @@ pub fn calculate_pokemon_sha1(message: &[u32; 16]) -> (u32, u32) {
     let mut d = h3;
     let mut e = h4;
     
-    for i in 0..80 {
+    for (i, &w_val) in w.iter().enumerate() {
         let (f, k) = match i {
             0..=19 => (choice(b, c, d), 0x5A827999),
             20..=39 => (parity(b, c, d), 0x6ED9EBA1),
@@ -52,7 +49,7 @@ pub fn calculate_pokemon_sha1(message: &[u32; 16]) -> (u32, u32) {
             .wrapping_add(f)
             .wrapping_add(e)
             .wrapping_add(k)
-            .wrapping_add(w[i]);
+            .wrapping_add(w_val);
         
         e = d;
         d = c;
