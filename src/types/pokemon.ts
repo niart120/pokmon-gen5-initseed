@@ -171,7 +171,7 @@ export interface ParallelWorkerResponse {
     matchesFound: number;
     currentDateTime?: string;
   };
-  result?: InitialSeedResult;
+  result?: InitialSeedResult & { datetime: string }; // シリアライゼーション用
   error?: string;
   message?: string;
   chunkProgress?: {
