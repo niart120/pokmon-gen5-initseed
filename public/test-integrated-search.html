@@ -174,7 +174,7 @@
                 updateStatus('init-status', 'Initializing...', 'warning');
                 
                 // Import integrated search manager
-                const { initWasm } = await import('./src/lib/wasm-interface.ts');
+                const { initWasm } = await import('./src/lib/core/wasm-interface.ts');
                 wasmModule = await initWasm();
                 
                 // Make wasmModule globally accessible for debugging

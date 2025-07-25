@@ -66,9 +66,9 @@
     <div id="output"></div>
 
     <script type="module">
-        import { PerformanceAnalyzer, runPerformanceAnalysis } from '/src/lib/performance-analyzer.ts';
-        import { SeedCalculator } from '/src/lib/seed-calculator.ts';
-        import { initWasm, getWasm } from '/src/lib/wasm-interface.ts';
+        import { PerformanceAnalyzer, runPerformanceAnalysis } from '/src/test-utils/profiling/performance-analyzer.ts';
+        import { SeedCalculator } from '/src/lib/core/seed-calculator.ts';
+        import { initWasm, getWasm } from '/src/lib/core/wasm-interface.ts';
         
         let analyzer = null;
         let seedCalculator = null;
