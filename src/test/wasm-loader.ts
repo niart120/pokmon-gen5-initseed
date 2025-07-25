@@ -24,21 +24,16 @@ export async function initWasmForTesting(): Promise<WasmModule> {
   }
 
   try {
-    // WebAssemblyファイルのパス
+    // WebAssemblyファイルを直接読み込んでJSモジュールに渡す
     const wasmPath = join(process.cwd(), 'src/wasm/wasm_pkg_bg.wasm');
-    
-    // WebAssemblyファイルを読み込み
     const wasmBytes = readFileSync(wasmPath);
-    const wasmResult = await WebAssembly.instantiate(wasmBytes);
     
-    // JSバインディングモジュールを読み込み（Node.js環境用）
+    // JSバインディングモジュールを読み込み
     const jsModulePath = join(process.cwd(), 'src/wasm/wasm_pkg.js');
-    
-    // 動的にJSモジュールをrequireではなくimportで読み込み
     const jsModule = await import(jsModulePath);
     
-    // WebAssemblyモジュールをJSモジュールに設定
-    await jsModule.default();
+    // WebAssemblyバイトコードでJSモジュールを初期化
+    await jsModule.default(wasmBytes);
     
     wasmModuleInstance = {
       to_little_endian_32_wasm: jsModule.to_little_endian_32_wasm,

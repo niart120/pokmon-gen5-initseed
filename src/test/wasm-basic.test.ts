@@ -1,16 +1,17 @@
 /**
- * WebAssembly基本動作テスト (vitest + vite-plugin-wasm)
+ * WebAssembly基本動作テスト (vitest + Node.js環境)
  */
 
 import { describe, test, expect, beforeAll } from 'vitest'
+import { initWasmForTesting } from './wasm-loader'
 
-// vite-plugin-wasmによりWebAssemblyを直接importできる
-import init, * as wasm from '../wasm/wasm_pkg.js'
+// Node.js環境でのWASM読み込み
+let wasm: Awaited<ReturnType<typeof initWasmForTesting>>;
 
 describe('WebAssembly基本動作テスト', () => {
   beforeAll(async () => {
-    // WebAssembly初期化
-    await init()
+    // Node.js環境でのWebAssembly初期化
+    wasm = await initWasmForTesting()
   }, 10000) // 10秒のタイムアウト
 
   test('WebAssemblyモジュールが正常に読み込まれる', () => {
@@ -21,7 +22,8 @@ describe('WebAssembly基本動作テスト', () => {
   test('基本的なSHA-1ハッシュ計算が正常に動作する', () => {
     const message = new Uint32Array(16)
     const result = wasm.calculate_sha1_hash(message)
-    expect(Array.isArray(result)).toBe(true)
+    console.log('🔍 calculate_sha1_hash result:', result, 'type:', typeof result, 'isArray:', Array.isArray(result))
+    expect(result).toBeDefined()
     expect(result.length).toBe(2)
   })
 
@@ -55,7 +57,7 @@ describe('WebAssembly基本動作テスト', () => {
     const message = new Uint32Array(16)
     const result = wasm.calculate_sha1_hash(message)
     
-    expect(Array.isArray(result)).toBe(true)
+    expect(result instanceof Uint32Array).toBe(true)
     expect(result.length).toBe(2)
     expect(result[0] !== 0 || result[1] !== 0).toBe(true) // 少なくとも一つは非ゼロ
   })
@@ -70,7 +72,7 @@ describe('WebAssembly基本動作テスト', () => {
     
     const result = wasm.calculate_sha1_batch(messages, batchSize)
     
-    expect(Array.isArray(result)).toBe(true)
+    expect(result instanceof Uint32Array).toBe(true)
     expect(result.length).toBe(batchSize * 2)
     expect(result.some(x => x !== 0)).toBe(true) // 少なくとも一つは非ゼロ
   })
