@@ -8,7 +8,8 @@ import { ProductionPerformanceMonitor } from '../lib/core/performance-monitor';
 import type { SearchConditions, InitialSeedResult } from '../types/pokemon';
 
 // Performance optimization: Use larger batch sizes for better WASM utilization
-const BATCH_SIZE_SECONDS = 86400; // 1 day = 86,400 seconds (24x larger than previous 1-hour batches)
+const BATCH_SIZE_SECONDS = 2592000;   // 30日
+
 
 // Worker message types
 export interface WorkerRequest {
