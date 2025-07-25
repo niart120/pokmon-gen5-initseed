@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../store/app-store';
-import { SeedCalculator } from '../lib/seed-calculator';
+import { SeedCalculator } from '../lib/core/seed-calculator';
 import { ROMConfigurationCard } from './search/ROMConfigurationCard';
 import { Timer0VCountCard } from './search/Timer0VCountCard';
 import { DateRangeCard } from './search/DateRangeCard';

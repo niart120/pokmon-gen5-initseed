@@ -1,5 +1,5 @@
-import { SeedCalculator } from './seed-calculator';
-import type { ROMVersion, ROMRegion, Hardware } from '../types/pokemon';
+import { SeedCalculator } from '../../lib/core/seed-calculator';
+import type { ROMVersion, ROMRegion, Hardware } from '../../types/pokemon';
 
 // Minimal interface for testing
 interface TestConditions {

@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Square } from '@phosphor-icons/react';
 import { useAppStore } from '../../store/app-store';
-import { getSearchWorkerManager } from '../../lib/search-worker-manager';
+import { getSearchWorkerManager } from '../../lib/search/search-worker-manager';
 import type { InitialSeedResult } from '../../types/pokemon';
 
 export function SearchControlCard() {

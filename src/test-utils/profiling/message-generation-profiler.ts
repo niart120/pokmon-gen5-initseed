@@ -3,8 +3,8 @@
  * メッセージ生成処理専用のボトルネック分析ツール
  */
 
-import { SeedCalculator } from './seed-calculator';
-import type { SearchConditions } from '../types/pokemon';
+import { SeedCalculator } from '../../lib/core/seed-calculator';
+import type { SearchConditions } from '../../types/pokemon';
 
 export interface MessageGenerationMetrics {
   totalTime: number;

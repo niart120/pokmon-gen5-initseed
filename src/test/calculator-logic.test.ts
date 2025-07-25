@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest'
-import { SeedCalculator } from '../lib/seed-calculator'
+import { SeedCalculator } from '../lib/core/seed-calculator'
 
 describe('WebAssembly計算ロジックテスト', () => {
   let calculator: SeedCalculator

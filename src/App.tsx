@@ -8,8 +8,8 @@ import { useAppStore } from './store/app-store';
 import { SearchPanel } from './components/SearchPanel';
 import { TargetSeedsPanel } from './components/TargetSeedsPanel';
 import { ResultsPanel } from './components/ResultsPanel';
-import { verifySearchImplementation } from './lib/search-verification';
-import { verifyWebAssemblyImplementation } from './lib/wasm-verification';
+import { verifySearchImplementation } from './test-utils/verification/search-verification';
+import { verifyWebAssemblyImplementation } from './test-utils/verification/wasm-verification';
 
 function App() {
   const { activeTab, setActiveTab, targetSeeds, searchResults, searchProgress } = useAppStore();
@@ -23,7 +23,7 @@ function App() {
       let calculator: any = null;
       let wasmSuccess = false;
       try {
-        const { SeedCalculator } = await import('./lib/seed-calculator');
+        const { SeedCalculator } = await import('./lib/core/seed-calculator');
         calculator = new SeedCalculator();
         wasmSuccess = await calculator.initializeWasm();
         

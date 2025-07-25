@@ -1,5 +1,5 @@
-import { SeedCalculator } from './seed-calculator';
-import type { SearchConditions } from '../types/pokemon';
+import { SeedCalculator } from '../../lib/core/seed-calculator';
+import type { SearchConditions } from '../../types/pokemon';
 
 /**
  * Generate some test seeds for our test date range to verify search is working

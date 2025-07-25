@@ -1,7 +1,7 @@
 import { SHA1 } from './sha1';
 import { initWasm, getWasm, isWasmReady, createWasmCalculator, type WasmSeedCalculator } from './wasm-interface';
-import type { SearchConditions, ROMParameters, Hardware } from '../types/pokemon';
-import romParametersData from '../data/rom-parameters.json';
+import type { SearchConditions, ROMParameters, Hardware } from '../../types/pokemon';
+import romParametersData from '../../data/rom-parameters.json';
 
 const HARDWARE_FRAME_VALUES: Record<Hardware, number> = {
   DS: 8,

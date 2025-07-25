@@ -3,9 +3,9 @@
  * Identifies bottlenecks and measures optimization impact
  */
 
-import { SeedCalculator } from './seed-calculator';
+import { SeedCalculator } from '../../lib/core/seed-calculator';
 import { MessageGenerationProfiler, type MessageGenerationMetrics } from './message-generation-profiler';
-import type { SearchConditions } from '../types/pokemon';
+import type { SearchConditions } from '../../types/pokemon';
 
 export interface PerformanceMetrics {
   totalTime: number;
@@ -921,7 +921,7 @@ export class PerformanceAnalyzer {
     console.log('🎯 Phase 2C-1: Real Search Scenario Analysis starting...');
     
     // Ensure WebAssembly is available for integrated search
-    const wasmModule = await import('../wasm/wasm_pkg.js');
+    const wasmModule = await import('../../wasm/wasm_pkg.js');
     if (!wasmModule.IntegratedSeedSearcher) {
       throw new Error('WebAssembly IntegratedSeedSearcher not available');
     }
@@ -1054,7 +1054,7 @@ export class PerformanceAnalyzer {
     console.log('🎯 Phase 2C-2: User Experience & Usability Measurement starting...');
     
     // Ensure WebAssembly is available
-    const wasmModule = await import('../wasm/wasm_pkg.js');
+    const wasmModule = await import('../../wasm/wasm_pkg.js');
     if (!wasmModule.IntegratedSeedSearcher) {
       throw new Error('WebAssembly IntegratedSeedSearcher not available');
     }
@@ -1203,7 +1203,7 @@ export class PerformanceAnalyzer {
 
     const actualBatteryImpact = await this.measureBatteryImpact(async () => {
       // バッテリー影響測定用の軽量テスト（軽量版）
-      const wasmModule = await import('../wasm/wasm_pkg.js');
+      const wasmModule = await import('../../wasm/wasm_pkg.js');
       const mac = new Uint8Array([0x00, 0x1B, 0x7A, 0x45, 0x67, 0x89]);
       const nazo = new Uint32Array([0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000]);
       const targetSeeds = new Uint32Array([0x12345678]);

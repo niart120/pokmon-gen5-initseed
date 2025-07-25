@@ -3,7 +3,7 @@
  * Performs heavy computation off the main thread to prevent UI blocking
  */
 
-import { SeedCalculator } from '../lib/seed-calculator';
+import { SeedCalculator } from '../lib/core/seed-calculator';
 import type { SearchConditions, InitialSeedResult } from '../types/pokemon';
 
 // Worker message types

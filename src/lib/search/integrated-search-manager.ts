@@ -3,7 +3,7 @@
  * WebAssembly実装のメッセージ生成+SHA-1計算一体化インターフェース
  */
 
-import { initWasm } from './wasm-interface';
+import { initWasm } from '../core/wasm-interface';
 
 // WebAssembly統合実装のインターフェース
 export interface IntegratedSeedSearcher {

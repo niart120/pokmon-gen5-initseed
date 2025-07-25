@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SearchConditions, InitialSeedResult, TargetSeedList, SearchProgress, SearchPreset, ROMVersion, ROMRegion, Hardware } from '../types/pokemon';
-import { generateTestSeeds } from '../lib/generate-test-seeds';
+import { generateTestSeeds } from '../test-utils/data-generation/generate-test-seeds';
 
 interface AppStore {
   // Search conditions

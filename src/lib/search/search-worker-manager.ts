@@ -3,8 +3,8 @@
  * Handles communication between main thread and search worker
  */
 
-import type { SearchConditions, InitialSeedResult } from '../types/pokemon';
-import type { WorkerRequest, WorkerResponse } from '../workers/search-worker';
+import type { SearchConditions, InitialSeedResult } from '../../types/pokemon';
+import type { WorkerRequest, WorkerResponse } from '../../workers/search-worker';
 
 export interface SearchCallbacks {
   onProgress: (progress: {
@@ -35,7 +35,7 @@ export class SearchWorkerManager {
     try {
       // Create worker with Vite's URL constructor
       this.worker = new Worker(
-        new URL('../workers/search-worker.ts', import.meta.url),
+        new URL('../../workers/search-worker.ts', import.meta.url),
         { type: 'module' }
       );
 

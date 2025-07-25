@@ -3,7 +3,7 @@
  * 段階的にWebAssembly実装の動作を検証
  */
 
-import { initWasm, getWasm, isWasmReady, WasmSeedCalculator } from '../lib/wasm-interface';
+import { initWasm, getWasm, isWasmReady, WasmSeedCalculator } from '../lib/core/wasm-interface';
 
 /**
  * Level 1: WebAssembly基本読み込みテスト
@@ -319,7 +319,7 @@ export async function testLevel5_Integration(): Promise<boolean> {
   
   try {
     // SeedCalculatorを使用したテスト
-    const { SeedCalculator } = await import('../lib/seed-calculator');
+    const { SeedCalculator } = await import('../lib/core/seed-calculator');
     const calculator = new SeedCalculator();
     
     // WebAssembly初期化

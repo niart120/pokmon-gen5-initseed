@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeAll } from 'vitest'
-import { SeedCalculator } from '../lib/seed-calculator'
+import { SeedCalculator } from '../lib/core/seed-calculator'
 import init, * as wasm from '../wasm/wasm_pkg.js'
 
 describe('WebAssembly統合テスト', () => {

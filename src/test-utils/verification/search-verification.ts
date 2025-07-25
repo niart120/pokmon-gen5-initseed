@@ -1,5 +1,5 @@
-import { SeedCalculator } from './seed-calculator';
-import type { SearchConditions } from '../types/pokemon';
+import { SeedCalculator } from '../../lib/core/seed-calculator';
+import type { SearchConditions } from '../../types/pokemon';
 
 /**
  * Verification function to test the search logic with known parameters

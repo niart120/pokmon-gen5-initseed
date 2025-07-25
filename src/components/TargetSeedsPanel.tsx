@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trash, Upload, Download, Warning } from '@phosphor-icons/react';
 import { useAppStore } from '../store/app-store';
-import { SeedCalculator } from '../lib/seed-calculator';
+import { SeedCalculator } from '../lib/core/seed-calculator';
 
 export function TargetSeedsPanel() {
   const {

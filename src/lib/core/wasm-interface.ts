@@ -57,7 +57,7 @@ export async function initWasm(): Promise<WasmModule> {
   wasmPromise = (async () => {
     try {
       // Import the WebAssembly module
-      const module = await import('../wasm/wasm_pkg.js');
+      const module = await import('../../wasm/wasm_pkg.js');
       await module.default();
       
       wasmModule = {
