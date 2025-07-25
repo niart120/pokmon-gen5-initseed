@@ -1198,12 +1198,18 @@ export class PerformanceAnalyzer {
     // より精密なリソース使用量測定
     const actualCpuUsage = await this.measureCpuUsage(async () => {
       // 実際の計算処理を再実行して測定
-      await this.runRealisticSearchScenario(searchParams.name, searchParams.duration / 3600000);
+      await taskFunction();
     }, duration);
 
     const actualBatteryImpact = await this.measureBatteryImpact(async () => {
-      // バッテリー影響測定用の軽量テスト
-      await this.runRealisticSearchScenario(searchParams.name, 0.01); // 0.6分
+      // バッテリー影響測定用の軽量テスト（軽量版）
+      const wasmModule = await import('../wasm/wasm_pkg.js');
+      const mac = new Uint8Array([0x00, 0x1B, 0x7A, 0x45, 0x67, 0x89]);
+      const nazo = new Uint32Array([0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000]);
+      const targetSeeds = new Uint32Array([0x12345678]);
+      const searcher = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+      searcher.search_seeds_integrated(2012, 6, 15, 10, 30, 0, 36, 1100, 1102, 45, 47, targetSeeds);
+      searcher.free();
     }, 36000); // 0.6分
 
     const resourceUsage = {
