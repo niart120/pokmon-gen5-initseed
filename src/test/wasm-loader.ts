@@ -7,11 +7,10 @@ import { join } from 'path'
 
 // WebAssembly module interface
 interface WasmModule {
-  to_little_endian_32(value: number): number;
-  to_little_endian_16(value: number): number;
+  to_little_endian_32_wasm(value: number): number;
+  to_little_endian_16_wasm(value: number): number;
   calculate_sha1_hash(message: Uint32Array): Uint32Array;
   calculate_sha1_batch(messages: Uint32Array, batch_size: number): Uint32Array;
-  test_wasm(): string;
 }
 
 let wasmModuleInstance: WasmModule | null = null;
@@ -42,11 +41,10 @@ export async function initWasmForTesting(): Promise<WasmModule> {
     await jsModule.default();
     
     wasmModuleInstance = {
-      to_little_endian_32: jsModule.to_little_endian_32,
-      to_little_endian_16: jsModule.to_little_endian_16,
+      to_little_endian_32_wasm: jsModule.to_little_endian_32_wasm,
+      to_little_endian_16_wasm: jsModule.to_little_endian_16_wasm,
       calculate_sha1_hash: jsModule.calculate_sha1_hash,
       calculate_sha1_batch: jsModule.calculate_sha1_batch,
-      test_wasm: jsModule.test_wasm,
     };
 
     console.log('🦀 WebAssembly module loaded for testing');

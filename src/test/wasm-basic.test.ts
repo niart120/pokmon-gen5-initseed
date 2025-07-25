@@ -15,19 +15,20 @@ describe('WebAssembly基本動作テスト', () => {
 
   test('WebAssemblyモジュールが正常に読み込まれる', () => {
     expect(wasm).toBeTruthy()
-    expect(typeof wasm.test_wasm).toBe('function')
+    expect(typeof wasm.calculate_sha1_hash).toBe('function')
   })
 
-  test('test_wasm関数が正常に動作する', () => {
-    const result = wasm.test_wasm()
-    expect(result).toContain('successfully')
+  test('基本的なSHA-1ハッシュ計算が正常に動作する', () => {
+    const message = new Uint32Array(16)
+    const result = wasm.calculate_sha1_hash(message)
+    expect(Array.isArray(result)).toBe(true)
+    expect(result.length).toBe(2)
   })
 
   test('必要な関数が全て存在する', () => {
     const requiredFunctions = [
-      'test_wasm',
-      'to_little_endian_32',
-      'to_little_endian_16', 
+      'to_little_endian_32_wasm',
+      'to_little_endian_16_wasm', 
       'calculate_sha1_hash',
       'calculate_sha1_batch'
     ]
@@ -39,12 +40,12 @@ describe('WebAssembly基本動作テスト', () => {
 
   test('エンディアン変換が動作する', () => {
     const testValue32 = 0x12345678
-    const result32 = wasm.to_little_endian_32(testValue32)
+    const result32 = wasm.to_little_endian_32_wasm(testValue32)
     expect(typeof result32).toBe('number')
     expect(result32).not.toBe(0)
     
     const testValue16 = 0x1234
-    const result16 = wasm.to_little_endian_16(testValue16)
+    const result16 = wasm.to_little_endian_16_wasm(testValue16)
     expect(typeof result16).toBe('number')
     expect(result16).not.toBe(0)
   })

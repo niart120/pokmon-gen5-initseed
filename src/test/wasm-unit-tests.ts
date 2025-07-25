@@ -23,9 +23,8 @@ export async function testLevel1_WasmLoading(): Promise<boolean> {
     
     // 基本的な関数が存在するかチェック
     const requiredFunctions = [
-      'test_wasm',
-      'to_little_endian_32',
-      'to_little_endian_16', 
+      'to_little_endian_32_wasm',
+      'to_little_endian_16_wasm', 
       'calculate_sha1_hash',
       'calculate_sha1_batch'
     ];
@@ -39,13 +38,14 @@ export async function testLevel1_WasmLoading(): Promise<boolean> {
       console.log(`✅ 関数確認: ${funcName}`);
     }
     
-    // test_wasm関数の動作確認
-    console.log('🧪 test_wasm関数の動作確認...');
-    const testResult = wasm.test_wasm();
-    console.log(`📝 test_wasm結果: "${testResult}"`);
+    // SHA-1ハッシュ関数の動作確認
+    console.log('🧪 SHA-1ハッシュ関数の動作確認...');
+    const testMessage = new Uint32Array(16); // 空のメッセージ
+    const hashResult = wasm.calculate_sha1_hash(testMessage);
+    console.log(`📝 SHA-1結果: [${hashResult[0]}, ${hashResult[1]}]`);
     
-    if (!testResult || !testResult.includes('successfully')) {
-      console.error('❌ test_wasm関数が期待される結果を返しませんでした');
+    if (!Array.isArray(hashResult) || hashResult.length !== 2) {
+      console.error('❌ SHA-1ハッシュ関数が期待される結果を返しませんでした');
       return false;
     }
     
@@ -84,7 +84,7 @@ export async function testLevel2_EndianConversion(): Promise<boolean> {
     ];
     
     for (const value of test32Values) {
-      const result = wasm.to_little_endian_32(value);
+      const result = wasm.to_little_endian_32_wasm(value);
       console.log(`  入力: 0x${value.toString(16).padStart(8, '0')} → 出力: 0x${result.toString(16).padStart(8, '0')}`);
       
       // 結果が数値であることを確認
@@ -105,7 +105,7 @@ export async function testLevel2_EndianConversion(): Promise<boolean> {
     ];
     
     for (const value of test16Values) {
-      const result = wasm.to_little_endian_16(value);
+      const result = wasm.to_little_endian_16_wasm(value);
       console.log(`  入力: 0x${value.toString(16).padStart(4, '0')} → 出力: 0x${result.toString(16).padStart(4, '0')}`);
       
       // 結果が数値であることを確認

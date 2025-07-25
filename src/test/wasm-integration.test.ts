@@ -30,11 +30,14 @@ describe('WebAssembly統合テスト', () => {
 
   test('WebAssembly直接アクセステスト', () => {
     expect(wasm).toBeDefined()
-    expect(typeof wasm.test_wasm).toBe('function')
+    expect(typeof wasm.calculate_sha1_hash).toBe('function')
     
-    const testResult = wasm.test_wasm()
-    expect(testResult).toContain('successfully')
-    console.log(`🦀 直接アクセス結果: "${testResult}"`)
+    // 基本的なSHA-1計算テスト
+    const message = new Uint32Array(16)
+    const result = wasm.calculate_sha1_hash(message)
+    expect(Array.isArray(result)).toBe(true)
+    expect(result.length).toBe(2)
+    console.log(`🦀 直接アクセス結果: SHA-1計算成功 [${result[0]}, ${result[1]}]`)
   })
 
   test('WebAssemblyの初期化状態を確認', () => {
@@ -50,8 +53,8 @@ describe('WebAssembly統合テスト', () => {
 
   test('WebAssembly個別関数の動作確認', () => {
     // エンディアン変換テスト
-    const endian32 = wasm.to_little_endian_32(0x12345678)
-    const endian16 = wasm.to_little_endian_16(0x1234)
+    const endian32 = wasm.to_little_endian_32_wasm(0x12345678)
+    const endian16 = wasm.to_little_endian_16_wasm(0x1234)
     expect(typeof endian32).toBe('number')
     expect(typeof endian16).toBe('number')
     console.log(`🔄 エンディアン変換: 32bit=0x${endian32.toString(16)}, 16bit=0x${endian16.toString(16)}`)
