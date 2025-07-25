@@ -8,8 +8,8 @@ applyTo: "src/**/*.{ts,tsx}"
 
 ### 既存アーキテクチャの活用
 ```typescript
-// ✅ 推奨: 既存の統合システムを活用
-import { integratedSearchManager } from '@/lib/integrated-search-manager';
+// ✅ 推奨: 直接WebAssemblyまたはTypeScriptフォールバック
+import { SeedCalculator } from '@/lib/core/seed-calculator';
 import { useAppStore } from '@/store/app-store';
 
 // ✅ 本番用パフォーマンス監視
@@ -29,6 +29,11 @@ import { DevelopmentPerformanceAnalyzer } from '@/test-utils/profiling/developme
 - 既存の検証システムの無効化
 - 本番コードから`src/test-utils/`への依存
 - テストコードから本番状態への影響
+
+## 計算エンジン構造
+- **最高性能**: WebAssembly `IntegratedSeedSearcher` (事前計算テーブル活用)
+- **フォールバック**: TypeScript `SeedCalculator` (WebAssembly失敗時)
+- 中間レイヤーは避け、直接利用を推奨
 
 ## WebAssembly統合
 - 高性能計算処理はWebAssemblyを活用

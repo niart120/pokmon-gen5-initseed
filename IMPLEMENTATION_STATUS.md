@@ -148,9 +148,10 @@
 
 計算エンジン:
 - Rust + WebAssembly (wasm-pack + wasm-bindgen)
-- 事前計算テーブル (TimeCode: 86,400 + DateCode: 36,525)
-- 統合シード探索 (IntegratedSeedSearcher)
-- TypeScript実装 (フォールバック)
+- 事前計算テーブル (TimeCode: 86,400 + DateCode: 36,525)  
+- 2層アーキテクチャ:
+  1. IntegratedSeedSearcher (WebAssembly最高性能)
+  2. SeedCalculator (TypeScriptフォールバック)
 
 パフォーマンス:
 - Web Workers (バックグラウンド処理)
@@ -169,10 +170,10 @@ src/
 ├── lib/                 # 計算ロジック
 │   ├── core/
 │   │   ├── seed-calculator.ts       # メインの計算エンジン
-│   │   ├── wasm-interface.ts        # WebAssemblyインターフェース
+│   │   ├── wasm-interface.ts        # WebAssemblyインターフェース  
 │   │   └── performance-monitor.ts   # 本番パフォーマンス監視
 │   ├── search/
-│   │   └── integrated-search-manager.ts  # 統合探索マネージャー
+│   │   └── search-worker-manager.ts # 検索ワーカー管理
 │   └── export/
 │       └── result-exporter.ts      # エクスポート機能
 ├── workers/
