@@ -3,6 +3,10 @@ name = "wasm-pkg"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata.wasm-pack.profile.release]
+# Disable wasm-opt to avoid bulk memory issues
+wasm-opt = false
+
 [lib]
 crate-type = ["cdylib"]
 
@@ -19,3 +23,27 @@ features = [
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
+
+# Performance optimization profile for WebAssembly
+[profile.release]
+# Maximum optimization level for speed
+opt-level = 3
+# Enable fat LTO for maximum optimization across crates
+lto = "fat"
+# Reduce code size while maintaining performance
+codegen-units = 1
+# Panic handling: abort instead of unwinding (smaller binary)
+panic = "abort"
+# Strip debug symbols from release build
+strip = true
+
+# Additional optimization profile for size-critical scenarios
+[profile.release-size]
+inherits = "release"
+# Optimize for size instead of speed
+opt-level = "s"
+# More aggressive size optimization
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
