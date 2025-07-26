@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useAppStore } from '../store/app-store';
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useAppStore } from '../store/app-store';
-
 describe('Phase 4: 並列検索UI統合テスト', () => {
   beforeEach(() => {
     // Zustandストアをリセット
