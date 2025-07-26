@@ -102,7 +102,7 @@ export function SearchHistory() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <History className="h-5 w-5" />
-          探索履歴
+          Search History
           {history.length > 0 && (
             <Badge variant="secondary" className="ml-auto">
               {history.length}件

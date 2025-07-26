@@ -95,7 +95,7 @@ export function PresetManager() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Save className="h-5 w-5" />
-          探索条件プリセット
+          Search Presets
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -111,15 +111,15 @@ export function PresetManager() {
         <div className="flex gap-2">
           {/* プリセット選択 */}
           <div className="flex-1">
-            <Label htmlFor="preset-select">保存済みプリセット</Label>
+            <Label htmlFor="preset-select">Saved Presets</Label>
             <Select value={selectedPresetId} onValueChange={setSelectedPresetId}>
               <SelectTrigger id="preset-select">
-                <SelectValue placeholder="プリセットを選択..." />
+                <SelectValue placeholder="Select a preset..." />
               </SelectTrigger>
               <SelectContent>
                 {presets.length === 0 ? (
                   <SelectItem value="no-presets" disabled>
-                    保存されたプリセットはありません
+                    No saved presets
                   </SelectItem>
                 ) : (
                   presets

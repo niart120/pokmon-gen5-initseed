@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { Play, Pause, Square } from '@phosphor-icons/react';
+import { Play, Pause, Square, Gear } from '@phosphor-icons/react';
 import { useAppStore } from '../../store/app-store';
 import { getSearchWorkerManager, resetSearchWorkerManager } from '../../lib/search/search-worker-manager';
+import { useIsMobile } from '../../hooks/use-mobile';
 import type { InitialSeedResult } from '../../types/pokemon';
 
 export function SearchControlCard() {
@@ -26,6 +27,8 @@ export function SearchControlCard() {
     setMaxWorkers,
     setParallelProgress,
   } = useAppStore();
+
+  const isMobile = useIsMobile();
 
   // ワーカー数設定を初期化時に同期
   useEffect(() => {
@@ -180,11 +183,140 @@ export function SearchControlCard() {
   const maxCpuCores = navigator.hardwareConcurrency || 4;
   const isParallelAvailable = getSearchWorkerManager().isParallelSearchAvailable();
 
+  // PCレイアウト: コンパクトな検索制御
+  if (!isMobile) {
+    return (
+      <Card className="flex-shrink-0">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center">
+            <Gear size={16} className="mr-2" />
+            Search Control
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="space-y-2">
+            {/* 検索制御ボタン - PC版では最上位に配置 */}
+            <div className="flex gap-2">
+              {!searchProgress.isRunning ? (
+                <Button 
+                  onClick={handleStartSearch} 
+                  disabled={targetSeeds.seeds.length === 0}
+                  className="flex-1"
+                  size="sm"
+                >
+                  <Play size={16} className="mr-2" />
+                  Start Search
+                </Button>
+              ) : (
+                <>
+                  {searchProgress.isPaused ? (
+                    <Button onClick={handleResumeSearch} className="flex-1" size="sm">
+                      <Play size={14} className="mr-2" />
+                      Resume
+                    </Button>
+                  ) : (
+                    <Button onClick={handlePauseSearch} className="flex-1" size="sm">
+                      <Pause size={14} className="mr-2" />
+                      Pause
+                    </Button>
+                  )}
+                  <Button variant="destructive" onClick={handleStopSearch} size="sm">
+                    <Square size={14} className="mr-2" />
+                    Stop
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* 並列検索設定 - 折りたたみ式 */}
+            {isParallelAvailable && (
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="parallel-search"
+                      checked={parallelSearchSettings.enabled}
+                      onCheckedChange={handleParallelModeChange}
+                      disabled={searchProgress.isRunning}
+                    />
+                    <Label htmlFor="parallel-search" className="text-sm font-medium">
+                      Parallel Search {parallelSearchSettings.enabled ? '(Active)' : ''}
+                    </Label>
+                  </div>
+
+                  {/* ワーカー数設定: 並列検索有効時のみ表示 */}
+                  {parallelSearchSettings.enabled && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        Workers: {parallelSearchSettings.maxWorkers} / {maxCpuCores}
+                      </Label>
+                      <Slider
+                        value={[parallelSearchSettings.maxWorkers]}
+                        onValueChange={handleMaxWorkersChange}
+                        max={maxCpuCores}
+                        min={1}
+                        step={1}
+                        disabled={searchProgress.isRunning}
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // モバイルレイアウト: 従来通りの詳細表示
   return (
     <Card>
       <CardContent className="pt-6">
         <div className="space-y-4">
-          {/* 検索制御ボタン */}
+          {/* 並列検索設定 - 検索ボタンの上に配置 */}
+          {isParallelAvailable && (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="parallel-search"
+                  checked={parallelSearchSettings.enabled}
+                  onCheckedChange={handleParallelModeChange}
+                  disabled={searchProgress.isRunning}
+                />
+                <Label htmlFor="parallel-search" className="text-sm font-medium">
+                  Enable Parallel Search {parallelSearchSettings.enabled ? '(Active)' : '(Experimental)'}
+                </Label>
+              </div>
+
+              {/* ワーカー数設定: 並列検索有効時のみ表示 */}
+              {parallelSearchSettings.enabled && (
+                <div className="space-y-2 pl-6 border-l-2 border-muted">
+                  <Label className="text-sm">
+                    Worker Count: {parallelSearchSettings.maxWorkers} / {maxCpuCores}
+                  </Label>
+                  <Slider
+                    value={[parallelSearchSettings.maxWorkers]}
+                    onValueChange={handleMaxWorkersChange}
+                    max={maxCpuCores}
+                    min={1}
+                    step={1}
+                    disabled={searchProgress.isRunning}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    More workers = faster search but higher memory usage
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 区切り線（並列検索設定がある場合のみ表示） */}
+          {isParallelAvailable && <Separator />}
+
+          {/* 検索制御ボタン - 並列検索設定の下に配置 */}
           <div className="flex gap-2">
             {!searchProgress.isRunning ? (
               <Button onClick={handleStartSearch} disabled={targetSeeds.seeds.length === 0}>
@@ -211,46 +343,6 @@ export function SearchControlCard() {
               </>
             )}
           </div>
-
-          {/* 並列検索設定 */}
-          {isParallelAvailable && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="parallel-search"
-                    checked={parallelSearchSettings.enabled}
-                    onCheckedChange={handleParallelModeChange}
-                    disabled={searchProgress.isRunning}
-                  />
-                  <Label htmlFor="parallel-search" className="text-sm font-medium">
-                    Enable Parallel Search {parallelSearchSettings.enabled ? '(Active)' : '(Experimental)'}
-                  </Label>
-                </div>
-
-                {parallelSearchSettings.enabled && (
-                  <div className="space-y-2 pl-6">
-                    <Label className="text-sm">
-                      Worker Count: {parallelSearchSettings.maxWorkers} / {maxCpuCores}
-                    </Label>
-                    <Slider
-                      value={[parallelSearchSettings.maxWorkers]}
-                      onValueChange={handleMaxWorkersChange}
-                      max={maxCpuCores}
-                      min={1}
-                      step={1}
-                      disabled={searchProgress.isRunning}
-                      className="w-full"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      More workers = faster search but higher memory usage
-                    </p>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
         </div>
       </CardContent>
     </Card>

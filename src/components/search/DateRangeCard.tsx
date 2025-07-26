@@ -9,21 +9,22 @@ export function DateRangeCard() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Date & Time Range</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg">Date & Time Range</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <h4 className="font-medium">Start Date/Time</h4>
-            <div className="grid grid-cols-3 gap-2">
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">Start Date/Time</h4>
+            <div className="grid grid-cols-3 gap-1.5">
               <div>
-                <Label htmlFor="start-year">Year</Label>
+                <Label htmlFor="start-year" className="text-xs">Year</Label>
                 <Input
                   id="start-year"
                   type="number"
                   min={2000}
                   max={2099}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.startYear}
                   onChange={(e) =>
                     setSearchConditions({
@@ -33,12 +34,13 @@ export function DateRangeCard() {
                 />
               </div>
               <div>
-                <Label htmlFor="start-month">Month</Label>
+                <Label htmlFor="start-month" className="text-xs">Month</Label>
                 <Input
                   id="start-month"
                   type="number"
                   min={1}
                   max={12}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.startMonth}
                   onChange={(e) =>
                     setSearchConditions({
@@ -48,12 +50,13 @@ export function DateRangeCard() {
                 />
               </div>
               <div>
-                <Label htmlFor="start-day">Day</Label>
+                <Label htmlFor="start-day" className="text-xs">Day</Label>
                 <Input
                   id="start-day"
                   type="number"
                   min={1}
                   max={31}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.startDay}
                   onChange={(e) =>
                     setSearchConditions({
@@ -63,14 +66,15 @@ export function DateRangeCard() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               <div>
-                <Label htmlFor="start-hour">Hour</Label>
+                <Label htmlFor="start-hour" className="text-xs">Hour</Label>
                 <Input
                   id="start-hour"
                   type="number"
                   min={0}
                   max={23}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.startHour}
                   onChange={(e) =>
                     setSearchConditions({
@@ -80,12 +84,13 @@ export function DateRangeCard() {
                 />
               </div>
               <div>
-                <Label htmlFor="start-minute">Minute</Label>
+                <Label htmlFor="start-minute" className="text-xs">Minute</Label>
                 <Input
                   id="start-minute"
                   type="number"
                   min={0}
                   max={59}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.startMinute}
                   onChange={(e) =>
                     setSearchConditions({
@@ -95,12 +100,13 @@ export function DateRangeCard() {
                 />
               </div>
               <div>
-                <Label htmlFor="start-second">Second</Label>
+                <Label htmlFor="start-second" className="text-xs">Second</Label>
                 <Input
                   id="start-second"
                   type="number"
                   min={0}
                   max={59}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.startSecond}
                   onChange={(e) =>
                     setSearchConditions({
@@ -112,16 +118,17 @@ export function DateRangeCard() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h4 className="font-medium">End Date/Time</h4>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">End Date/Time</h4>
+            <div className="grid grid-cols-3 gap-1.5">
               <div>
-                <Label htmlFor="end-year">Year</Label>
+                <Label htmlFor="end-year" className="text-xs">Year</Label>
                 <Input
                   id="end-year"
                   type="number"
                   min={2000}
                   max={2099}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.endYear}
                   onChange={(e) =>
                     setSearchConditions({
@@ -131,12 +138,13 @@ export function DateRangeCard() {
                 />
               </div>
               <div>
-                <Label htmlFor="end-month">Month</Label>
+                <Label htmlFor="end-month" className="text-xs">Month</Label>
                 <Input
                   id="end-month"
                   type="number"
                   min={1}
                   max={12}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.endMonth}
                   onChange={(e) =>
                     setSearchConditions({
@@ -146,12 +154,13 @@ export function DateRangeCard() {
                 />
               </div>
               <div>
-                <Label htmlFor="end-day">Day</Label>
+                <Label htmlFor="end-day" className="text-xs">Day</Label>
                 <Input
                   id="end-day"
                   type="number"
                   min={1}
                   max={31}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.endDay}
                   onChange={(e) =>
                     setSearchConditions({
@@ -161,14 +170,15 @@ export function DateRangeCard() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               <div>
-                <Label htmlFor="end-hour">Hour</Label>
+                <Label htmlFor="end-hour" className="text-xs">Hour</Label>
                 <Input
                   id="end-hour"
                   type="number"
                   min={0}
                   max={23}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.endHour}
                   onChange={(e) =>
                     setSearchConditions({
@@ -178,12 +188,13 @@ export function DateRangeCard() {
                 />
               </div>
               <div>
-                <Label htmlFor="end-minute">Minute</Label>
+                <Label htmlFor="end-minute" className="text-xs">Minute</Label>
                 <Input
                   id="end-minute"
                   type="number"
                   min={0}
                   max={59}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.endMinute}
                   onChange={(e) =>
                     setSearchConditions({
@@ -193,12 +204,13 @@ export function DateRangeCard() {
                 />
               </div>
               <div>
-                <Label htmlFor="end-second">Second</Label>
+                <Label htmlFor="end-second" className="text-xs">Second</Label>
                 <Input
                   id="end-second"
                   type="number"
                   min={0}
                   max={59}
+                  className="h-8 text-xs"
                   value={searchConditions.dateRange.endSecond}
                   onChange={(e) =>
                     setSearchConditions({

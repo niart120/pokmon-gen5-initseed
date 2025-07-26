@@ -3,11 +3,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MagnifyingGlass, Target, ChartBar, Info } from '@phosphor-icons/react';
+import { MagnifyingGlass, Target, ChartBar, Info, Gear } from '@phosphor-icons/react';
 import { useAppStore } from './store/app-store';
 import { SearchPanel } from './components/SearchPanel';
-import { TargetSeedsPanel } from './components/TargetSeedsPanel';
-import { ResultsPanel } from './components/ResultsPanel';
+import { OptionPanel } from './components/OptionPanel';
 import { verifySearchImplementation } from './test-utils/verification/search-verification';
 import { verifyWebAssemblyImplementation } from './test-utils/verification/wasm-verification';
 
@@ -76,14 +75,14 @@ function App() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="text-xl font-bold text-foreground">
                 Pokémon BW/BW2 Initial Seed Search
               </h1>
-              <p className="text-muted-foreground mt-1">
-                Advanced seed calculation and matching for competitive RNG manipulation
+              <p className="text-muted-foreground text-xs mt-0.5">
+                Advanced seed calculation for competitive RNG
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -111,30 +110,26 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-4 w-full max-w-2xl mx-auto">
+      <main className="px-1 py-2 max-w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
+          <TabsList className="grid grid-cols-3 w-full max-w-6xl mx-auto">
             <TabsTrigger value="search" className="flex items-center gap-2">
               <MagnifyingGlass size={16} />
-              Search Setup
-            </TabsTrigger>
-            <TabsTrigger value="targets" className="flex items-center gap-2">
-              <Target size={16} />
-              Target Seeds
+              Search
               {targetSeeds.seeds.length > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {targetSeeds.seeds.length}
                 </Badge>
               )}
-            </TabsTrigger>
-            <TabsTrigger value="results" className="flex items-center gap-2">
-              <ChartBar size={16} />
-              Results
               {searchResults.length > 0 && (
                 <Badge variant="default" className="ml-1">
                   {searchResults.length}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <Gear size={16} />
+              Option
             </TabsTrigger>
             <TabsTrigger value="help" className="flex items-center gap-2">
               <Info size={16} />
@@ -146,12 +141,8 @@ function App() {
             <SearchPanel />
           </TabsContent>
 
-          <TabsContent value="targets">
-            <TargetSeedsPanel />
-          </TabsContent>
-
-          <TabsContent value="results">
-            <ResultsPanel />
+          <TabsContent value="history">
+            <OptionPanel />
           </TabsContent>
 
           <TabsContent value="help">
@@ -241,15 +232,10 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-muted/50 mt-12">
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center text-sm text-muted-foreground">
-            <p>
-              Pokémon BW/BW2 Initial Seed Search Tool - For educational and competitive play purposes
-            </p>
-            <p className="mt-1">
-              Based on the SHA-1 algorithm research and Project_Veni implementation
-            </p>
+      <footer className="border-t bg-muted/50 mt-3">
+        <div className="container mx-auto px-4 py-2">
+          <div className="text-center text-xs text-muted-foreground">
+            <p>Pokémon BW/BW2 Initial Seed Search - Educational & competitive RNG research tool</p>
           </div>
         </div>
       </footer>

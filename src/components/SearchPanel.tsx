@@ -7,11 +7,13 @@ import { DateRangeCard } from './search/DateRangeCard';
 import { MACAddressCard } from './search/MACAddressCard';
 import { SearchProgressCard } from './search/SearchProgressCard';
 import { SearchControlCard } from './search/SearchControlCard';
-import { PresetManager } from './search/PresetManager';
-import { SearchHistory } from './search/SearchHistory';
+import { TargetSeedsInput } from './search/TargetSeedsInput';
+import { ResultsPanel } from './ResultsPanel';
+import { useIsMobile } from '../hooks/use-mobile';
 
 export function SearchPanel() {
   const { searchConditions, setSearchConditions } = useAppStore();
+  const isMobile = useIsMobile();
 
   // Update auto-parameters when ROM version/region changes
   React.useEffect(() => {
@@ -45,16 +47,44 @@ export function SearchPanel() {
     }
   }, [searchConditions.romVersion, searchConditions.romRegion]);
 
+  if (isMobile) {
+    // スマートフォン: 縦スタック配置
+    return (
+      <div className="space-y-3">
+        <ROMConfigurationCard />
+        <Timer0VCountCard />
+        <DateRangeCard />
+        <MACAddressCard />
+        <TargetSeedsInput />
+        <SearchControlCard />
+        <SearchProgressCard />
+        <ResultsPanel />
+      </div>
+    );
+  }
+
+  // PC: 3カラム配置（設定 | 検索制御・進捗 | 結果）
   return (
-    <div className="space-y-6">
-      <PresetManager />
-      <SearchHistory />
-      <ROMConfigurationCard />
-      <Timer0VCountCard />
-      <DateRangeCard />
-      <MACAddressCard />
-      <SearchProgressCard />
-      <SearchControlCard />
+    <div className="grid grid-cols-3 gap-3 max-w-full">
+      {/* 左カラム: 設定エリア */}
+      <div className="space-y-3 min-w-0">
+        <ROMConfigurationCard />
+        <Timer0VCountCard />
+        <DateRangeCard />
+        <MACAddressCard />
+        <TargetSeedsInput />
+      </div>
+      
+      {/* 中央カラム: 検索制御・進捗エリア */}
+      <div className="space-y-3 min-w-0 flex flex-col">
+        <SearchControlCard />
+        <SearchProgressCard />
+      </div>
+      
+      {/* 右カラム: 結果エリア */}
+      <div className="space-y-3 min-w-0">
+        <ResultsPanel />
+      </div>
     </div>
   );
 }
