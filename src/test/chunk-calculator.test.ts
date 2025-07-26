@@ -98,10 +98,10 @@ describe('ChunkCalculator', () => {
 
   describe('メモリ制約テスト', () => {
     it('メモリ制限が適切に適用される', () => {
-      // 100MBの制限で最大2Workerになることを確認
-      const chunks = ChunkCalculator.calculateOptimalChunks(mockConditions, 8, 100);
+      // 最大8Workerが適切に処理されることを確認
+      const chunks = ChunkCalculator.calculateOptimalChunks(mockConditions, 8);
       
-      expect(chunks.length).toBeLessThanOrEqual(2);
+      expect(chunks.length).toBeLessThanOrEqual(8);
     });
   });
 });

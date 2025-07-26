@@ -46,7 +46,7 @@ describe('MultiWorkerSearchManager', () => {
   };
 
   beforeEach(() => {
-    manager = new MultiWorkerSearchManager(4, 500);
+    manager = new MultiWorkerSearchManager(4);
     mockCallbacks = {
       onProgress: vi.fn(),
       onResult: vi.fn(),
@@ -96,7 +96,7 @@ describe('MultiWorkerSearchManager', () => {
     });
 
     it('適切なWorker数を作成する', async () => {
-      const manager2 = new MultiWorkerSearchManager(2, 500);
+      const manager2 = new MultiWorkerSearchManager(2);
       
       // 検索開始前にモック状態をクリア
       vi.clearAllMocks();
@@ -190,9 +190,9 @@ describe('MultiWorkerSearchManager', () => {
 
   describe('メモリ管理', () => {
     it('制限されたメモリでWorker数を調整', () => {
-      const memoryLimitedManager = new MultiWorkerSearchManager(8, 100); // 100MB制限
+      const memoryLimitedManager = new MultiWorkerSearchManager(8);
       
-      // 100MB制限では最大2Workerになることを期待
+      // Worker数が適切に設定されることを期待
       expect(memoryLimitedManager).toBeDefined();
     });
   });

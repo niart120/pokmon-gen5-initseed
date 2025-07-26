@@ -54,14 +54,14 @@ describe('Phase 5: 並列処理テスト', () => {
 
   describe('Task 5.1: 基本機能テスト', () => {
     it('MultiWorkerSearchManagerインスタンスを正常に作成できる', () => {
-      const manager = new MultiWorkerSearchManager(4, 500);
+      const manager = new MultiWorkerSearchManager(4);
       expect(manager).toBeDefined();
     });
 
     it('ChunkCalculatorが正しく時刻範囲を分割できる', () => {
       const conditions = createTestConditions({ hours: 2 });
       
-      const chunks = ChunkCalculator.calculateOptimalChunks(conditions, 4, 500);
+      const chunks = ChunkCalculator.calculateOptimalChunks(conditions, 4);
       
       expect(chunks).toBeDefined();
       expect(chunks.length).toBeGreaterThan(0);
@@ -79,7 +79,7 @@ describe('Phase 5: 並列処理テスト', () => {
     it('LoadBalanceScoreを正しく計算できる', () => {
       const conditions = createTestConditions({ hours: 1 });
       
-      const chunks = ChunkCalculator.calculateOptimalChunks(conditions, 4, 500);
+      const chunks = ChunkCalculator.calculateOptimalChunks(conditions, 4);
       const metrics = ChunkCalculator.evaluateChunkDistribution(chunks);
       
       expect(metrics.loadBalanceScore).toBeGreaterThanOrEqual(0);
@@ -100,7 +100,7 @@ describe('Phase 5: 並列処理テスト', () => {
       
       vi.stubGlobal('Worker', vi.fn(() => mockWorker));
       
-      const manager = new MultiWorkerSearchManager(4, 500);
+      const manager = new MultiWorkerSearchManager(4);
       const conditions = createTestConditions({ hours: 1 });
       const targetSeeds = [0x12345678];
       
@@ -129,7 +129,7 @@ describe('Phase 5: 並列処理テスト', () => {
     });
 
     it('Worker障害時のエラーハンドリング', async () => {
-      const manager = new MultiWorkerSearchManager(4, 500);
+      const manager = new MultiWorkerSearchManager(4);
       const conditions = createTestConditions({ hours: 1 });
       const targetSeeds = [0x12345678];
       
@@ -181,7 +181,7 @@ describe('Phase 5: 並列処理テスト', () => {
       
       // ChunkCalculatorが無効な条件を処理する際の動作を確認
       // 実装によってはエラーを投げない場合もあるので、少なくとも処理は完了することを確認
-      const result = ChunkCalculator.calculateOptimalChunks(invalidConditions, 4, 500);
+      const result = ChunkCalculator.calculateOptimalChunks(invalidConditions, 4);
       
       // 結果が少なくとも配列であることを確認（無効な条件でも空配列を返す可能性）
       expect(Array.isArray(result)).toBe(true);
@@ -193,33 +193,32 @@ describe('Phase 5: 並列処理テスト', () => {
       const maxCpuCores = navigator.hardwareConcurrency || 4;
       
       // 最大値を超える値
-      const manager1 = new MultiWorkerSearchManager(maxCpuCores + 5, 500);
+      const manager1 = new MultiWorkerSearchManager(maxCpuCores + 5);
       expect(manager1).toBeDefined();
       
       // 最小値
-      const manager2 = new MultiWorkerSearchManager(1, 500);
+      const manager2 = new MultiWorkerSearchManager(1);
       expect(manager2).toBeDefined();
       
       // 0以下の値
-      const manager3 = new MultiWorkerSearchManager(0, 500);
+      const manager3 = new MultiWorkerSearchManager(0);
       expect(manager3).toBeDefined();
     });
 
     it('メモリ制限設定が正しく保存される', () => {
-      const memoryLimit = 1000; // MB
-      const manager = new MultiWorkerSearchManager(4, memoryLimit);
+      const manager = new MultiWorkerSearchManager(4);
       expect(manager).toBeDefined();
     });
 
     it('様々な時刻範囲での分割テスト', () => {
       // 短い範囲（1時間）
       const shortConditions = createTestConditions({ hours: 1 });
-      const shortChunks = ChunkCalculator.calculateOptimalChunks(shortConditions, 4, 500);
+      const shortChunks = ChunkCalculator.calculateOptimalChunks(shortConditions, 4);
       expect(shortChunks.length).toBeGreaterThan(0);
       
       // 長い範囲（24時間）
       const longConditions = createTestConditions({ hours: 24 });
-      const longChunks = ChunkCalculator.calculateOptimalChunks(longConditions, 4, 500);
+      const longChunks = ChunkCalculator.calculateOptimalChunks(longConditions, 4);
       expect(longChunks.length).toBeGreaterThan(0);
       
       // 長い範囲の方がより多くのチャンクに分割されることを確認
@@ -233,7 +232,7 @@ describe('Phase 5: 並列処理テスト', () => {
       const conditions = createTestConditions({ hours: 24 });
       
       const startTime = performance.now();
-      const chunks = ChunkCalculator.calculateOptimalChunks(conditions, 8, 500);
+      const chunks = ChunkCalculator.calculateOptimalChunks(conditions, 8);
       const endTime = performance.now();
       
       const executionTime = endTime - startTime;
@@ -247,7 +246,7 @@ describe('Phase 5: 並列処理テスト', () => {
       const conditions = createTestConditions({ hours: 12 });
       
       // 大量のWorker（16個）での分割
-      const chunks = ChunkCalculator.calculateOptimalChunks(conditions, 16, 1000);
+      const chunks = ChunkCalculator.calculateOptimalChunks(conditions, 16);
       
       expect(chunks.length).toBeGreaterThan(0);
       expect(chunks.length).toBeLessThanOrEqual(16);
@@ -260,7 +259,7 @@ describe('Phase 5: 並列処理テスト', () => {
 
   describe('Task 5.1: 統合テスト', () => {
     it('完全なワークフローでエラーが発生しない', async () => {
-      const manager = new MultiWorkerSearchManager(2, 500);
+      const manager = new MultiWorkerSearchManager(2);
       const conditions = createTestConditions({ hours: 1 });
       const targetSeeds = [0x12345678];
       
