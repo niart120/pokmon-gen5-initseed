@@ -51,11 +51,17 @@ export function ResultDetailsDialog({
           <div className="grid grid-cols-4 gap-4">
             <div>
               <Label>Timer0</Label>
-              <div className="font-mono">{result.timer0}</div>
+              <div className="font-mono">0x{result.timer0.toString(16).toUpperCase().padStart(4, '0')}</div>
+              <div className="text-sm text-muted-foreground font-mono">
+                {result.timer0} (decimal)
+              </div>
             </div>
             <div>
               <Label>VCount</Label>
-              <div className="font-mono">{result.vcount}</div>
+              <div className="font-mono">0x{result.vcount.toString(16).toUpperCase().padStart(2, '0')}</div>
+              <div className="text-sm text-muted-foreground font-mono">
+                {result.vcount} (decimal)
+              </div>
             </div>
             <div>
               <Label>ROM</Label>

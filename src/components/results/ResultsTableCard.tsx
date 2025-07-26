@@ -72,7 +72,7 @@ export function ResultsTableCard({
                     onClick={() => handleSort('timer0')}
                   >
                     <div className="flex items-center gap-1">
-                      Timer0 {getSortIcon('timer0')}
+                      Timer0 (Hex) {getSortIcon('timer0')}
                     </div>
                   </TableHead>
                   <TableHead 
@@ -80,7 +80,7 @@ export function ResultsTableCard({
                     onClick={() => handleSort('vcount')}
                   >
                     <div className="flex items-center gap-1">
-                      VCount {getSortIcon('vcount')}
+                      VCount (Hex) {getSortIcon('vcount')}
                     </div>
                   </TableHead>
                   <TableHead>ROM Info</TableHead>
@@ -101,8 +101,8 @@ export function ResultsTableCard({
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono">{result.timer0}</TableCell>
-                    <TableCell className="font-mono">{result.vcount}</TableCell>
+                    <TableCell className="font-mono">0x{result.timer0.toString(16).toUpperCase().padStart(4, '0')}</TableCell>
+                    <TableCell className="font-mono">0x{result.vcount.toString(16).toUpperCase().padStart(2, '0')}</TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         <Badge variant="outline">

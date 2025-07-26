@@ -35,10 +35,10 @@ export class ResultExporter {
    */
   private static exportToCSV(results: SearchResult[], options: ExportOptions): string {
     const headers = [
-      'Seed',
+      'Seed (Hex)',
       'DateTime',
-      'Timer0',
-      'VCount',
+      'Timer0 (Hex)',
+      'VCount (Hex)',
       'ROM',
       'Region',
       'Hardware'
@@ -62,8 +62,8 @@ export class ResultExporter {
       const row = [
         `0x${result.seed.toString(16).padStart(8, '0')}`,
         result.dateTime.toISOString(),
-        result.timer0.toString(),
-        result.vcount.toString(),
+        `0x${result.timer0.toString(16).padStart(4, '0')}`,
+        `0x${result.vcount.toString(16).padStart(2, '0')}`,
         result.romVersion,
         result.romRegion,
         result.hardware
@@ -103,8 +103,10 @@ export class ResultExporter {
           seed: `0x${result.seed.toString(16).padStart(8, '0')}`,
           seedDecimal: result.seed,
           dateTime: result.dateTime.toISOString(),
-          timer0: result.timer0,
-          vcount: result.vcount,
+          timer0: `0x${result.timer0.toString(16).padStart(4, '0')}`,
+          timer0Decimal: result.timer0,
+          vcount: `0x${result.vcount.toString(16).padStart(2, '0')}`,
+          vcountDecimal: result.vcount,
           rom: {
             version: result.romVersion,
             region: result.romRegion,
@@ -148,8 +150,8 @@ export class ResultExporter {
       lines.push(`Result #${index + 1}:`);
       lines.push(`  Seed: 0x${result.seed.toString(16).padStart(8, '0')} (${result.seed})`);
       lines.push(`  DateTime: ${result.dateTime.toLocaleString()}`);
-      lines.push(`  Timer0: ${result.timer0}`);
-      lines.push(`  VCount: ${result.vcount}`);
+      lines.push(`  Timer0: 0x${result.timer0.toString(16).padStart(4, '0')} (${result.timer0})`);
+      lines.push(`  VCount: 0x${result.vcount.toString(16).padStart(2, '0')} (${result.vcount})`);
       lines.push(`  ROM: ${result.romVersion} ${result.romRegion} (${result.hardware})`);
 
       if (options.includeDetails) {
