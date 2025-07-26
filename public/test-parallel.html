@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parallel Search - Real Environment Testing</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .test-button {
+            padding: 10px 20px;
+            background-color: #007acc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .test-button:hover {
+            background-color: #005a9a;
+        }
+        .test-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .test-button.danger {
+            background-color: #dc3545;
+        }
+        .test-button.danger:hover {
+            background-color: #c82333;
+        }
+        .test-results {
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 15px;
+            min-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 8px;
+            border-radius: 3px;
+        }
+        .log-info { background-color: #e3f2fd; color: #1565c0; }
+        .log-success { background-color: #e8f5e8; color: #2e7d32; }
+        .log-warning { background-color: #fff3e0; color: #f57c00; }
+        .log-error { background-color: #ffebee; color: #c62828; }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .metric-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007acc;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #4caf50;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .worker-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .worker-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 12px;
+        }
+        .worker-card.active {
+            border-color: #4caf50;
+            background-color: #f9fff9;
+        }
+        .worker-card.completed {
+            border-color: #2196f3;
+            background-color: #f3f9ff;
+        }
+        .worker-card.error {
+            border-color: #f44336;
+            background-color: #fff3f3;
+        }
+        .config-panel {
+            background: #f0f8ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .config-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        .config-row label {
+            min-width: 120px;
+            font-weight: bold;
+        }
+        .config-row input, .config-row select {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Parallel Search - Real Environment Testing</h1>
+            <p>WebAssembly-Worker統合テスト・実環境パフォーマンス測定・メモリ管理検証</p>
+        </div>
+
+        <!-- Configuration Panel -->
+        <div class="config-panel">
+            <h3>🛠️ Test Configuration</h3>
+            <div class="config-row">
+                <label>Max Workers:</label>
+                <input type="number" id="maxWorkers" min="1" max="16" value="4">
+                <span id="cpuInfo"></span>
+            </div>
+            <div class="config-row">
+                <label>Test Duration:</label>
+                <select id="testDuration">
+                    <option value="30">30 seconds</option>
+                    <option value="60" selected>1 minute</option>
+                    <option value="120">2 minutes</option>
+                    <option value="300">5 minutes</option>
+                </select>
+            </div>
+            <div class="config-row">
+                <label>Target Seeds:</label>
+                <input type="text" id="targetSeeds" value="0x12345678, 0x87654321" placeholder="Comma-separated hex values">
+            </div>
+        </div>
+
+        <!-- WebAssembly Integration Test -->
+        <div class="test-section">
+            <h3>🦀 WebAssembly Integration Test</h3>
+            <div class="test-controls">
+                <button class="test-button" onclick="runWebAssemblyTest()">Test WASM Loading</button>
+                <button class="test-button" onclick="runWorkerWasmTest()">Test Worker-WASM Integration</button>
+                <button class="test-button" onclick="runWasmPerformanceTest()">Performance Benchmark</button>
+            </div>
+            <div class="test-results" id="wasmResults"></div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="metric-value" id="wasmLoadTime">-</span>
+                    <span class="metric-label">WASM Load Time (ms)</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="wasmMemoryUsage">-</span>
+                    <span class="metric-label">Memory Usage (MB)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Worker Communication Test -->
+        <div class="test-section">
+            <h3>👥 Worker Communication Test</h3>
+            <div class="test-controls">
+                <button class="test-button" onclick="runWorkerCommunicationTest()">Test Worker Messages</button>
+                <button class="test-button" onclick="runWorkerLifecycleTest()">Test Worker Lifecycle</button>
+                <button class="test-button" onclick="runWorkerErrorHandlingTest()">Test Error Handling</button>
+            </div>
+            <div class="test-results" id="workerResults"></div>
+            <div class="worker-status" id="workerStatus"></div>
+        </div>
+
+        <!-- Parallel Search Integration Test -->
+        <div class="test-section">
+            <h3>🚀 Parallel Search Integration Test</h3>
+            <div class="test-controls">
+                <button class="test-button" onclick="runParallelSearchTest()">Run Parallel Search</button>
+                <button class="test-button" onclick="runLoadBalanceTest()">Test Load Balancing</button>
+                <button class="test-button" onclick="runMemoryStressTest()">Memory Stress Test</button>
+                <button class="test-button danger" onclick="stopAllTests()">Stop All Tests</button>
+            </div>
+            <div class="test-results" id="parallelResults"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="testProgress" style="width: 0%">0%</div>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="metric-value" id="throughput">-</span>
+                    <span class="metric-label">Operations/sec</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="activeWorkers">0</span>
+                    <span class="metric-label">Active Workers</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="totalResults">0</span>
+                    <span class="metric-label">Results Found</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="efficiencyRatio">-</span>
+                    <span class="metric-label">Efficiency Ratio</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Memory Management Test -->
+        <div class="test-section">
+            <h3>🧠 Memory Management Test</h3>
+            <div class="test-controls">
+                <button class="test-button" onclick="runMemoryLeakTest()">Check Memory Leaks</button>
+                <button class="test-button" onclick="runMemoryLimitTest()">Test Memory Limits</button>
+                <button class="test-button" onclick="runGarbageCollectionTest()">Force GC Test</button>
+            </div>
+            <div class="test-results" id="memoryResults"></div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="metric-value" id="usedJSHeapSize">-</span>
+                    <span class="metric-label">JS Heap Used (MB)</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="totalJSHeapSize">-</span>
+                    <span class="metric-label">JS Heap Total (MB)</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="memoryGrowth">-</span>
+                    <span class="metric-label">Memory Growth (%)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Initialize CPU information
+        document.getElementById('cpuInfo').textContent = 
+            `(Detected: ${navigator.hardwareConcurrency || 'Unknown'} cores)`;
+
+        // Global state
+        let testState = {
+            isRunning: false,
+            workers: new Map(),
+            results: [],
+            startTime: null,
+            initialMemory: null
+        };
+
+        // Logging utilities
+        function log(message, type = 'info', containerId = 'parallelResults') {
+            const container = document.getElementById(containerId);
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function updateMetric(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+
+        function updateProgress(percentage) {
+            const progressFill = document.getElementById('testProgress');
+            progressFill.style.width = `${percentage}%`;
+            progressFill.textContent = `${Math.round(percentage)}%`;
+        }
+
+        // Memory monitoring
+        function getMemoryInfo() {
+            if (performance.memory) {
+                return {
+                    used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
+                    total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024),
+                    limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024)
+                };
+            }
+            return null;
+        }
+
+        function updateMemoryMetrics() {
+            const memory = getMemoryInfo();
+            if (memory) {
+                updateMetric('usedJSHeapSize', memory.used);
+                updateMetric('totalJSHeapSize', memory.total);
+                
+                if (testState.initialMemory) {
+                    const growth = ((memory.used - testState.initialMemory.used) / testState.initialMemory.used * 100);
+                    updateMetric('memoryGrowth', `${growth.toFixed(1)}`);
+                }
+            }
+        }
+
+        // Worker status display
+        function updateWorkerStatus(workerId, status, info = '') {
+            const container = document.getElementById('workerStatus');
+            let workerCard = document.getElementById(`worker-${workerId}`);
+            
+            if (!workerCard) {
+                workerCard = document.createElement('div');
+                workerCard.id = `worker-${workerId}`;
+                workerCard.className = 'worker-card';
+                container.appendChild(workerCard);
+            }
+            
+            workerCard.className = `worker-card ${status}`;
+            workerCard.innerHTML = `
+                <strong>Worker ${workerId}</strong><br>
+                Status: ${status}<br>
+                ${info ? `Info: ${info}` : ''}
+            `;
+        }
+
+        // WebAssembly Integration Tests
+        window.runWebAssemblyTest = async function() {
+            log('Starting WebAssembly loading test...', 'info', 'wasmResults');
+            const startTime = performance.now();
+            
+            try {
+                // Dynamic import of WASM module
+                const wasmModule = await import('/wasm/wasm_pkg.js');
+                await wasmModule.default();
+                
+                const loadTime = performance.now() - startTime;
+                updateMetric('wasmLoadTime', Math.round(loadTime));
+                
+                log(`✅ WebAssembly loaded successfully in ${loadTime.toFixed(2)}ms`, 'success', 'wasmResults');
+                
+                // Test basic functionality
+                const searcher = new wasmModule.IntegratedSeedSearcher(
+                    [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC],
+                    new Uint32Array([0x02215F1, 0x020796A1]),
+                    5, 8
+                );
+                
+                log('✅ IntegratedSeedSearcher instance created successfully', 'success', 'wasmResults');
+                log('🔧 WebAssembly integration test completed', 'info', 'wasmResults');
+                
+            } catch (error) {
+                log(`❌ WebAssembly test failed: ${error.message}`, 'error', 'wasmResults');
+            }
+            
+            updateMemoryMetrics();
+        };
+
+        window.runWorkerWasmTest = async function() {
+            log('Testing Worker-WebAssembly integration...', 'info', 'wasmResults');
+            
+            try {
+                const worker = new Worker('/src/workers/parallel-search-worker.ts', { type: 'module' });
+                
+                worker.onmessage = function(event) {
+                    const { type, workerId, message, error } = event.data;
+                    
+                    if (type === 'INITIALIZED') {
+                        log(`✅ Worker ${workerId} initialized with WebAssembly`, 'success', 'wasmResults');
+                    } else if (type === 'ERROR') {
+                        log(`❌ Worker ${workerId} error: ${error}`, 'error', 'wasmResults');
+                    } else {
+                        log(`📝 Worker ${workerId}: ${type} - ${message || ''}`, 'info', 'wasmResults');
+                    }
+                };
+                
+                worker.onerror = function(error) {
+                    log(`❌ Worker error: ${error.message}`, 'error', 'wasmResults');
+                };
+                
+                // Initialize worker with test data
+                worker.postMessage({
+                    type: 'START_SEARCH',
+                    workerId: 1,
+                    conditions: {
+                        dateRange: {
+                            startYear: 2025, startMonth: 1, startDay: 1,
+                            startHour: 10, startMinute: 0, startSecond: 0,
+                            endYear: 2025, endMonth: 1, endDay: 1,
+                            endHour: 10, endMinute: 0, endSecond: 30
+                        },
+                        romVersion: 'Black',
+                        romRegion: 'Japan',
+                        timer0Range: { min: 3193, max: 3194 },
+                        vcountRange: { min: 160, max: 161 },
+                        macAddress: [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC],
+                        keyInput: 0
+                    },
+                    targetSeeds: [0x12345678],
+                    chunk: {
+                        workerId: 1,
+                        startDateTime: new Date('2025-01-01T10:00:00Z'),
+                        endDateTime: new Date('2025-01-01T10:00:30Z'),
+                        timer0Range: { min: 3193, max: 3194 },
+                        vcountRange: { min: 160, max: 161 }
+                    }
+                });
+                
+                setTimeout(() => {
+                    worker.terminate();
+                    log('🔧 Worker-WASM integration test completed', 'info', 'wasmResults');
+                }, 5000);
+                
+            } catch (error) {
+                log(`❌ Worker-WASM test failed: ${error.message}`, 'error', 'wasmResults');
+            }
+        };
+
+        window.runWasmPerformanceTest = async function() {
+            log('Running WebAssembly performance benchmark...', 'info', 'wasmResults');
+            
+            try {
+                const wasmModule = await import('/wasm/wasm_pkg.js');
+                await wasmModule.default();
+                
+                const searcher = new wasmModule.IntegratedSeedSearcher(
+                    [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC],
+                    new Uint32Array([0x02215F1, 0x020796A1]),
+                    5, 8
+                );
+                
+                const iterations = 1000;
+                const startTime = performance.now();
+                
+                for (let i = 0; i < iterations; i++) {
+                    searcher.search_seeds_integrated(
+                        2025, 1, 1, 10, 0, 0, 10,
+                        3193, 3194, 160, 161,
+                        new Uint32Array([0x12345678])
+                    );
+                }
+                
+                const endTime = performance.now();
+                const opsPerSecond = Math.round(iterations / ((endTime - startTime) / 1000));
+                
+                log(`✅ Performance: ${opsPerSecond} operations/sec`, 'success', 'wasmResults');
+                updateMetric('wasmMemoryUsage', getMemoryInfo()?.used || '-');
+                
+            } catch (error) {
+                log(`❌ Performance test failed: ${error.message}`, 'error', 'wasmResults');
+            }
+        };
+
+        // Worker Communication Tests
+        window.runWorkerCommunicationTest = function() {
+            log('Testing Worker communication...', 'info', 'workerResults');
+            
+            const maxWorkers = parseInt(document.getElementById('maxWorkers').value);
+            let responseCount = 0;
+            
+            for (let i = 1; i <= maxWorkers; i++) {
+                try {
+                    const worker = new Worker('/src/workers/parallel-search-worker.ts', { type: 'module' });
+                    updateWorkerStatus(i, 'initializing');
+                    
+                    worker.onmessage = function(event) {
+                        const { type, workerId } = event.data;
+                        responseCount++;
+                        
+                        if (type === 'INITIALIZED') {
+                            updateWorkerStatus(workerId, 'active', 'Communication OK');
+                            log(`✅ Worker ${workerId} communication established`, 'success', 'workerResults');
+                        }
+                        
+                        if (responseCount === maxWorkers) {
+                            log('🔧 All workers communication test completed', 'info', 'workerResults');
+                        }
+                    };
+                    
+                    worker.onerror = function(error) {
+                        updateWorkerStatus(i, 'error', error.message);
+                        log(`❌ Worker ${i} error: ${error.message}`, 'error', 'workerResults');
+                    };
+                    
+                    // Send initialization message
+                    worker.postMessage({ type: 'PING', workerId: i });
+                    
+                    // Clean up after test
+                    setTimeout(() => {
+                        worker.terminate();
+                        updateWorkerStatus(i, 'completed', 'Terminated');
+                    }, 3000);
+                    
+                } catch (error) {
+                    updateWorkerStatus(i, 'error', error.message);
+                    log(`❌ Failed to create Worker ${i}: ${error.message}`, 'error', 'workerResults');
+                }
+            }
+        };
+
+        window.runWorkerLifecycleTest = function() {
+            log('Testing Worker lifecycle...', 'info', 'workerResults');
+            
+            const worker = new Worker('/src/workers/parallel-search-worker.ts', { type: 'module' });
+            let step = 1;
+            
+            worker.onmessage = function(event) {
+                const { type, workerId } = event.data;
+                
+                switch (step) {
+                    case 1:
+                        if (type === 'INITIALIZED') {
+                            log(`✅ Step 1: Worker initialization successful`, 'success', 'workerResults');
+                            step++;
+                            worker.postMessage({ type: 'PAUSE_SEARCH', workerId: 1 });
+                        }
+                        break;
+                    case 2:
+                        if (type === 'PAUSED') {
+                            log(`✅ Step 2: Worker pause successful`, 'success', 'workerResults');
+                            step++;
+                            worker.postMessage({ type: 'RESUME_SEARCH', workerId: 1 });
+                        }
+                        break;
+                    case 3:
+                        if (type === 'RESUMED') {
+                            log(`✅ Step 3: Worker resume successful`, 'success', 'workerResults');
+                            step++;
+                            worker.postMessage({ type: 'STOP_SEARCH', workerId: 1 });
+                        }
+                        break;
+                    case 4:
+                        if (type === 'STOPPED') {
+                            log(`✅ Step 4: Worker stop successful`, 'success', 'workerResults');
+                            worker.terminate();
+                            log('🔧 Worker lifecycle test completed', 'info', 'workerResults');
+                        }
+                        break;
+                }
+            };
+            
+            worker.postMessage({ type: 'PING', workerId: 1 });
+        };
+
+        window.runWorkerErrorHandlingTest = function() {
+            log('Testing Worker error handling...', 'info', 'workerResults');
+            
+            const worker = new Worker('/src/workers/parallel-search-worker.ts', { type: 'module' });
+            
+            worker.onmessage = function(event) {
+                const { type, error } = event.data;
+                
+                if (type === 'ERROR') {
+                    log(`✅ Error handling works: ${error}`, 'success', 'workerResults');
+                } else {
+                    log(`📝 Worker response: ${type}`, 'info', 'workerResults');
+                }
+            };
+            
+            // Send invalid message to trigger error
+            worker.postMessage({
+                type: 'START_SEARCH',
+                workerId: 1,
+                // Missing required parameters
+            });
+            
+            setTimeout(() => {
+                worker.terminate();
+                log('🔧 Error handling test completed', 'info', 'workerResults');
+            }, 2000);
+        };
+
+        // Parallel Search Tests
+        window.runParallelSearchTest = function() {
+            if (testState.isRunning) {
+                log('⚠️ Test already running', 'warning');
+                return;
+            }
+            
+            testState.isRunning = true;
+            testState.startTime = performance.now();
+            testState.initialMemory = getMemoryInfo();
+            
+            log('🚀 Starting parallel search test...', 'info');
+            
+            const maxWorkers = parseInt(document.getElementById('maxWorkers').value);
+            const duration = parseInt(document.getElementById('testDuration').value);
+            const targetSeedsInput = document.getElementById('targetSeeds').value;
+            
+            // Parse target seeds
+            const targetSeeds = targetSeedsInput.split(',')
+                .map(s => parseInt(s.trim(), 16))
+                .filter(s => !isNaN(s));
+            
+            log(`Configuration: ${maxWorkers} workers, ${duration}s duration, ${targetSeeds.length} target seeds`, 'info');
+            
+            let activeWorkerCount = 0;
+            let completedWorkers = 0;
+            let totalResults = 0;
+            
+            // Create time chunks for workers
+            const startTime = new Date('2025-01-01T10:00:00Z');
+            const chunkDuration = Math.floor(duration / maxWorkers);
+            
+            for (let i = 0; i < maxWorkers; i++) {
+                const worker = new Worker('/src/workers/parallel-search-worker.ts', { type: 'module' });
+                const workerId = i + 1;
+                const chunkStart = new Date(startTime.getTime() + (i * chunkDuration * 1000));
+                const chunkEnd = new Date(chunkStart.getTime() + (chunkDuration * 1000));
+                
+                testState.workers.set(workerId, worker);
+                activeWorkerCount++;
+                updateWorkerStatus(workerId, 'active', `${chunkStart.toLocaleTimeString()} - ${chunkEnd.toLocaleTimeString()}`);
+                
+                worker.onmessage = function(event) {
+                    const { type, workerId, result, progress } = event.data;
+                    
+                    switch (type) {
+                        case 'PROGRESS':
+                            if (progress) {
+                                log(`📊 Worker ${workerId}: ${progress.currentStep}/${progress.totalSteps} steps`, 'info');
+                                
+                                // Update overall progress
+                                const totalProgress = Array.from(testState.workers.keys())
+                                    .reduce((sum, id) => sum + (id === workerId ? progress.currentStep / progress.totalSteps : 0), 0);
+                                updateProgress((totalProgress / maxWorkers) * 100);
+                            }
+                            break;
+                            
+                        case 'RESULT':
+                            if (result) {
+                                totalResults++;
+                                updateMetric('totalResults', totalResults);
+                                log(`🎯 Worker ${workerId} found result: ${result.initialSeed.toString(16)}`, 'success');
+                            }
+                            break;
+                            
+                        case 'COMPLETED':
+                            completedWorkers++;
+                            activeWorkerCount--;
+                            updateWorkerStatus(workerId, 'completed', 'Search completed');
+                            updateMetric('activeWorkers', activeWorkerCount);
+                            log(`✅ Worker ${workerId} completed`, 'success');
+                            
+                            if (completedWorkers === maxWorkers) {
+                                const elapsedTime = performance.now() - testState.startTime;
+                                const throughput = Math.round((totalResults * 1000) / elapsedTime);
+                                updateMetric('throughput', throughput);
+                                updateMetric('efficiencyRatio', (activeWorkerCount / maxWorkers * 100).toFixed(1) + '%');
+                                
+                                log('🎉 All workers completed successfully', 'success');
+                                testState.isRunning = false;
+                                updateProgress(100);
+                            }
+                            break;
+                            
+                        case 'ERROR':
+                            activeWorkerCount--;
+                            updateWorkerStatus(workerId, 'error', event.data.error);
+                            updateMetric('activeWorkers', activeWorkerCount);
+                            log(`❌ Worker ${workerId} error: ${event.data.error}`, 'error');
+                            break;
+                    }
+                };
+                
+                worker.onerror = function(error) {
+                    log(`❌ Worker ${workerId} critical error: ${error.message}`, 'error');
+                    updateWorkerStatus(workerId, 'error', error.message);
+                };
+                
+                // Start worker
+                worker.postMessage({
+                    type: 'START_SEARCH',
+                    workerId: workerId,
+                    conditions: {
+                        dateRange: {
+                            startYear: chunkStart.getFullYear(),
+                            startMonth: chunkStart.getMonth() + 1,
+                            startDay: chunkStart.getDate(),
+                            startHour: chunkStart.getHours(),
+                            startMinute: chunkStart.getMinutes(),
+                            startSecond: chunkStart.getSeconds(),
+                            endYear: chunkEnd.getFullYear(),
+                            endMonth: chunkEnd.getMonth() + 1,
+                            endDay: chunkEnd.getDate(),
+                            endHour: chunkEnd.getHours(),
+                            endMinute: chunkEnd.getMinutes(),
+                            endSecond: chunkEnd.getSeconds()
+                        },
+                        romVersion: 'Black',
+                        romRegion: 'Japan',
+                        timer0Range: { min: 3193, max: 3194 },
+                        vcountRange: { min: 160, max: 161 },
+                        macAddress: [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC],
+                        keyInput: 0
+                    },
+                    targetSeeds: targetSeeds,
+                    chunk: {
+                        workerId: workerId,
+                        startDateTime: chunkStart,
+                        endDateTime: chunkEnd,
+                        timer0Range: { min: 3193, max: 3194 },
+                        vcountRange: { min: 160, max: 161 }
+                    }
+                });
+            }
+            
+            updateMetric('activeWorkers', activeWorkerCount);
+            
+            // Auto-stop after duration + buffer
+            setTimeout(() => {
+                if (testState.isRunning) {
+                    stopAllTests();
+                    log('⏰ Test stopped due to timeout', 'warning');
+                }
+            }, (duration + 10) * 1000);
+        };
+
+        window.runLoadBalanceTest = function() {
+            log('Testing load balancing with uneven chunks...', 'info');
+            // Implementation for load balance testing
+        };
+
+        window.runMemoryStressTest = function() {
+            log('Running memory stress test...', 'info');
+            // Implementation for memory stress testing
+        };
+
+        window.stopAllTests = function() {
+            testState.isRunning = false;
+            
+            testState.workers.forEach((worker, workerId) => {
+                worker.terminate();
+                updateWorkerStatus(workerId, 'completed', 'Terminated by user');
+            });
+            
+            testState.workers.clear();
+            updateMetric('activeWorkers', 0);
+            log('🛑 All tests stopped by user', 'warning');
+        };
+
+        // Memory Management Tests
+        window.runMemoryLeakTest = function() {
+            log('Checking for memory leaks...', 'info', 'memoryResults');
+            
+            const initialMemory = getMemoryInfo();
+            if (!initialMemory) {
+                log('❌ Memory API not available in this browser', 'error', 'memoryResults');
+                return;
+            }
+            
+            log(`📊 Initial memory: ${initialMemory.used}MB used, ${initialMemory.total}MB total`, 'info', 'memoryResults');
+            
+            // Create and destroy workers multiple times
+            let iteration = 0;
+            const maxIterations = 10;
+            
+            const testIteration = () => {
+                iteration++;
+                log(`🔄 Memory test iteration ${iteration}/${maxIterations}`, 'info', 'memoryResults');
+                
+                const workers = [];
+                
+                // Create workers
+                for (let i = 0; i < 4; i++) {
+                    const worker = new Worker('/src/workers/parallel-search-worker.ts', { type: 'module' });
+                    workers.push(worker);
+                }
+                
+                // Destroy workers after short delay
+                setTimeout(() => {
+                    workers.forEach(worker => worker.terminate());
+                    
+                    // Check memory after cleanup
+                    setTimeout(() => {
+                        const currentMemory = getMemoryInfo();
+                        const memoryGrowth = currentMemory.used - initialMemory.used;
+                        
+                        log(`📊 After iteration ${iteration}: ${currentMemory.used}MB used (+${memoryGrowth}MB)`, 
+                            memoryGrowth > 50 ? 'warning' : 'info', 'memoryResults');
+                        
+                        if (iteration < maxIterations) {
+                            setTimeout(testIteration, 1000);
+                        } else {
+                            const finalMemory = getMemoryInfo();
+                            const totalGrowth = finalMemory.used - initialMemory.used;
+                            
+                            if (totalGrowth > 100) {
+                                log(`⚠️ Potential memory leak detected: +${totalGrowth}MB after ${maxIterations} iterations`, 'warning', 'memoryResults');
+                            } else {
+                                log(`✅ Memory usage acceptable: +${totalGrowth}MB after ${maxIterations} iterations`, 'success', 'memoryResults');
+                            }
+                        }
+                        
+                        updateMemoryMetrics();
+                    }, 500);
+                }, 100);
+            };
+            
+            testIteration();
+        };
+
+        window.runMemoryLimitTest = function() {
+            log('Testing memory limits...', 'info', 'memoryResults');
+            // Implementation for memory limit testing
+        };
+
+        window.runGarbageCollectionTest = function() {
+            log('Testing garbage collection...', 'info', 'memoryResults');
+            
+            if (window.gc) {
+                const beforeGC = getMemoryInfo();
+                window.gc();
+                const afterGC = getMemoryInfo();
+                
+                if (beforeGC && afterGC) {
+                    const freed = beforeGC.used - afterGC.used;
+                    log(`🗑️ Garbage collection freed ${freed}MB`, 'success', 'memoryResults');
+                } else {
+                    log('✅ Garbage collection executed', 'success', 'memoryResults');
+                }
+            } else {
+                log('⚠️ Manual GC not available (use --enable-precise-memory-info flag)', 'warning', 'memoryResults');
+            }
+            
+            updateMemoryMetrics();
+        };
+
+        // Start memory monitoring
+        setInterval(updateMemoryMetrics, 2000);
+        
+        // Initialize metrics
+        updateMemoryMetrics();
+        updateMetric('activeWorkers', 0);
+        updateMetric('totalResults', 0);
+        
+        log('🔧 Parallel Search Real Environment Testing initialized', 'info');
+        log('💡 Click test buttons to run different scenarios', 'info');
+    </script>
+</body>
+</html>
