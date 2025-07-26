@@ -310,3 +310,14 @@ export function getSearchWorkerManager(): SearchWorkerManager {
   }
   return workerManager;
 }
+
+/**
+ * ワーカーマネージャーのシングルトンインスタンスを完全にリセット
+ * メモリリーク防止のため、検索完了時に呼び出し推奨
+ */
+export function resetSearchWorkerManager(): void {
+  if (workerManager) {
+    workerManager.terminate();
+    workerManager = null;
+  }
+}

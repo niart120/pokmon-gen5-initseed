@@ -50,8 +50,7 @@ await analyzer.measureBasicPerformance(10000);
 
 ### WebAssembly読み込み失敗
 ```bash
-npm run build:wasm
-node scripts/copy-wasm-files.js
+npm run build
 ```
 
 ### 計算結果の不整合

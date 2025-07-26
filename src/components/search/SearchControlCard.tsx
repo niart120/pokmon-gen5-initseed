@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Play, Pause, Square } from '@phosphor-icons/react';
 import { useAppStore } from '../../store/app-store';
-import { getSearchWorkerManager } from '../../lib/search/search-worker-manager';
+import { getSearchWorkerManager, resetSearchWorkerManager } from '../../lib/search/search-worker-manager';
 import type { InitialSeedResult } from '../../types/pokemon';
 
 export function SearchControlCard() {
@@ -92,7 +92,6 @@ export function SearchControlCard() {
             setParallelProgress(aggregatedProgress);
           },
           onResult: (result: InitialSeedResult) => {
-            console.log(`🎉 Found match from worker! Seed: 0x${result.seed.toString(16).padStart(8, '0')}`);
             addSearchResult(result);
           },
           onComplete: (message: string) => {
@@ -100,6 +99,9 @@ export function SearchControlCard() {
             
             // 先に検索状態を停止
             stopSearch();
+            
+            // ワーカーマネージャーをリセット（メモリリーク防止）
+            resetSearchWorkerManager();
             
             // その後でアラートを表示
             const matchesFound = useAppStore.getState().searchProgress.matchesFound;
@@ -118,6 +120,8 @@ export function SearchControlCard() {
             console.error('Search error:', error);
             alert(`Search failed: ${error}`);
             stopSearch();
+            // エラー時もワーカーマネージャーをリセット（メモリリーク防止）
+            resetSearchWorkerManager();
           },
           onPaused: () => {
             console.log('🔻 Search paused by worker');
@@ -129,6 +133,8 @@ export function SearchControlCard() {
             console.log('⏹️ Search stopped by worker');
             setParallelProgress(null); // 並列進捗をクリア
             stopSearch();
+            // 停止時もワーカーマネージャーをリセット（メモリリーク防止）
+            resetSearchWorkerManager();
           }
         }
       );
@@ -137,6 +143,8 @@ export function SearchControlCard() {
       alert(`Failed to start search: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setParallelProgress(null);
       stopSearch();
+      // 例外時もワーカーマネージャーをリセット（メモリリーク防止）
+      resetSearchWorkerManager();
     }
   };
 

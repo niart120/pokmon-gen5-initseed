@@ -82,7 +82,9 @@ impl IntegratedSeedSearcher {
     /// コンストラクタ: 固定パラメータの事前計算
     #[wasm_bindgen(constructor)]
     pub fn new(mac: &[u8], nazo: &[u32], _version: u32, frame: u32) -> Result<IntegratedSeedSearcher, JsValue> {
-        console_log!("🚀 IntegratedSeedSearcher初期化開始");
+        // 初期化時のみログ出力（メモリリーク対策：1回のみ実行）
+        console_log!("🔧 IntegratedSeedSearcher initialized - Tables: Time={}, Date={}", 
+            TimeCodeGenerator::TIME_CODES.len(), DateCodeGenerator::DATE_CODES.len());
         
         if mac.len() != 6 {
             return Err(JsValue::from_str("MAC address must be 6 bytes"));
@@ -114,10 +116,6 @@ impl IntegratedSeedSearcher {
         // インデックス11はTimer0で動的に設定
         // インデックス12-15は0で固定
 
-        console_log!("✅ 固定パラメータ事前計算完了");
-        console_log!("📊 TimeCode table size: {}", TimeCodeGenerator::TIME_CODES.len());
-        console_log!("📊 DateCode table size: {}", DateCodeGenerator::DATE_CODES.len());
-
         Ok(IntegratedSeedSearcher {
             mac_le,
             nazo: nazo_array,
@@ -146,9 +144,7 @@ impl IntegratedSeedSearcher {
         vcount_max: u32,
         target_seeds: &[u32],
     ) -> js_sys::Array {
-        console_log!("🔥 統合シード探索開始: {}秒範囲", range_seconds);
         
-        let start_time = js_sys::Date::now();
         let results = js_sys::Array::new();
 
         // 日時範囲の探索
@@ -214,10 +210,6 @@ impl IntegratedSeedSearcher {
                 }
             }
         }
-
-        let end_time = js_sys::Date::now();
-        let duration = end_time - start_time;
-        console_log!("✅ 統合探索完了: {:.2}ms, {}件ヒット", duration, results.length());
 
         results
     }

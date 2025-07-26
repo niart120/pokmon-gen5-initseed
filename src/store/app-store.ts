@@ -146,9 +146,12 @@ export const useAppStore = create<AppStore>()(
       searchResults: [],
       setSearchResults: (results) => set({ searchResults: results }),
       addSearchResult: (result) =>
-        set((state) => ({
-          searchResults: [...state.searchResults, result],
-        })),
+        set((state) => {
+          // 効率的な配列追加：スプレッド演算子による新配列作成を避ける
+          const newResults = state.searchResults.slice();
+          newResults.push(result);
+          return { searchResults: newResults };
+        }),
       clearSearchResults: () => set({ searchResults: [] }),
 
       // Search progress

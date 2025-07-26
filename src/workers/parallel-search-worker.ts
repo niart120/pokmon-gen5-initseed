@@ -146,8 +146,6 @@ async function processChunkWithWasm(
       
       if (subChunkRange <= 0) break;
 
-      console.log(`🔍 Worker ${searchState.workerId}: Processing sub-chunk ${Math.floor(offset / subChunkSeconds) + 1}: ${subChunkRange} seconds`);
-
       // サブチャンクの統合検索実行
       const subResults = searcher.search_seeds_integrated(
         subChunkStart.getFullYear(),
@@ -198,7 +196,6 @@ async function processChunkWithWasm(
       reportProgress(processedOperations, totalOperations, allResults.length);
     }
 
-    console.log(`✅ Worker ${searchState.workerId}: Completed all sub-chunks, found ${allResults.length} results`);
     return allResults;
     
   } finally {

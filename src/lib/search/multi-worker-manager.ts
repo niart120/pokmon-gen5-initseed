@@ -172,7 +172,6 @@ export class MultiWorkerSearchManager {
 
     switch (response.type) {
       case 'READY':
-        console.log(`✅ Worker ${workerId} ready`);
         break;
 
       case 'PROGRESS':
@@ -200,7 +199,6 @@ export class MultiWorkerSearchManager {
         break;
 
       case 'COMPLETE':
-        console.log(`✅ Worker ${workerId} completed`);
         this.handleWorkerCompletion(workerId);
         break;
 
@@ -512,6 +510,12 @@ export class MultiWorkerSearchManager {
       worker.terminate();
     }
 
+    // Worker参照のクリア（メモリリーク防止）
+    this.workers.clear();
+    this.workerProgresses.clear();
+    this.activeChunks.clear();
+    this.lastProgressCheck.clear();
+
     this.searchRunning = false;
     this.callbacks = null;
   }
@@ -520,17 +524,8 @@ export class MultiWorkerSearchManager {
    * 状態リセット
    */
   private resetState(): void {
-    this.workers.clear();
-    this.workerProgresses.clear();
-    this.activeChunks.clear();
+    // cleanup()で既にクリアされるため、結果のみクリア
     this.results = [];
     this.completedWorkers = 0;
-    this.lastProgressCheck.clear();
-    
-    // 進捗監視タイマーも確実に停止
-    if (this.progressUpdateTimer) {
-      clearInterval(this.progressUpdateTimer);
-      this.progressUpdateTimer = null;
-    }
   }
 }
