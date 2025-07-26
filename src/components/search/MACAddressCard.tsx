@@ -31,15 +31,29 @@ export function MACAddressCard() {
         const macAddress = [...searchConditions.macAddress];
         macAddress[index] = parsed;
         setSearchConditions({ macAddress });
+      } else if (value === '') {
+        // 空の場合は0として扱う
+        const macAddress = [...searchConditions.macAddress];
+        macAddress[index] = 0;
+        setSearchConditions({ macAddress });
       }
     }
   };
 
   const handleBlur = (index: number) => {
-    // フォーカス離脱時に正規化して表示
-    const newInputValues = [...inputValues];
-    newInputValues[index] = formatHexDisplay(searchConditions.macAddress[index], 2);
-    setInputValues(newInputValues);
+    // フォーカス離脱時に入力値を2桁にフォーマット
+    const currentInput = inputValues[index];
+    if (currentInput === '') {
+      // 空の場合は"00"に設定
+      const newInputValues = [...inputValues];
+      newInputValues[index] = '00';
+      setInputValues(newInputValues);
+    } else if (currentInput.length === 1) {
+      // 1桁の場合は先頭に0を追加
+      const newInputValues = [...inputValues];
+      newInputValues[index] = '0' + currentInput;
+      setInputValues(newInputValues);
+    }
   };
 
   const handleFocus = (index: number) => {
