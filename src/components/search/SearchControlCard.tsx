@@ -195,22 +195,45 @@ export function SearchControlCard() {
                 </div>
 
                 {parallelSearchSettings.enabled && (
-                  <div className="space-y-2 pl-6">
-                    <Label className="text-sm">
-                      Worker Count: {parallelSearchSettings.maxWorkers} / {maxCpuCores}
-                    </Label>
-                    <Slider
-                      value={[parallelSearchSettings.maxWorkers]}
-                      onValueChange={handleMaxWorkersChange}
-                      max={maxCpuCores}
-                      min={1}
-                      step={1}
-                      disabled={searchProgress.isRunning}
-                      className="w-full"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      More workers = faster search but higher memory usage
-                    </p>
+                  <div className="space-y-3 pl-6 border-l-2 border-blue-200 dark:border-blue-800">
+                    {/* Worker数設定 */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">
+                        Worker Count: {parallelSearchSettings.maxWorkers} / {maxCpuCores}
+                      </Label>
+                      <Slider
+                        value={[parallelSearchSettings.maxWorkers]}
+                        onValueChange={handleMaxWorkersChange}
+                        max={maxCpuCores}
+                        min={1}
+                        step={1}
+                        disabled={searchProgress.isRunning}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Conservative</span>
+                        <span>Maximum Performance</span>
+                      </div>
+                    </div>
+
+                    {/* パフォーマンス予測 */}
+                    <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs">
+                      <div className="font-medium mb-1">Performance Estimation:</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-muted-foreground">Speed boost: </span>
+                          <span className="font-mono">~{Math.round(parallelSearchSettings.maxWorkers * 0.85)}x</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Memory: </span>
+                          <span className="font-mono">~{(parallelSearchSettings.maxWorkers * 15).toFixed(0)}MB</span>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-muted-foreground">
+                        More workers = faster search but higher memory usage. 
+                        {parallelSearchSettings.maxWorkers >= maxCpuCores && " Maximum CPU utilization enabled."}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

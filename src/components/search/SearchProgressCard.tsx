@@ -45,16 +45,37 @@ export function SearchProgressCard() {
             <Badge variant={searchProgress.matchesFound > 0 ? "default" : "secondary"}>
               {searchProgress.matchesFound}
             </Badge>
+            {isParallelMode && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Rate: {searchProgress.totalSteps > 0 
+                  ? ((searchProgress.matchesFound / searchProgress.totalSteps) * 100).toFixed(4)
+                  : '0.00'
+                }%
+              </div>
+            )}
           </div>
           <div>
             <div className="text-muted-foreground">Elapsed Time</div>
             <div className="font-mono">{Math.floor(searchProgress.elapsedTime / 1000)}s</div>
+            {isParallelMode && (
+              <div className="text-xs text-muted-foreground">
+                Speed: {searchProgress.elapsedTime > 0 
+                  ? Math.round(searchProgress.currentStep / (searchProgress.elapsedTime / 1000)).toLocaleString()
+                  : '0'
+                } calc/sec
+              </div>
+            )}
           </div>
           <div>
             <div className="text-muted-foreground">Est. Remaining</div>
             <div className="font-mono">
               {searchProgress.estimatedTimeRemaining > 0 ? `${Math.floor(searchProgress.estimatedTimeRemaining / 1000)}s` : '--'}
             </div>
+            {isParallelMode && parallelProgress && (
+              <div className="text-xs text-muted-foreground">
+                {parallelProgress.activeWorkers}x boost
+              </div>
+            )}
           </div>
         </div>
 
@@ -66,18 +87,56 @@ export function SearchProgressCard() {
               Worker Details ({parallelProgress.activeWorkers} active, {parallelProgress.completedWorkers} completed)
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-3">
+              {/* 並列検索パフォーマンス指標 */}
+              <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs">
+                <div>
+                  <div className="text-muted-foreground">Total Speed</div>
+                  <div className="font-mono">
+                    {parallelProgress.totalElapsedTime > 0 
+                      ? Math.round(parallelProgress.totalCurrentStep / (parallelProgress.totalElapsedTime / 1000)).toLocaleString()
+                      : '0'
+                    } calc/sec
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Memory Usage</div>
+                  <div className="font-mono">
+                    ~{(parallelProgress.activeWorkers * 15).toFixed(0)}MB
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Efficiency</div>
+                  <div className="font-mono">
+                    {parallelProgress.activeWorkers > 0 
+                      ? Math.round((parallelProgress.activeWorkers / (navigator.hardwareConcurrency || 4)) * 100)
+                      : 0
+                    }%
+                  </div>
+                </div>
+              </div>
+
+              {/* Worker詳細リスト */}
               <div className="space-y-2">
                 {Array.from(parallelProgress.workerProgresses.entries()).map(([workerId, progress]) => (
                   <div key={workerId} className="p-2 bg-muted rounded text-xs">
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-medium">Worker {workerId}</span>
-                      <Badge variant={
-                        progress.status === 'completed' ? 'default' :
-                        progress.status === 'running' ? 'secondary' :
-                        progress.status === 'error' ? 'destructive' : 'outline'
-                      } className="text-xs">
-                        {progress.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        {/* Worker速度 */}
+                        <span className="text-muted-foreground">
+                          {progress.elapsedTime > 0 
+                            ? Math.round(progress.currentStep / (progress.elapsedTime / 1000)).toLocaleString()
+                            : '0'
+                          } calc/sec
+                        </span>
+                        <Badge variant={
+                          progress.status === 'completed' ? 'default' :
+                          progress.status === 'running' ? 'secondary' :
+                          progress.status === 'error' ? 'destructive' : 'outline'
+                        } className="text-xs">
+                          {progress.status}
+                        </Badge>
+                      </div>
                     </div>
                     <Progress 
                       value={(progress.currentStep / progress.totalSteps) * 100} 
@@ -87,6 +146,12 @@ export function SearchProgressCard() {
                       <span>{progress.currentStep.toLocaleString()} / {progress.totalSteps.toLocaleString()}</span>
                       <span>{progress.matchesFound} matches</span>
                     </div>
+                    {/* Worker時刻範囲表示 */}
+                    {progress.currentDateTime && (
+                      <div className="mt-1 text-muted-foreground">
+                        Current: {progress.currentDateTime.toLocaleString()}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
