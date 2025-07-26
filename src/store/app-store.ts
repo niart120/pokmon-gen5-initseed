@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { SearchConditions, InitialSeedResult, TargetSeedList, SearchProgress, SearchPreset, ROMVersion, ROMRegion, Hardware } from '../types/pokemon';
+import type { SearchConditions, InitialSeedResult, TargetSeedList, SearchProgress, SearchPreset, ROMVersion, ROMRegion, Hardware, ParallelSearchSettings, AggregatedProgress } from '../types/pokemon';
 import { DEMO_TARGET_SEEDS } from '../data/default-seeds';
 
 interface AppStore {
@@ -29,6 +29,17 @@ interface AppStore {
   pauseSearch: () => void;
   resumeSearch: () => void;
   stopSearch: () => void;
+
+  // Parallel search settings
+  parallelSearchSettings: ParallelSearchSettings;
+  setParallelSearchEnabled: (enabled: boolean) => void;
+  setMaxWorkers: (count: number) => void;
+  setChunkStrategy: (strategy: ParallelSearchSettings['chunkStrategy']) => void;
+  setMemoryLimit: (limit: number) => void;
+
+  // Parallel search progress
+  parallelProgress: AggregatedProgress | null;
+  setParallelProgress: (progress: AggregatedProgress | null) => void;
 
   // UI state
   activeTab: string;
@@ -92,6 +103,13 @@ const defaultSearchProgress: SearchProgress = {
   matchesFound: 0,
   canPause: false,
   isPaused: false,
+};
+
+const defaultParallelSearchSettings: ParallelSearchSettings = {
+  enabled: false,
+  maxWorkers: navigator.hardwareConcurrency || 4,
+  chunkStrategy: 'time-based',
+  memoryLimit: 500, // MB
 };
 
 // Use demo seeds for initial setup
@@ -168,6 +186,29 @@ export const useAppStore = create<AppStore>()(
           },
         })),
 
+      // Parallel search settings
+      parallelSearchSettings: defaultParallelSearchSettings,
+      setParallelSearchEnabled: (enabled) =>
+        set((state) => ({
+          parallelSearchSettings: { ...state.parallelSearchSettings, enabled },
+        })),
+      setMaxWorkers: (count) =>
+        set((state) => ({
+          parallelSearchSettings: { ...state.parallelSearchSettings, maxWorkers: count },
+        })),
+      setChunkStrategy: (strategy) =>
+        set((state) => ({
+          parallelSearchSettings: { ...state.parallelSearchSettings, chunkStrategy: strategy },
+        })),
+      setMemoryLimit: (limit) =>
+        set((state) => ({
+          parallelSearchSettings: { ...state.parallelSearchSettings, memoryLimit: limit },
+        })),
+
+      // Parallel search progress
+      parallelProgress: null,
+      setParallelProgress: (progress) => set({ parallelProgress: progress }),
+
       // UI state
       activeTab: 'search',
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -208,6 +249,7 @@ export const useAppStore = create<AppStore>()(
         targetSeeds: state.targetSeeds,
         targetSeedInput: state.targetSeedInput,
         presets: state.presets,
+        parallelSearchSettings: state.parallelSearchSettings,
       }),
     }
   )

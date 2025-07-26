@@ -1,10 +1,12 @@
 /**
  * Manager for search Web Worker
  * Handles communication between main thread and search worker
+ * Extended with parallel search capabilities
  */
 
-import type { SearchConditions, InitialSeedResult } from '../../types/pokemon';
+import type { SearchConditions, InitialSeedResult, AggregatedProgress } from '../../types/pokemon';
 import type { WorkerRequest, WorkerResponse } from '../../workers/search-worker';
+import { MultiWorkerSearchManager } from './multi-worker-manager';
 
 export interface SearchCallbacks {
   onProgress: (progress: {
@@ -21,11 +23,14 @@ export interface SearchCallbacks {
   onPaused: () => void;
   onResumed: () => void;
   onStopped: () => void;
+  onParallelProgress?: (progress: AggregatedProgress) => void;
 }
 
 export class SearchWorkerManager {
   private worker: Worker | null = null;
   private callbacks: SearchCallbacks | null = null;
+  private singleWorkerMode: boolean = true;
+  private multiWorkerManager: MultiWorkerSearchManager | null = null;
 
   constructor() {
     this.initializeWorker();
@@ -113,12 +118,18 @@ export class SearchWorkerManager {
     targetSeeds: number[], 
     callbacks: SearchCallbacks
   ): boolean {
+    this.callbacks = callbacks;
+
+    // 並列検索モードの場合
+    if (!this.singleWorkerMode) {
+      return this.startParallelSearch(conditions, targetSeeds, callbacks);
+    }
+
+    // 従来の単一Workerモード
     if (!this.worker) {
       callbacks.onError('Worker not available. Falling back to main thread.');
       return false;
     }
-
-    this.callbacks = callbacks;
 
     const request: WorkerRequest = {
       type: 'START_SEARCH',
@@ -130,28 +141,117 @@ export class SearchWorkerManager {
     return true;
   }
 
+  /**
+   * 並列検索開始
+   */
+  private startParallelSearch(
+    conditions: SearchConditions,
+    targetSeeds: number[],
+    callbacks: SearchCallbacks
+  ): boolean {
+    try {
+      if (!this.multiWorkerManager) {
+        this.multiWorkerManager = new MultiWorkerSearchManager();
+      }
+
+      // 並列検索用のコールバック変換
+      const parallelCallbacks = {
+        onProgress: (aggregatedProgress: AggregatedProgress) => {
+          // 既存の進捗フォーマットに変換
+          callbacks.onProgress({
+            currentStep: aggregatedProgress.totalCurrentStep,
+            totalSteps: aggregatedProgress.totalSteps,
+            elapsedTime: aggregatedProgress.totalElapsedTime,
+            estimatedTimeRemaining: aggregatedProgress.totalEstimatedTimeRemaining,
+            matchesFound: aggregatedProgress.totalMatchesFound
+          });
+
+          // 並列進捗情報も送信（利用可能な場合）
+          if (callbacks.onParallelProgress) {
+            callbacks.onParallelProgress(aggregatedProgress);
+          }
+        },
+        onResult: callbacks.onResult,
+        onComplete: callbacks.onComplete,
+        onError: callbacks.onError,
+        onPaused: callbacks.onPaused,
+        onResumed: callbacks.onResumed,
+        onStopped: callbacks.onStopped
+      };
+
+      this.multiWorkerManager.startParallelSearch(conditions, targetSeeds, parallelCallbacks);
+      return true;
+
+    } catch (error) {
+      console.error('Failed to start parallel search:', error);
+      callbacks.onError('Failed to start parallel search. Falling back to single worker mode.');
+      
+      // フォールバック: 単一Workerモードに切り替え
+      this.singleWorkerMode = true;
+      return this.startSearch(conditions, targetSeeds, callbacks);
+    }
+  }
+
   public pauseSearch() {
-    if (this.worker) {
+    if (!this.singleWorkerMode && this.multiWorkerManager) {
+      this.multiWorkerManager.pauseAll();
+    } else if (this.worker) {
       const request: WorkerRequest = { type: 'PAUSE_SEARCH' };
       this.worker.postMessage(request);
     }
   }
 
   public resumeSearch() {
-    if (this.worker) {
+    if (!this.singleWorkerMode && this.multiWorkerManager) {
+      this.multiWorkerManager.resumeAll();
+    } else if (this.worker) {
       const request: WorkerRequest = { type: 'RESUME_SEARCH' };
       this.worker.postMessage(request);
     }
   }
 
   public stopSearch() {
-    if (this.worker) {
+    if (!this.singleWorkerMode && this.multiWorkerManager) {
+      this.multiWorkerManager.terminateAll();
+    } else if (this.worker) {
       const request: WorkerRequest = { type: 'STOP_SEARCH' };
       this.worker.postMessage(request);
     }
   }
 
+  /**
+   * 並列検索モードの設定
+   */
+  public setParallelMode(enabled: boolean): void {
+    this.singleWorkerMode = !enabled;
+    
+    if (enabled && !this.multiWorkerManager) {
+      this.multiWorkerManager = new MultiWorkerSearchManager();
+    }
+    
+    console.log(`🔧 Search mode: ${enabled ? 'Parallel' : 'Single'} worker`);
+  }
+
+  /**
+   * 並列検索の利用可能性確認
+   */
+  public isParallelSearchAvailable(): boolean {
+    return (navigator.hardwareConcurrency ?? 1) > 1;
+  }
+
+  /**
+   * 現在のモード取得
+   */
+  public isParallelMode(): boolean {
+    return !this.singleWorkerMode;
+  }
+
   public terminate() {
+    if (this.multiWorkerManager) {
+      this.multiWorkerManager.terminateAll();
+      this.multiWorkerManager = null;
+    }
+    
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;

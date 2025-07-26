@@ -1,6 +1,10 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Separator } from '@/components/ui/separator';
 import { Play, Pause, Square } from '@phosphor-icons/react';
 import { useAppStore } from '../../store/app-store';
 import { getSearchWorkerManager } from '../../lib/search/search-worker-manager';
@@ -17,6 +21,10 @@ export function SearchControlCard() {
     targetSeeds,
     addSearchResult,
     clearSearchResults,
+    parallelSearchSettings,
+    setParallelSearchEnabled,
+    setMaxWorkers,
+    setParallelProgress,
   } = useAppStore();
 
   // Worker management functions
@@ -54,6 +62,9 @@ export function SearchControlCard() {
       // Get the worker manager
       const workerManager = getSearchWorkerManager();
       
+      // Set parallel mode based on settings
+      workerManager.setParallelMode(parallelSearchSettings.enabled);
+      
       // Start search with worker
       await workerManager.startSearch(
         searchConditions,
@@ -68,6 +79,10 @@ export function SearchControlCard() {
               matchesFound: progress.matchesFound,
               currentDateTime: progress.currentDateTime,
             });
+          },
+          onParallelProgress: (aggregatedProgress) => {
+            // 並列検索の詳細進捗を保存
+            setParallelProgress(aggregatedProgress);
           },
           onResult: (result: InitialSeedResult) => {
             console.log(`🎉 Found match from worker! Seed: 0x${result.seed.toString(16).padStart(8, '0')}`);
@@ -98,6 +113,7 @@ export function SearchControlCard() {
           },
           onStopped: () => {
             console.log('⏹️ Search stopped by worker');
+            setParallelProgress(null); // 並列進捗をクリア
             stopSearch();
           }
         }
@@ -105,36 +121,99 @@ export function SearchControlCard() {
     } catch (error) {
       console.error('Failed to start worker search:', error);
       alert(`Failed to start search: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setParallelProgress(null);
       stopSearch();
     }
   };
 
+  // 並列検索設定の変更
+  const handleParallelModeChange = (enabled: boolean) => {
+    if (searchProgress.isRunning) {
+      alert('Cannot change parallel mode while search is running.');
+      return;
+    }
+    setParallelSearchEnabled(enabled);
+  };
+
+  const handleMaxWorkersChange = (values: number[]) => {
+    if (searchProgress.isRunning) {
+      return;
+    }
+    setMaxWorkers(values[0]);
+  };
+
+  const maxCpuCores = navigator.hardwareConcurrency || 4;
+  const isParallelAvailable = getSearchWorkerManager().isParallelSearchAvailable();
+
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="flex gap-2">
-          {!searchProgress.isRunning ? (
-            <Button onClick={handleStartSearch} disabled={targetSeeds.seeds.length === 0}>
-              <Play size={16} className="mr-2" />
-              Start Search
-            </Button>
-          ) : (
-            <>
-              {searchProgress.isPaused ? (
-                <Button onClick={handleResumeSearch}>
-                  <Play size={16} className="mr-2" />
-                  Resume
-                </Button>
-              ) : (
-                <Button onClick={handlePauseSearch}>
-                  <Pause size={16} className="mr-2" />
-                  Pause
-                </Button>
-              )}
-              <Button variant="destructive" onClick={handleStopSearch}>
-                <Square size={16} className="mr-2" />
-                Stop
+        <div className="space-y-4">
+          {/* 検索制御ボタン */}
+          <div className="flex gap-2">
+            {!searchProgress.isRunning ? (
+              <Button onClick={handleStartSearch} disabled={targetSeeds.seeds.length === 0}>
+                <Play size={16} className="mr-2" />
+                Start Search
               </Button>
+            ) : (
+              <>
+                {searchProgress.isPaused ? (
+                  <Button onClick={handleResumeSearch}>
+                    <Play size={16} className="mr-2" />
+                    Resume
+                  </Button>
+                ) : (
+                  <Button onClick={handlePauseSearch}>
+                    <Pause size={16} className="mr-2" />
+                    Pause
+                  </Button>
+                )}
+                <Button variant="destructive" onClick={handleStopSearch}>
+                  <Square size={16} className="mr-2" />
+                  Stop
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* 並列検索設定 */}
+          {isParallelAvailable && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="parallel-search"
+                    checked={parallelSearchSettings.enabled}
+                    onCheckedChange={handleParallelModeChange}
+                    disabled={searchProgress.isRunning}
+                  />
+                  <Label htmlFor="parallel-search" className="text-sm font-medium">
+                    Enable Parallel Search {parallelSearchSettings.enabled ? '(Active)' : '(Experimental)'}
+                  </Label>
+                </div>
+
+                {parallelSearchSettings.enabled && (
+                  <div className="space-y-2 pl-6">
+                    <Label className="text-sm">
+                      Worker Count: {parallelSearchSettings.maxWorkers} / {maxCpuCores}
+                    </Label>
+                    <Slider
+                      value={[parallelSearchSettings.maxWorkers]}
+                      onValueChange={handleMaxWorkersChange}
+                      max={maxCpuCores}
+                      min={1}
+                      step={1}
+                      disabled={searchProgress.isRunning}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      More workers = faster search but higher memory usage
+                    </p>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
