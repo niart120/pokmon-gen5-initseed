@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../store/app-store';
-import { SeedCalculator } from '../lib/core/seed-calculator';
+import { getFullTimer0Range, getValidVCounts } from '../lib/utils/rom-parameter-helpers';
 import { ROMConfigurationCard } from './search/ROMConfigurationCard';
 import { Timer0VCountCard } from './search/Timer0VCountCard';
 import { DateRangeCard } from './search/DateRangeCard';
@@ -12,28 +12,36 @@ import { SearchHistory } from './search/SearchHistory';
 
 export function SearchPanel() {
   const { searchConditions, setSearchConditions } = useAppStore();
-  const calculator = new SeedCalculator();
 
   // Update auto-parameters when ROM version/region changes
   React.useEffect(() => {
-    const params = calculator.getROMParameters(searchConditions.romVersion, searchConditions.romRegion);
-    if (params && searchConditions.timer0Range.useAutoRange) {
-      setSearchConditions({
-        timer0Range: {
-          ...searchConditions.timer0Range,
-          min: params.timer0Min,
-          max: params.timer0Max,
-        },
-      });
+    if (searchConditions.timer0Range.useAutoRange) {
+      const timer0Range = getFullTimer0Range(searchConditions.romVersion, searchConditions.romRegion);
+      if (timer0Range) {
+        setSearchConditions({
+          timer0Range: {
+            ...searchConditions.timer0Range,
+            min: timer0Range.min,
+            max: timer0Range.max,
+          },
+        });
+      }
     }
-    if (params && searchConditions.vcountRange.useAutoRange) {
-      setSearchConditions({
-        vcountRange: {
-          ...searchConditions.vcountRange,
-          min: params.defaultVCount,
-          max: params.defaultVCount,
-        },
-      });
+    
+    if (searchConditions.vcountRange.useAutoRange) {
+      const validVCounts = getValidVCounts(searchConditions.romVersion, searchConditions.romRegion);
+      if (validVCounts.length > 0) {
+        // 通常版は最初のVCOUNT値、VCOUNTずれ版は全範囲を使用
+        const minVCount = Math.min(...validVCounts);
+        const maxVCount = Math.max(...validVCounts);
+        setSearchConditions({
+          vcountRange: {
+            ...searchConditions.vcountRange,
+            min: minVCount,
+            max: maxVCount,
+          },
+        });
+      }
     }
   }, [searchConditions.romVersion, searchConditions.romRegion]);
 

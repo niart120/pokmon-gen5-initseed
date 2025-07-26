@@ -63,11 +63,12 @@ export function testSeedCalculation() {
     
     // Test VCount offset handling for BW2
     const bw2Params = calculator.getROMParameters('B2', 'GER');
-    if (bw2Params && bw2Params.vcountOffset) {
-      console.log('Testing VCount offset for B2 GER:');
+    if (bw2Params) {
+      console.log('Testing VCount handling for B2 GER:');
+      console.log(`  Valid VCounts: ${bw2Params.vcountTimerRanges.map(range => `0x${range[0].toString(16)}`).join(', ')}`);
       for (let timer0 = 4325; timer0 <= 4332; timer0++) {
         const vcount = calculator.getVCountForTimer0(bw2Params, timer0);
-        console.log(`  Timer0 ${timer0}: VCount ${vcount}`);
+        console.log(`  Timer0 ${timer0}: VCount 0x${vcount.toString(16)}`);
       }
     }
     

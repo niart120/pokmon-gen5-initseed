@@ -2,6 +2,7 @@ import { SHA1 } from './sha1';
 import { initWasm, getWasm, isWasmReady, createWasmCalculator, type WasmSeedCalculator } from './wasm-interface';
 import type { SearchConditions, ROMParameters, Hardware } from '../../types/pokemon';
 import romParameters from '../../data/rom-parameters';
+import { getTimer0Range, getVCountFromTimer0 } from '../utils/rom-parameter-helpers';
 
 const HARDWARE_FRAME_VALUES: Record<Hardware, number> = {
   DS: 8,
@@ -92,12 +93,11 @@ export class SeedCalculator {
     }
     
     return {
-      nazo: [...regionData.nazo],
-      defaultVCount: regionData.defaultVCount,
-      timer0Min: regionData.timer0Min,
-      timer0Max: regionData.timer0Max,
-      vcountOffset: 'vcountOffset' in regionData ? [...(regionData as any).vcountOffset] : undefined
-    } as ROMParameters;
+      nazo: [...regionData.nazo] as [number, number, number, number, number],
+      vcountTimerRanges: regionData.vcountTimerRanges.map(range => 
+        [...range] as [number, number, number]
+      )
+    };
   }
 
   /**
@@ -300,17 +300,14 @@ export class SeedCalculator {
    * Get VCount value with offset handling for BW2
    */
   public getVCountForTimer0(params: ROMParameters, timer0: number): number {
-    if (!params.vcountOffset) {
-      return params.defaultVCount;
-    }
-
-    // Check if Timer0 falls within any offset range
-    for (const offset of params.vcountOffset) {
-      if (timer0 >= offset.timer0Min && timer0 <= offset.timer0Max) {
-        return offset.vcountValue;
+    // 新しいvcountTimerRanges構造を使用
+    for (const [vcount, timer0Min, timer0Max] of params.vcountTimerRanges) {
+      if (timer0 >= timer0Min && timer0 <= timer0Max) {
+        return vcount;
       }
     }
 
-    return params.defaultVCount;
+    // フォールバック: 最初のVCOUNT値を返す
+    return params.vcountTimerRanges.length > 0 ? params.vcountTimerRanges[0][0] : 0x60;
   }
 }
