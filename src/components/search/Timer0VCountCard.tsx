@@ -4,9 +4,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAppStore } from '../../store/app-store';
+import { parseHexInput, formatHexDisplay } from '../../lib/utils/hex-parser';
 
 export function Timer0VCountCard() {
   const { searchConditions, setSearchConditions } = useAppStore();
+
+  const handleTimer0Change = (field: 'min' | 'max', value: string) => {
+    const parsed = parseHexInput(value, 0xFFFF); // Timer0 max value
+    if (parsed !== null) {
+      setSearchConditions({
+        timer0Range: { ...searchConditions.timer0Range, [field]: parsed },
+      });
+    }
+  };
+
+  const handleVCountChange = (field: 'min' | 'max', value: string) => {
+    const parsed = parseHexInput(value, 0xFF); // VCount max value
+    if (parsed !== null) {
+      setSearchConditions({
+        vcountRange: { ...searchConditions.vcountRange, [field]: parsed },
+      });
+    }
+  };
 
   return (
     <Card>
@@ -30,31 +49,27 @@ export function Timer0VCountCard() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label htmlFor="timer0-min">Timer0 Min</Label>
+                <Label htmlFor="timer0-min">Timer0 Min (hex)</Label>
                 <Input
                   id="timer0-min"
-                  type="number"
-                  value={searchConditions.timer0Range.min}
-                  onChange={(e) =>
-                    setSearchConditions({
-                      timer0Range: { ...searchConditions.timer0Range, min: parseInt(e.target.value) || 0 },
-                    })
-                  }
+                  type="text"
+                  placeholder="0"
+                  value={formatHexDisplay(searchConditions.timer0Range.min)}
+                  onChange={(e) => handleTimer0Change('min', e.target.value)}
                   disabled={searchConditions.timer0Range.useAutoRange}
+                  className="font-mono"
                 />
               </div>
               <div>
-                <Label htmlFor="timer0-max">Timer0 Max</Label>
+                <Label htmlFor="timer0-max">Timer0 Max (hex)</Label>
                 <Input
                   id="timer0-max"
-                  type="number"
-                  value={searchConditions.timer0Range.max}
-                  onChange={(e) =>
-                    setSearchConditions({
-                      timer0Range: { ...searchConditions.timer0Range, max: parseInt(e.target.value) || 0 },
-                    })
-                  }
+                  type="text"
+                  placeholder="FFFF"
+                  value={formatHexDisplay(searchConditions.timer0Range.max)}
+                  onChange={(e) => handleTimer0Change('max', e.target.value)}
                   disabled={searchConditions.timer0Range.useAutoRange}
+                  className="font-mono"
                 />
               </div>
             </div>
@@ -75,31 +90,27 @@ export function Timer0VCountCard() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label htmlFor="vcount-min">VCount Min</Label>
+                <Label htmlFor="vcount-min">VCount Min (hex)</Label>
                 <Input
                   id="vcount-min"
-                  type="number"
-                  value={searchConditions.vcountRange.min}
-                  onChange={(e) =>
-                    setSearchConditions({
-                      vcountRange: { ...searchConditions.vcountRange, min: parseInt(e.target.value) || 0 },
-                    })
-                  }
+                  type="text"
+                  placeholder="0"
+                  value={formatHexDisplay(searchConditions.vcountRange.min)}
+                  onChange={(e) => handleVCountChange('min', e.target.value)}
                   disabled={searchConditions.vcountRange.useAutoRange}
+                  className="font-mono"
                 />
               </div>
               <div>
-                <Label htmlFor="vcount-max">VCount Max</Label>
+                <Label htmlFor="vcount-max">VCount Max (hex)</Label>
                 <Input
                   id="vcount-max"
-                  type="number"
-                  value={searchConditions.vcountRange.max}
-                  onChange={(e) =>
-                    setSearchConditions({
-                      vcountRange: { ...searchConditions.vcountRange, max: parseInt(e.target.value) || 0 },
-                    })
-                  }
+                  type="text"
+                  placeholder="FF"
+                  value={formatHexDisplay(searchConditions.vcountRange.max)}
+                  onChange={(e) => handleVCountChange('max', e.target.value)}
                   disabled={searchConditions.vcountRange.useAutoRange}
+                  className="font-mono"
                 />
               </div>
             </div>
