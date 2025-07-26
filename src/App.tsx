@@ -129,7 +129,7 @@ function App() {
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <Gear size={16} />
-              Option (WIP)
+              Option
             </TabsTrigger>
             <TabsTrigger value="help" className="flex items-center gap-2">
               <Info size={16} />

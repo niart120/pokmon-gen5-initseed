@@ -102,10 +102,7 @@ export function SearchHistory() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <History className="h-5 w-5" />
-          Search History
-          <Badge variant="outline" className="text-xs">
-            WIP
-          </Badge>
+          Search History (WIP)
           {history.length > 0 && (
             <Badge variant="secondary" className="ml-auto">
               {history.length}件
@@ -114,13 +111,6 @@ export function SearchHistory() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* WIP: 履歴機能は未実装です */}
-        <Alert className="border-yellow-500 bg-yellow-50">
-          <AlertDescription className="text-yellow-800">
-            <strong>開発中:</strong> この履歴機能は現在実装中です。探索結果の自動保存機能はまだ動作しません。
-          </AlertDescription>
-        </Alert>
-
         {/* メッセージ表示 */}
         {message && (
           <Alert className={message.type === 'error' ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'}>
