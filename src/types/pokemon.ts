@@ -153,7 +153,7 @@ export interface WorkerProgress {
 
 // Parallel worker message types
 export interface ParallelWorkerRequest {
-  type: 'START_SEARCH' | 'PAUSE_SEARCH' | 'RESUME_SEARCH' | 'STOP_SEARCH';
+  type: 'START_SEARCH' | 'PAUSE_SEARCH' | 'RESUME_SEARCH' | 'STOP_SEARCH' | 'PING';
   workerId: number;
   conditions?: SearchConditions;
   targetSeeds?: number[];
@@ -161,7 +161,7 @@ export interface ParallelWorkerRequest {
 }
 
 export interface ParallelWorkerResponse {
-  type: 'PROGRESS' | 'RESULT' | 'COMPLETE' | 'ERROR' | 'PAUSED' | 'RESUMED' | 'STOPPED' | 'READY';
+  type: 'PROGRESS' | 'RESULT' | 'COMPLETE' | 'ERROR' | 'PAUSED' | 'RESUMED' | 'STOPPED' | 'READY' | 'INITIALIZED';
   workerId: number;
   progress?: {
     currentStep: number;

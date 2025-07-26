@@ -395,17 +395,27 @@
                 
                 log(`✅ WebAssembly loaded successfully in ${loadTime.toFixed(2)}ms`, 'success', 'wasmResults');
                 
-                // Test basic functionality
+                // Test IntegratedSeedSearcher with proper parameters
+                const macAddress = new Uint8Array([0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC]);
+                const nazoParams = new Uint32Array([0x02215F1, 0x020796A1, 0x02215EE, 0x02217DA, 0x0221962]);
+                const version = 5; // BW version identifier
+                const frame = 8; // Default frame parameter
+                
                 const searcher = new wasmModule.IntegratedSeedSearcher(
-                    [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC],
-                    new Uint32Array([0x02215F1, 0x020796A1]),
-                    5, 8
+                    macAddress,
+                    nazoParams,
+                    version,
+                    frame
                 );
                 
                 log('✅ IntegratedSeedSearcher instance created successfully', 'success', 'wasmResults');
                 log('🔧 WebAssembly integration test completed', 'info', 'wasmResults');
                 
+                // Clean up
+                searcher.free();
+                
             } catch (error) {
+                console.error('WebAssembly Test Error:', error);
                 log(`❌ WebAssembly test failed: ${error.message}`, 'error', 'wasmResults');
             }
             
@@ -476,33 +486,52 @@
             log('Running WebAssembly performance benchmark...', 'info', 'wasmResults');
             
             try {
+                // Load WebAssembly module
                 const wasmModule = await import('/wasm/wasm_pkg.js');
                 await wasmModule.default();
                 
+                // Create IntegratedSeedSearcher with proper parameters
+                const macAddress = new Uint8Array([0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC]);
+                const nazoParams = new Uint32Array([0x02215F1, 0x020796A1, 0x02215EE, 0x02217DA, 0x0221962]);
+                const version = 5; // BW version identifier
+                const frame = 8; // Default frame parameter
+                
                 const searcher = new wasmModule.IntegratedSeedSearcher(
-                    [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC],
-                    new Uint32Array([0x02215F1, 0x020796A1]),
-                    5, 8
+                    macAddress,
+                    nazoParams, 
+                    version,
+                    frame
                 );
                 
-                const iterations = 1000;
+                const iterations = 100; // Reduced for stability
                 const startTime = performance.now();
                 
+                // Target seeds for testing
+                const targetSeeds = new Uint32Array([0x12345678]);
+                
                 for (let i = 0; i < iterations; i++) {
-                    searcher.search_seeds_integrated(
-                        2025, 1, 1, 10, 0, 0, 10,
-                        3193, 3194, 160, 161,
-                        new Uint32Array([0x12345678])
+                    const results = searcher.search_seeds_integrated(
+                        2025, 1, 1, 10, 0, 0, 1, // 1 second range
+                        3193, 3194, // timer0 range
+                        160, 161,   // vcount range
+                        targetSeeds
                     );
+                    // Results processed but not stored for performance test
                 }
                 
                 const endTime = performance.now();
-                const opsPerSecond = Math.round(iterations / ((endTime - startTime) / 1000));
+                const totalTime = endTime - startTime;
+                const opsPerSecond = Math.round(iterations / (totalTime / 1000));
                 
-                log(`✅ Performance: ${opsPerSecond} operations/sec`, 'success', 'wasmResults');
+                log(`✅ Performance: ${opsPerSecond} operations/sec (${totalTime.toFixed(2)}ms total)`, 'success', 'wasmResults');
+                updateMetric('wasmLoadTime', totalTime.toFixed(2));
                 updateMetric('wasmMemoryUsage', getMemoryInfo()?.used || '-');
                 
+                // Clean up
+                searcher.free();
+                
             } catch (error) {
+                console.error('WASM Performance Test Error:', error);
                 log(`❌ Performance test failed: ${error.message}`, 'error', 'wasmResults');
             }
         };

@@ -356,6 +356,15 @@ self.onmessage = async (event: MessageEvent<ParallelWorkerRequest>) => {
       } as ParallelWorkerResponse);
       break;
 
+    case 'PING':
+      // テスト用通信確認
+      postMessage({
+        type: 'INITIALIZED',
+        workerId: searchState.workerId,
+        message: `Pong from worker ${searchState.workerId}`
+      } as ParallelWorkerResponse);
+      break;
+
     default:
       console.warn(`Worker ${searchState.workerId}: Unknown message type:`, type);
   }
