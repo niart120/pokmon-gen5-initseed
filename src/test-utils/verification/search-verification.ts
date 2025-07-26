@@ -1,4 +1,5 @@
 import { SeedCalculator } from '../../lib/core/seed-calculator';
+import { getFullTimer0Range, getValidVCounts } from '../../lib/utils/rom-parameter-helpers';
 import type { SearchConditions } from '../../types/pokemon';
 
 /**
@@ -26,9 +27,11 @@ export function verifySearchImplementation(): boolean {
       console.error(`❌ Failed to load parameters for ${config.version} ${config.region}`);
       allTestsPassed = false;
     } else {
-      console.log(`✅ ${config.version} ${config.region}: Timer0=${params.timer0Min}-${params.timer0Max}, VCount=${params.defaultVCount}`);
-      if (params.vcountOffset) {
-        console.log(`   VCount offsets: ${params.vcountOffset.length} rules`);
+      const timer0Range = getFullTimer0Range(config.version, config.region);
+      const validVCounts = getValidVCounts(config.version, config.region);
+      console.log(`✅ ${config.version} ${config.region}: Timer0=${timer0Range?.min}-${timer0Range?.max}, VCounts=[${validVCounts.map(v => `0x${v.toString(16)}`).join(', ')}]`);
+      if (params.vcountTimerRanges.length > 1) {
+        console.log(`   VCount offset handling: ${params.vcountTimerRanges.length} ranges`);
       }
     }
   }
@@ -36,21 +39,21 @@ export function verifySearchImplementation(): boolean {
   // Test 2: VCount offset handling for BW2
   console.log('\n2. Testing VCount offset handling...');
   const bw2GerParams = calculator.getROMParameters('B2', 'GER');
-  if (bw2GerParams && bw2GerParams.vcountOffset) {
+  if (bw2GerParams && bw2GerParams.vcountTimerRanges.length > 1) {
     // Test specific Timer0 values that should trigger different VCounts
     const testCases = [
-      { timer0: 4325, expectedVCount: 129 },
-      { timer0: 4328, expectedVCount: 129 },
-      { timer0: 4329, expectedVCount: 130 },
-      { timer0: 4332, expectedVCount: 130 }
+      { timer0: 4325, expectedVCount: 0x81 },  // 0x10E5 in first range
+      { timer0: 4328, expectedVCount: 0x81 },  // 0x10E8 in first range  
+      { timer0: 4329, expectedVCount: 0x82 },  // 0x10E9 in second range
+      { timer0: 4332, expectedVCount: 0x82 }   // 0x10EC in second range
     ];
 
     for (const testCase of testCases) {
       const actualVCount = calculator.getVCountForTimer0(bw2GerParams, testCase.timer0);
       if (actualVCount === testCase.expectedVCount) {
-        console.log(`✅ Timer0 ${testCase.timer0} → VCount ${actualVCount}`);
+        console.log(`✅ Timer0 ${testCase.timer0} → VCount 0x${actualVCount.toString(16)}`);
       } else {
-        console.error(`❌ Timer0 ${testCase.timer0} → Expected VCount ${testCase.expectedVCount}, got ${actualVCount}`);
+        console.error(`❌ Timer0 ${testCase.timer0} → Expected VCount 0x${testCase.expectedVCount.toString(16)}, got 0x${actualVCount.toString(16)}`);
         allTestsPassed = false;
       }
     }
