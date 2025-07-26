@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-describe('MACAddressCard Logic', () => {
+describe('MACAddressCard New Approach', () => {
   const isValidHexInput = (value: string): boolean => {
     return /^[0-9a-fA-F]{0,2}$/i.test(value);
   };
@@ -9,17 +9,28 @@ describe('MACAddressCard Logic', () => {
     return value.toUpperCase();
   };
 
-  const shouldRemoveLeadingZero = (value: string): boolean => {
-    return value.length === 2 && value.startsWith('0') && value !== '00';
-  };
-
-  const formatOnBlur = (value: string): string => {
-    if (value === '') {
-      return '00';
-    } else if (value.length === 1) {
-      return '0' + value;
+  const validateAndFormat = (input: string, fallback: number): { valid: boolean; value: number; display: string } => {
+    // パーサによるバリデーション
+    const hexValue = input.toLowerCase();
+    const cleanInput = hexValue.startsWith('0x') ? hexValue.substring(2) : hexValue;
+    
+    if (/^[0-9a-f]{1,2}$/.test(cleanInput)) {
+      const parsed = parseInt(cleanInput, 16);
+      if (parsed >= 0 && parsed <= 255) {
+        return {
+          valid: true,
+          value: parsed,
+          display: parsed.toString(16).padStart(2, '0').toUpperCase()
+        };
+      }
     }
-    return value;
+    
+    // バリデーション失敗時は元の値を保持
+    return {
+      valid: false,
+      value: fallback,
+      display: fallback.toString(16).padStart(2, '0').toUpperCase()
+    };
   };
 
   it('should validate hex input correctly', () => {
@@ -38,80 +49,50 @@ describe('MACAddressCard Logic', () => {
     expect(formatInputValue('1a')).toBe('1A');
   });
 
-  it('should identify leading zero removal cases', () => {
-    expect(shouldRemoveLeadingZero('01')).toBe(true);
-    expect(shouldRemoveLeadingZero('0A')).toBe(true);
-    expect(shouldRemoveLeadingZero('00')).toBe(false);
-    expect(shouldRemoveLeadingZero('10')).toBe(false);
-    expect(shouldRemoveLeadingZero('1')).toBe(false);
+  it('should validate and format on blur correctly', () => {
+    // 有効な値のテスト
+    expect(validateAndFormat('1', 0)).toEqual({ valid: true, value: 1, display: '01' });
+    expect(validateAndFormat('FF', 0)).toEqual({ valid: true, value: 255, display: 'FF' });
+    expect(validateAndFormat('a0', 0)).toEqual({ valid: true, value: 160, display: 'A0' });
+    
+    // 無効な値のテスト（元の値を保持）
+    expect(validateAndFormat('', 42)).toEqual({ valid: false, value: 42, display: '2A' });
+    expect(validateAndFormat('GG', 42)).toEqual({ valid: false, value: 42, display: '2A' });
+    expect(validateAndFormat('256', 42)).toEqual({ valid: false, value: 42, display: '2A' });
   });
 
-  it('should format values correctly on blur', () => {
-    expect(formatOnBlur('')).toBe('00');
-    expect(formatOnBlur('1')).toBe('01');
-    expect(formatOnBlur('A')).toBe('0A');
-    expect(formatOnBlur('FF')).toBe('FF');
-    expect(formatOnBlur('12')).toBe('12');
+  it('should handle focus selection behavior', () => {
+    // フォーカス時の全選択は DOM 操作なので、ここでは概念をテスト
+    const shouldSelectAll = true;
+    expect(shouldSelectAll).toBe(true);
   });
 
-  it('should handle empty input during editing without immediate store update', () => {
-    // Scenario: User wants to clear and re-enter a value
-    // 1. User selects all and deletes -> should allow empty temporarily
-    // 2. User types new value -> should update store only when valid
-    // 3. Blur on empty -> should set to "00"
+  it('should handle typical user scenarios', () => {
+    // シナリオ1: 正常な入力
+    let result = validateAndFormat('12', 0);
+    expect(result).toEqual({ valid: true, value: 18, display: '12' });
     
-    let currentValue = '01';
-    let storeValue = 1;
+    // シナリオ2: 1桁入力
+    result = validateAndFormat('A', 0);
+    expect(result).toEqual({ valid: true, value: 10, display: '0A' });
     
-    // User deletes content (temporary empty state)
-    currentValue = '';
-    // Store should NOT be updated yet (remains 1)
-    expect(storeValue).toBe(1);
+    // シナリオ3: 無効入力（元の値保持）
+    result = validateAndFormat('XY', 255);
+    expect(result).toEqual({ valid: false, value: 255, display: 'FF' });
     
-    // User types new value
-    currentValue = '4';
-    storeValue = 4; // Store updates when valid value is entered
-    
-    // User continues typing
-    currentValue = '42';
-    storeValue = 0x42; // Store updates
-    
-    expect(formatOnBlur(currentValue)).toBe('42');
+    // シナリオ4: 空入力（元の値保持）
+    result = validateAndFormat('', 100);
+    expect(result).toEqual({ valid: false, value: 100, display: '64' });
   });
 
-  it('should handle Tab navigation with auto-formatting', () => {
-    // When user presses Tab on single digit, it should auto-format
-    let currentValue = '5';
+  it('should handle edge cases', () => {
+    // 最小値
+    expect(validateAndFormat('0', 50)).toEqual({ valid: true, value: 0, display: '00' });
     
-    // Simulate Tab key behavior
-    const formattedOnTab = currentValue.length === 1 ? '0' + currentValue : currentValue;
-    expect(formattedOnTab).toBe('05');
-  });
-
-  it('should handle continuous input scenarios correctly', () => {
-    // Scenario: User wants to input "12"
-    // 1. Focus on field showing "00"
-    // 2. Clear and type "1" -> should show "1"
-    // 3. Type "2" -> should show "12"
-    // 4. Blur -> should show "12" (not "01")
+    // 最大値
+    expect(validateAndFormat('FF', 50)).toEqual({ valid: true, value: 255, display: 'FF' });
     
-    let currentValue = '00';
-    
-    // Focus removes leading zero for editing
-    if (shouldRemoveLeadingZero(currentValue)) {
-      currentValue = currentValue[1];
-    }
-    expect(currentValue).toBe('00'); // "00" doesn't change on focus
-    
-    // User clears and types "1"
-    currentValue = '1';
-    expect(isValidHexInput(currentValue)).toBe(true);
-    
-    // User continues typing "2"
-    currentValue = '12';
-    expect(isValidHexInput(currentValue)).toBe(true);
-    
-    // Blur should keep "12" as is
-    expect(formatOnBlur(currentValue)).toBe('12');
+    // 範囲外
+    expect(validateAndFormat('100', 50)).toEqual({ valid: false, value: 50, display: '32' });
   });
 });

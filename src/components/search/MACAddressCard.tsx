@@ -8,7 +8,7 @@ import { parseMacByte, formatHexDisplay } from '../../lib/utils/hex-parser';
 export function MACAddressCard() {
   const { searchConditions, setSearchConditions } = useAppStore();
   
-  // 入力中の表示値を管理（フォーマットされていない生の値）
+  // 各フィールドの表示値を管理
   const [inputValues, setInputValues] = useState<string[]>(
     searchConditions.macAddress.map(byte => formatHexDisplay(byte, 2))
   );
@@ -19,61 +19,42 @@ export function MACAddressCard() {
   }, [searchConditions.macAddress]);
 
   const handleInputChange = (index: number, value: string) => {
-    // 入力中は生の値を保持（16進数文字のみ許可、最大2文字）
+    // 最大2桁の16進数文字のみ許可
     if (/^[0-9a-fA-F]{0,2}$/i.test(value)) {
       const newInputValues = [...inputValues];
       newInputValues[index] = value.toUpperCase();
       setInputValues(newInputValues);
-      
-      // 有効な値の場合のみストアを更新（空文字の場合は更新しない）
-      const parsed = parseMacByte(value);
-      if (parsed !== null) {
-        const macAddress = [...searchConditions.macAddress];
-        macAddress[index] = parsed;
-        setSearchConditions({ macAddress });
-      }
-      // 空文字の場合はストア更新をスキップ（一時的な削除を許可）
-    }
-  };
-
-  const handleBlur = (index: number) => {
-    // フォーカス離脱時に入力値を2桁にフォーマット
-    const currentInput = inputValues[index];
-    if (currentInput === '') {
-      // 空の場合は"00"に設定し、ストアも0に更新
-      const newInputValues = [...inputValues];
-      newInputValues[index] = '00';
-      setInputValues(newInputValues);
-      
-      const macAddress = [...searchConditions.macAddress];
-      macAddress[index] = 0;
-      setSearchConditions({ macAddress });
-    } else if (currentInput.length === 1) {
-      // 1桁の場合は先頭に0を追加
-      const newInputValues = [...inputValues];
-      newInputValues[index] = '0' + currentInput;
-      setInputValues(newInputValues);
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Tab キーでフィールドを移動する際の自動フォーマット
-    if (e.key === 'Tab') {
-      const currentInput = inputValues[index];
-      if (currentInput.length === 1) {
-        const newInputValues = [...inputValues];
-        newInputValues[index] = '0' + currentInput;
-        setInputValues(newInputValues);
-      }
     }
   };
 
   const handleFocus = (index: number) => {
-    // フォーカス時に0パディングを削除（01 → 1）
-    const currentValue = inputValues[index];
-    if (currentValue.length === 2 && currentValue.startsWith('0') && currentValue !== '00') {
+    // フォーカス時に全選択
+    setTimeout(() => {
+      const input = document.getElementById(`mac-${index}`) as HTMLInputElement;
+      if (input) {
+        input.select();
+      }
+    }, 0);
+  };
+
+  const handleBlur = (index: number) => {
+    // バリデーション実行
+    const currentInput = inputValues[index];
+    const parsed = parseMacByte(currentInput);
+    
+    if (parsed !== null) {
+      // バリデーション成功: ストア更新 & 2桁フォーマット
+      const macAddress = [...searchConditions.macAddress];
+      macAddress[index] = parsed;
+      setSearchConditions({ macAddress });
+      
       const newInputValues = [...inputValues];
-      newInputValues[index] = currentValue[1];
+      newInputValues[index] = formatHexDisplay(parsed, 2);
+      setInputValues(newInputValues);
+    } else {
+      // バリデーション失敗: 元の値に戻す
+      const newInputValues = [...inputValues];
+      newInputValues[index] = formatHexDisplay(searchConditions.macAddress[index], 2);
       setInputValues(newInputValues);
     }
   };
@@ -97,7 +78,6 @@ export function MACAddressCard() {
                 onChange={(e) => handleInputChange(index, e.target.value)}
                 onBlur={() => handleBlur(index)}
                 onFocus={() => handleFocus(index)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
                 className="font-mono text-center"
               />
             </div>
