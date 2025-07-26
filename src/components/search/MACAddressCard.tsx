@@ -25,18 +25,14 @@ export function MACAddressCard() {
       newInputValues[index] = value.toUpperCase();
       setInputValues(newInputValues);
       
-      // 有効な値の場合のみストアを更新
+      // 有効な値の場合のみストアを更新（空文字の場合は更新しない）
       const parsed = parseMacByte(value);
       if (parsed !== null) {
         const macAddress = [...searchConditions.macAddress];
         macAddress[index] = parsed;
         setSearchConditions({ macAddress });
-      } else if (value === '') {
-        // 空の場合は0として扱う
-        const macAddress = [...searchConditions.macAddress];
-        macAddress[index] = 0;
-        setSearchConditions({ macAddress });
       }
+      // 空文字の場合はストア更新をスキップ（一時的な削除を許可）
     }
   };
 
@@ -44,15 +40,31 @@ export function MACAddressCard() {
     // フォーカス離脱時に入力値を2桁にフォーマット
     const currentInput = inputValues[index];
     if (currentInput === '') {
-      // 空の場合は"00"に設定
+      // 空の場合は"00"に設定し、ストアも0に更新
       const newInputValues = [...inputValues];
       newInputValues[index] = '00';
       setInputValues(newInputValues);
+      
+      const macAddress = [...searchConditions.macAddress];
+      macAddress[index] = 0;
+      setSearchConditions({ macAddress });
     } else if (currentInput.length === 1) {
       // 1桁の場合は先頭に0を追加
       const newInputValues = [...inputValues];
       newInputValues[index] = '0' + currentInput;
       setInputValues(newInputValues);
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Tab キーでフィールドを移動する際の自動フォーマット
+    if (e.key === 'Tab') {
+      const currentInput = inputValues[index];
+      if (currentInput.length === 1) {
+        const newInputValues = [...inputValues];
+        newInputValues[index] = '0' + currentInput;
+        setInputValues(newInputValues);
+      }
     }
   };
 
@@ -85,6 +97,7 @@ export function MACAddressCard() {
                 onChange={(e) => handleInputChange(index, e.target.value)}
                 onBlur={() => handleBlur(index)}
                 onFocus={() => handleFocus(index)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
                 className="font-mono text-center"
               />
             </div>

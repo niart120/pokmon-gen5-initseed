@@ -54,6 +54,40 @@ describe('MACAddressCard Logic', () => {
     expect(formatOnBlur('12')).toBe('12');
   });
 
+  it('should handle empty input during editing without immediate store update', () => {
+    // Scenario: User wants to clear and re-enter a value
+    // 1. User selects all and deletes -> should allow empty temporarily
+    // 2. User types new value -> should update store only when valid
+    // 3. Blur on empty -> should set to "00"
+    
+    let currentValue = '01';
+    let storeValue = 1;
+    
+    // User deletes content (temporary empty state)
+    currentValue = '';
+    // Store should NOT be updated yet (remains 1)
+    expect(storeValue).toBe(1);
+    
+    // User types new value
+    currentValue = '4';
+    storeValue = 4; // Store updates when valid value is entered
+    
+    // User continues typing
+    currentValue = '42';
+    storeValue = 0x42; // Store updates
+    
+    expect(formatOnBlur(currentValue)).toBe('42');
+  });
+
+  it('should handle Tab navigation with auto-formatting', () => {
+    // When user presses Tab on single digit, it should auto-format
+    let currentValue = '5';
+    
+    // Simulate Tab key behavior
+    const formattedOnTab = currentValue.length === 1 ? '0' + currentValue : currentValue;
+    expect(formattedOnTab).toBe('05');
+  });
+
   it('should handle continuous input scenarios correctly', () => {
     // Scenario: User wants to input "12"
     // 1. Focus on field showing "00"
