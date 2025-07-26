@@ -122,53 +122,84 @@ async function processChunkWithWasm(
     const startDate = chunk.startDateTime;
     const endDate = chunk.endDateTime;
     const rangeSeconds = Math.floor((endDate.getTime() - startDate.getTime()) / 1000) + 1;
+    const totalOperations = rangeSeconds * 
+      (conditions.timer0Range.max - conditions.timer0Range.min + 1) *
+      (conditions.vcountRange.max - conditions.vcountRange.min + 1);
 
-    console.log(`🔍 Worker ${searchState.workerId}: Processing ${rangeSeconds} seconds with WebAssembly`);
+    console.log(`🔍 Worker ${searchState.workerId}: Processing ${rangeSeconds} seconds with WebAssembly (WITH sub-chunking)`);
 
-    // 統合検索実行
-    const results = searcher.search_seeds_integrated(
-      startDate.getFullYear(),
-      startDate.getMonth() + 1,
-      startDate.getDate(),
-      startDate.getHours(),
-      startDate.getMinutes(),
-      startDate.getSeconds(),
-      rangeSeconds,
-      conditions.timer0Range.min,
-      conditions.timer0Range.max,
-      conditions.vcountRange.min,
-      conditions.vcountRange.max,
-      new Uint32Array(targetSeeds)
-    );
+    // 初期進捗報告
+    reportProgress(0, totalOperations, 0);
 
-    // 結果変換
-    const searchResults: InitialSeedResult[] = [];
-    for (const result of results) {
-      const resultDate = new Date(
-        result.year, 
-        result.month - 1, 
-        result.date, 
-        result.hour, 
-        result.minute, 
-        result.second
-      );
+    // サブチャンク分割 (30日 = 2,592,000秒)
+    const subChunkSeconds = Math.min(30 * 24 * 60 * 60, rangeSeconds);
+    const allResults: InitialSeedResult[] = [];
+    let processedOperations = 0;
+
+    for (let offset = 0; offset < rangeSeconds; offset += subChunkSeconds) {
+      const subChunkStart = new Date(startDate.getTime() + offset * 1000);
+      const subChunkEnd = new Date(Math.min(
+        startDate.getTime() + (offset + subChunkSeconds) * 1000,
+        endDate.getTime() + 1000
+      ));
+      const subChunkRange = Math.floor((subChunkEnd.getTime() - subChunkStart.getTime()) / 1000);
       
-      const message = calculator.generateMessage(conditions, result.timer0, result.vcount, resultDate);
-      const { hash } = calculator.calculateSeed(message);
+      if (subChunkRange <= 0) break;
 
-      searchResults.push({
-        seed: result.seed,
-        datetime: resultDate,
-        timer0: result.timer0,
-        vcount: result.vcount,
-        conditions,
-        message,
-        sha1Hash: hash,
-        isMatch: true,
-      });
+      console.log(`🔍 Worker ${searchState.workerId}: Processing sub-chunk ${Math.floor(offset / subChunkSeconds) + 1}: ${subChunkRange} seconds`);
+
+      // サブチャンクの統合検索実行
+      const subResults = searcher.search_seeds_integrated(
+        subChunkStart.getFullYear(),
+        subChunkStart.getMonth() + 1,
+        subChunkStart.getDate(),
+        subChunkStart.getHours(),
+        subChunkStart.getMinutes(),
+        subChunkStart.getSeconds(),
+        subChunkRange,
+        conditions.timer0Range.min,
+        conditions.timer0Range.max,
+        conditions.vcountRange.min,
+        conditions.vcountRange.max,
+        new Uint32Array(targetSeeds)
+      );
+
+      // サブチャンクの結果を統合
+      for (const result of subResults) {
+        const resultDate = new Date(
+          result.year, 
+          result.month - 1, 
+          result.date, 
+          result.hour, 
+          result.minute, 
+          result.second
+        );
+        
+        const message = calculator.generateMessage(conditions, result.timer0, result.vcount, resultDate);
+        const { hash } = calculator.calculateSeed(message);
+
+        allResults.push({
+          seed: result.seed,
+          datetime: resultDate,
+          timer0: result.timer0,
+          vcount: result.vcount,
+          conditions,
+          message,
+          sha1Hash: hash,
+          isMatch: true,
+        });
+      }
+
+      // サブチャンク完了後の進捗報告
+      const subChunkOperations = subChunkRange * 
+        (conditions.timer0Range.max - conditions.timer0Range.min + 1) *
+        (conditions.vcountRange.max - conditions.vcountRange.min + 1);
+      processedOperations += subChunkOperations;
+      reportProgress(processedOperations, totalOperations, allResults.length);
     }
 
-    return searchResults;
+    console.log(`✅ Worker ${searchState.workerId}: Completed all sub-chunks, found ${allResults.length} results`);
+    return allResults;
     
   } finally {
     searcher.free(); // メモリ解放

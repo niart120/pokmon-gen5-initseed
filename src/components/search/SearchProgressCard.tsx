@@ -71,11 +71,6 @@ export function SearchProgressCard() {
             <div className="font-mono">
               {searchProgress.estimatedTimeRemaining > 0 ? `${Math.floor(searchProgress.estimatedTimeRemaining / 1000)}s` : '--'}
             </div>
-            {isParallelMode && parallelProgress && (
-              <div className="text-xs text-muted-foreground">
-                {parallelProgress.activeWorkers}x boost
-              </div>
-            )}
           </div>
         </div>
 
@@ -88,7 +83,7 @@ export function SearchProgressCard() {
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-3">
               {/* 並列検索パフォーマンス指標 */}
-              <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs">
+              <div className="grid grid-cols-2 gap-2 mb-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs">
                 <div>
                   <div className="text-muted-foreground">Total Speed</div>
                   <div className="font-mono">
@@ -99,18 +94,12 @@ export function SearchProgressCard() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">Memory Usage</div>
-                  <div className="font-mono">
-                    ~{(parallelProgress.activeWorkers * 15).toFixed(0)}MB
-                  </div>
-                </div>
-                <div>
                   <div className="text-muted-foreground">Efficiency</div>
                   <div className="font-mono">
                     {parallelProgress.activeWorkers > 0 
                       ? Math.round((parallelProgress.activeWorkers / (navigator.hardwareConcurrency || 4)) * 100)
                       : 0
-                    }%
+                    }% CPU
                   </div>
                 </div>
               </div>

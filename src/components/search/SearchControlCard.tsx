@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,6 +26,13 @@ export function SearchControlCard() {
     setMaxWorkers,
     setParallelProgress,
   } = useAppStore();
+
+  // ワーカー数設定を初期化時に同期
+  useEffect(() => {
+    const workerManager = getSearchWorkerManager();
+    workerManager.setMaxWorkers(parallelSearchSettings.maxWorkers);
+    workerManager.setParallelMode(parallelSearchSettings.enabled);
+  }, [parallelSearchSettings.maxWorkers, parallelSearchSettings.enabled]);
 
   // Worker management functions
   const handlePauseSearch = () => {
@@ -90,15 +97,22 @@ export function SearchControlCard() {
           },
           onComplete: (message: string) => {
             console.log('✅ Search completed:', message);
+            
+            // 先に検索状態を停止
+            stopSearch();
+            
+            // その後でアラートを表示
             const matchesFound = useAppStore.getState().searchProgress.matchesFound;
             const totalSteps = useAppStore.getState().searchProgress.totalSteps;
             
-            if (matchesFound === 0) {
-              alert(`Search completed. No matches found in ${totalSteps.toLocaleString()} combinations.\n\nTry:\n- Expanding the date range\n- Checking Timer0/VCount ranges\n- Verifying target seed format\n\nCheck browser console for detailed debug information.`);
-            } else {
-              alert(`🎉 Search completed successfully!\n\nFound ${matchesFound} matching seed${matchesFound === 1 ? '' : 's'} out of ${totalSteps.toLocaleString()} combinations.\n\nCheck the Results tab for details.`);
-            }
-            stopSearch();
+            // 少し遅延してからアラートを表示（状態更新の確実な完了を待つ）
+            setTimeout(() => {
+              if (matchesFound === 0) {
+                alert(`Search completed. No matches found in ${totalSteps.toLocaleString()} combinations.\n\nTry:\n- Expanding the date range\n- Checking Timer0/VCount ranges\n- Verifying target seed format\n\nCheck browser console for detailed debug information.`);
+              } else {
+                alert(`🎉 Search completed successfully!\n\nFound ${matchesFound} matching seed${matchesFound === 1 ? '' : 's'} out of ${totalSteps.toLocaleString()} combinations.\n\nCheck the Results tab for details.`);
+              }
+            }, 100);
           },
           onError: (error: string) => {
             console.error('Search error:', error);
@@ -133,13 +147,26 @@ export function SearchControlCard() {
       return;
     }
     setParallelSearchEnabled(enabled);
+    
+    // SearchWorkerManagerにも反映
+    const workerManager = getSearchWorkerManager();
+    workerManager.setParallelMode(enabled);
+    
+    console.log(`🔧 Parallel mode changed to: ${enabled ? 'enabled' : 'disabled'}`);
   };
 
   const handleMaxWorkersChange = (values: number[]) => {
     if (searchProgress.isRunning) {
       return;
     }
-    setMaxWorkers(values[0]);
+    const newWorkerCount = values[0];
+    setMaxWorkers(newWorkerCount);
+    
+    // SearchWorkerManagerにも反映
+    const workerManager = getSearchWorkerManager();
+    workerManager.setMaxWorkers(newWorkerCount);
+    
+    console.log(`🔧 Worker count changed to: ${newWorkerCount}`);
   };
 
   const maxCpuCores = navigator.hardwareConcurrency || 4;

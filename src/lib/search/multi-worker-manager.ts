@@ -37,9 +37,27 @@ export class MultiWorkerSearchManager {
   private lastProgressCheck: Map<number, number> = new Map();
 
   constructor(
-    private maxWorkers: number = navigator.hardwareConcurrency || 4,
-    private memoryLimit: number = 500 // MB
+    private maxWorkers: number = navigator.hardwareConcurrency || 4
   ) {}
+
+  /**
+   * ワーカー数設定
+   */
+  public setMaxWorkers(count: number): void {
+    if (this.searchRunning) {
+      console.warn('⚠️ Cannot change worker count during active search');
+      return;
+    }
+    this.maxWorkers = Math.max(1, Math.min(count, navigator.hardwareConcurrency || 4));
+    console.log(`🔧 Updated max workers to: ${this.maxWorkers}`);
+  }
+
+  /**
+   * 現在のワーカー数設定を取得
+   */
+  public getMaxWorkers(): number {
+    return this.maxWorkers;
+  }
 
   /**
    * 並列検索開始
@@ -64,15 +82,14 @@ export class MultiWorkerSearchManager {
       // チャンク分割計算
       const chunks = ChunkCalculator.calculateOptimalChunks(
         conditions, 
-        this.maxWorkers, 
-        this.memoryLimit
+        this.maxWorkers
       );
 
       if (chunks.length === 0) {
         throw new Error('No valid chunks created for search');
       }
 
-      console.log(`📊 Created ${chunks.length} chunks for processing`);
+      console.log(`📊 Created ${chunks.length} chunks for processing (${this.maxWorkers} workers)`);
       const metrics = ChunkCalculator.evaluateChunkDistribution(chunks);
       console.log(`📈 Load balance score: ${metrics.loadBalanceScore}/100`);
 
@@ -244,6 +261,11 @@ export class MultiWorkerSearchManager {
    * 進捗集約とレポート
    */
   private aggregateAndReportProgress(): void {
+    // 検索が終了している場合は進捗レポートを停止
+    if (!this.searchRunning || !this.callbacks) {
+      return;
+    }
+
     const progresses = Array.from(this.workerProgresses.values());
     
     if (progresses.length === 0) return;
@@ -332,10 +354,30 @@ export class MultiWorkerSearchManager {
     
     console.log(`🎉 Parallel search completed in ${totalElapsed}ms with ${totalResults} results`);
     
-    this.cleanup();
+    // 最終進捗状態をクリア（全ワーカー完了状態）
+    const finalProgress: AggregatedProgress = {
+      totalCurrentStep: 0,
+      totalSteps: 0,
+      totalElapsedTime: totalElapsed,
+      totalEstimatedTimeRemaining: 0,
+      totalMatchesFound: totalResults,
+      activeWorkers: 0,
+      completedWorkers: this.workers.size,
+      workerProgresses: new Map()
+    };
+    
+    // 並列進捗をクリア
+    this.callbacks?.onProgress(finalProgress);
+    
+    // onCompleteコールバックを先に実行してからクリーンアップ
+    console.log('🔄 About to call onComplete callback:', this.callbacks?.onComplete ? 'exists' : 'missing');
     this.callbacks?.onComplete(
       `Parallel search completed. Found ${totalResults} matches in ${Math.round(totalElapsed / 1000)}s`
     );
+    console.log('✅ onComplete callback called');
+    
+    // コールバック実行後にクリーンアップ
+    this.cleanup();
   }
 
   /**
@@ -379,16 +421,16 @@ export class MultiWorkerSearchManager {
    */
   private detectAndHandleStalls(): void {
     const now = Date.now();
-    const stallThreshold = 10000; // 10秒
+    const stallThreshold = 60000; // 60秒
 
     for (const [workerId, lastUpdate] of this.lastProgressCheck.entries()) {
       if (now - lastUpdate > stallThreshold) {
         const progress = this.workerProgresses.get(workerId);
         if (progress && progress.status === 'running') {
-          console.warn(`⚠️ Worker ${workerId} appears to be stalled, restarting...`);
+          console.warn(`⚠️ Worker ${workerId} has not reported progress for ${stallThreshold/1000}s (possibly heavy computation)`);
           
-          // スタックしたWorkerを再起動（将来実装）
-          // this.restartWorker(workerId);
+          // Note: Worker restart is not implemented - this is just a monitoring warning
+          // Heavy WASM calculations may legitimately take longer than the threshold
         }
       }
     }
@@ -484,5 +526,11 @@ export class MultiWorkerSearchManager {
     this.results = [];
     this.completedWorkers = 0;
     this.lastProgressCheck.clear();
+    
+    // 進捗監視タイマーも確実に停止
+    if (this.progressUpdateTimer) {
+      clearInterval(this.progressUpdateTimer);
+      this.progressUpdateTimer = null;
+    }
   }
 }

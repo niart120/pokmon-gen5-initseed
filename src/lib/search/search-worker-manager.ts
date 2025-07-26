@@ -23,7 +23,7 @@ export interface SearchCallbacks {
   onPaused: () => void;
   onResumed: () => void;
   onStopped: () => void;
-  onParallelProgress?: (progress: AggregatedProgress) => void;
+  onParallelProgress?: (progress: AggregatedProgress | null) => void;
 }
 
 export class SearchWorkerManager {
@@ -154,6 +154,11 @@ export class SearchWorkerManager {
         this.multiWorkerManager = new MultiWorkerSearchManager();
       }
 
+      // アプリストアから現在のワーカー数設定を取得
+      // 注意: ここでは直接importを避けて、公開APIを使用
+      const currentMaxWorkers = this.getMaxWorkers();
+      this.multiWorkerManager.setMaxWorkers(currentMaxWorkers);
+
       // 並列検索用のコールバック変換
       const parallelCallbacks = {
         onProgress: (aggregatedProgress: AggregatedProgress) => {
@@ -172,8 +177,20 @@ export class SearchWorkerManager {
           }
         },
         onResult: callbacks.onResult,
-        onComplete: callbacks.onComplete,
-        onError: callbacks.onError,
+        onComplete: (message: string) => {
+          // 並列進捗をクリア
+          if (callbacks.onParallelProgress) {
+            callbacks.onParallelProgress(null);
+          }
+          callbacks.onComplete(message);
+        },
+        onError: (error: string) => {
+          // 並列進捗をクリア
+          if (callbacks.onParallelProgress) {
+            callbacks.onParallelProgress(null);
+          }
+          callbacks.onError(error);
+        },
         onPaused: callbacks.onPaused,
         onResumed: callbacks.onResumed,
         onStopped: callbacks.onStopped
@@ -230,6 +247,26 @@ export class SearchWorkerManager {
     }
     
     console.log(`🔧 Search mode: ${enabled ? 'Parallel' : 'Single'} worker`);
+  }
+
+  /**
+   * ワーカー数設定
+   */
+  public setMaxWorkers(count: number): void {
+    if (!this.multiWorkerManager) {
+      this.multiWorkerManager = new MultiWorkerSearchManager();
+    }
+    this.multiWorkerManager.setMaxWorkers(count);
+  }
+
+  /**
+   * 現在のワーカー数設定を取得
+   */
+  public getMaxWorkers(): number {
+    if (!this.multiWorkerManager) {
+      return navigator.hardwareConcurrency || 4;
+    }
+    return this.multiWorkerManager.getMaxWorkers();
   }
 
   /**

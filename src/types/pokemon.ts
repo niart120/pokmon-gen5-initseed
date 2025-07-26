@@ -126,7 +126,6 @@ export interface ParallelSearchSettings {
   enabled: boolean;
   maxWorkers: number;
   chunkStrategy: 'time-based' | 'hybrid' | 'auto';
-  memoryLimit: number; // MB
 }
 
 export interface AggregatedProgress {

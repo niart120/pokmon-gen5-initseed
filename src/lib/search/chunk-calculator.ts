@@ -19,24 +19,16 @@ export class ChunkCalculator {
    */
   static calculateOptimalChunks(
     conditions: SearchConditions,
-    maxWorkers: number = navigator.hardwareConcurrency || 4,
-    memoryLimit: number = 500 // MB
+    maxWorkers: number = navigator.hardwareConcurrency || 4
   ): WorkerChunk[] {
     const searchSpaceAnalysis = this.analyzeSearchSpace(conditions);
     
-    // CPU数とメモリ制限を考慮したWorker数決定
-    const optimalWorkerCount = Math.min(
-      maxWorkers,
-      this.calculateMemoryConstrainedWorkerCount(memoryLimit)
-    );
-
     // 時刻範囲が支配的な場合は時刻ベース分割
-    if (searchSpaceAnalysis.timeRangeDominant) {
-      return this.createTimeBasedChunks(conditions, optimalWorkerCount);
-    }
+    const chunks = searchSpaceAnalysis.timeRangeDominant 
+      ? this.createTimeBasedChunks(conditions, maxWorkers)
+      : this.createTimeBasedChunks(conditions, maxWorkers);
 
-    // ハイブリッド分割（将来拡張用）
-    return this.createTimeBasedChunks(conditions, optimalWorkerCount);
+    return chunks;
   }
 
   /**
@@ -138,16 +130,6 @@ export class ChunkCalculator {
       timeRangeDominant,
       totalOperations
     };
-  }
-
-  /**
-   * メモリ制約によるWorker数計算
-   */
-  private static calculateMemoryConstrainedWorkerCount(memoryLimit: number): number {
-    // WebAssemblyインスタンス当たりの推定メモリ使用量 (MB)
-    const WASM_MEMORY_PER_WORKER = 50;
-    
-    return Math.floor(memoryLimit / WASM_MEMORY_PER_WORKER);
   }
 
   /**

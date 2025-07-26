@@ -35,7 +35,6 @@ interface AppStore {
   setParallelSearchEnabled: (enabled: boolean) => void;
   setMaxWorkers: (count: number) => void;
   setChunkStrategy: (strategy: ParallelSearchSettings['chunkStrategy']) => void;
-  setMemoryLimit: (limit: number) => void;
 
   // Parallel search progress
   parallelProgress: AggregatedProgress | null;
@@ -109,7 +108,6 @@ const defaultParallelSearchSettings: ParallelSearchSettings = {
   enabled: false,
   maxWorkers: navigator.hardwareConcurrency || 4,
   chunkStrategy: 'time-based',
-  memoryLimit: 500, // MB
 };
 
 // Use demo seeds for initial setup
@@ -199,10 +197,6 @@ export const useAppStore = create<AppStore>()(
       setChunkStrategy: (strategy) =>
         set((state) => ({
           parallelSearchSettings: { ...state.parallelSearchSettings, chunkStrategy: strategy },
-        })),
-      setMemoryLimit: (limit) =>
-        set((state) => ({
-          parallelSearchSettings: { ...state.parallelSearchSettings, memoryLimit: limit },
         })),
 
       // Parallel search progress
