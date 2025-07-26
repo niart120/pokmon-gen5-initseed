@@ -4,6 +4,7 @@ import { SearchPreset } from '../../types/pokemon';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
@@ -96,9 +97,19 @@ export function PresetManager() {
         <CardTitle className="flex items-center gap-2">
           <Save className="h-5 w-5" />
           Search Presets
+          <Badge variant="outline" className="text-xs">
+            WIP
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* WIP: プリセット機能は未実装です */}
+        <Alert className="border-yellow-500 bg-yellow-50">
+          <AlertDescription className="text-yellow-800">
+            <strong>開発中:</strong> このプリセット機能は現在実装中です。設定の保存・読み込み機能はまだ動作しません。
+          </AlertDescription>
+        </Alert>
+
         {/* メッセージ表示 */}
         {message && (
           <Alert className={message.type === 'error' ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'}>
