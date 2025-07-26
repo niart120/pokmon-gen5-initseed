@@ -1,7 +1,7 @@
 import { SHA1 } from './sha1';
 import { initWasm, getWasm, isWasmReady, createWasmCalculator, type WasmSeedCalculator } from './wasm-interface';
 import type { SearchConditions, ROMParameters, Hardware } from '../../types/pokemon';
-import romParametersData from '../../data/rom-parameters.json';
+import romParameters from '../../data/rom-parameters';
 
 const HARDWARE_FRAME_VALUES: Record<Hardware, number> = {
   DS: 8,
@@ -79,7 +79,7 @@ export class SeedCalculator {
    * Get ROM parameters for the specified version and region
    */
   public getROMParameters(version: string, region: string): ROMParameters | null {
-    const versionData = romParametersData[version as keyof typeof romParametersData];
+    const versionData = romParameters[version as keyof typeof romParameters];
     if (!versionData) {
       console.error(`ROM version not found: ${version}`);
       return null;
@@ -91,7 +91,13 @@ export class SeedCalculator {
       return null;
     }
     
-    return regionData as ROMParameters;
+    return {
+      nazo: [...regionData.nazo],
+      defaultVCount: regionData.defaultVCount,
+      timer0Min: regionData.timer0Min,
+      timer0Max: regionData.timer0Max,
+      vcountOffset: 'vcountOffset' in regionData ? [...(regionData as any).vcountOffset] : undefined
+    } as ROMParameters;
   }
 
   /**

@@ -41,7 +41,7 @@ npm run build:wasm
 npm run build
 
 # テスト実行
-npm test
+npm run test:run
 ```
 
 ## テスト環境

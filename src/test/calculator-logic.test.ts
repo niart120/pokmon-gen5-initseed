@@ -5,6 +5,7 @@
 
 import { describe, test, expect, beforeEach } from 'vitest'
 import { SeedCalculator } from '../lib/core/seed-calculator'
+import romParameters from '../data/rom-parameters'
 
 describe('WebAssembly計算ロジックテスト', () => {
   let calculator: SeedCalculator
@@ -67,6 +68,10 @@ describe('WebAssembly計算ロジックテスト', () => {
   })
 
   test('メッセージ生成が正常に動作する', () => {
+    // デバッグ用: romParameters の中身を確認
+    console.log('romParameters:', Object.keys(romParameters))
+    console.log('romParameters.B:', romParameters.B)
+    
     const conditions = {
       romVersion: 'B' as const,
       romRegion: 'JPN' as const,
