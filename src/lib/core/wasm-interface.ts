@@ -14,6 +14,8 @@ interface WasmModule {
   IntegratedSeedSearcher: new (
     mac: Uint8Array,
     nazo: Uint32Array,
+    hardware: string,
+    key_input: number,
     version: number,
     frame: number
   ) => {
@@ -50,7 +52,7 @@ export async function initWasm(): Promise<WasmModule> {
     return wasmPromise;
   }
 
-  wasmPromise = (async () => {
+  wasmPromise = (async (): Promise<WasmModule> => {
     try {
       // Import the WebAssembly module
       const module = await import('../../wasm/wasm_pkg.js');
