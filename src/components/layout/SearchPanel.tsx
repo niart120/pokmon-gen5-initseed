@@ -9,7 +9,7 @@ import {
   TargetSeedsInput 
 } from '../search/configuration';
 import { SearchControlCard, SearchProgressCard } from '../search/control';
-import { ResultsControlCard, ResultsHeaderCard, ResultsTableCard, ResultDetailsDialog, type SortField } from '../results';
+import { ResultsControlCard, ResultsHeaderCard, ResultsTableCard, ResultDetailsDialog, type SortField } from '../search/results';
 import { useIsMobile } from '../../hooks/use-mobile';
 import type { InitialSeedResult, SearchResult } from '../../types/pokemon';
 

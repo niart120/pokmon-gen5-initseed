@@ -1,10 +1,10 @@
-import { Calendar, ChevronDown, ChevronUp, Eye } from 'lucide-react';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import type { InitialSeedResult } from '../../types/pokemon';
-import type { SortField } from './ResultsHeaderCard';
+import { Calendar, ChevronDown, ChevronUp, Eye, Filter } from 'lucide-react';
+import { Badge } from '../../ui/badge';
+import { Button } from '../../ui/button';
+import { Card, CardContent } from '../../ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
+import type { InitialSeedResult } from '../../../types/pokemon';
+import type { SortField } from './ResultsControlCard';
 
 interface ResultsTableCardProps {
   filteredAndSortedResults: InitialSeedResult[];

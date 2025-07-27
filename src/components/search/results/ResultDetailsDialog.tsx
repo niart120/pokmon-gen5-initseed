@@ -1,8 +1,8 @@
 import { Eye } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { Label } from '../ui/label';
-import type { InitialSeedResult } from '../../types/pokemon';
+import { Button } from '../../ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../ui/dialog';
+import { Label } from '../../ui/label';
+import type { InitialSeedResult } from '../../../types/pokemon';
 
 interface ResultDetailsDialogProps {
   result: InitialSeedResult | null;
