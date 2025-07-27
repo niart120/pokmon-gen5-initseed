@@ -24,7 +24,7 @@ describe('WebAssembly基本動作テスト', () => {
     const result = wasm.calculate_sha1_hash(message)
     console.log('🔍 calculate_sha1_hash result:', result, 'type:', typeof result, 'isArray:', Array.isArray(result))
     expect(result).toBeDefined()
-    expect(result.length).toBe(2)
+    expect(result.length).toBe(6)
   })
 
   test('必要な関数が全て存在する', () => {
@@ -58,7 +58,7 @@ describe('WebAssembly基本動作テスト', () => {
     const result = wasm.calculate_sha1_hash(message)
     
     expect(result instanceof Uint32Array).toBe(true)
-    expect(result.length).toBe(2)
+    expect(result.length).toBe(6)
     expect(result[0] !== 0 || result[1] !== 0).toBe(true) // 少なくとも一つは非ゼロ
   })
 
@@ -73,7 +73,7 @@ describe('WebAssembly基本動作テスト', () => {
     const result = wasm.calculate_sha1_batch(messages, batchSize)
     
     expect(result instanceof Uint32Array).toBe(true)
-    expect(result.length).toBe(batchSize * 2)
+    expect(result.length).toBe(batchSize * 6)
     expect(result.some(x => x !== 0)).toBe(true) // 少なくとも一つは非ゼロ
   })
 
@@ -120,10 +120,18 @@ describe('WebAssembly基本動作テスト', () => {
     batchMessages.set(message2, 16)
     const batchResults = wasm.calculate_sha1_batch(batchMessages, 2)
     
-    // 結果の比較
-    expect(individual1[0]).toBe(batchResults[0])
-    expect(individual1[1]).toBe(batchResults[1])
-    expect(individual2[0]).toBe(batchResults[2])
-    expect(individual2[1]).toBe(batchResults[3])
+    // 結果の比較 (seed, h0, h1, h2, h3, h4)
+    expect(individual1[0]).toBe(batchResults[0])  // seed1
+    expect(individual1[1]).toBe(batchResults[1])  // h0_1
+    expect(individual1[2]).toBe(batchResults[2])  // h1_1
+    expect(individual1[3]).toBe(batchResults[3])  // h2_1
+    expect(individual1[4]).toBe(batchResults[4])  // h3_1
+    expect(individual1[5]).toBe(batchResults[5])  // h4_1
+    expect(individual2[0]).toBe(batchResults[6])  // seed2
+    expect(individual2[1]).toBe(batchResults[7])  // h0_2
+    expect(individual2[2]).toBe(batchResults[8])  // h1_2
+    expect(individual2[3]).toBe(batchResults[9])  // h2_2
+    expect(individual2[4]).toBe(batchResults[10]) // h3_2
+    expect(individual2[5]).toBe(batchResults[11]) // h4_2
   })
 })

@@ -38,8 +38,8 @@ describe('WebAssembly統合テスト', () => {
       const message = new Uint32Array(16)
       const result = wasm.calculate_sha1_hash(message)
       expect(result instanceof Uint32Array).toBe(true)
-      expect(result.length).toBe(2)
-      console.log(`🦀 直接アクセス結果: SHA-1計算成功 [${result[0]}, ${result[1]}]`)
+      expect(result.length).toBe(6)
+      console.log(`🦀 直接アクセス結果: SHA-1計算成功 [${result[0]}, ${result[1]}, ${result[2]}, ${result[3]}, ${result[4]}, ${result[5]}]`)
     } else {
       console.log('⏭️ WebAssemblyが利用できないため直接アクセステストをスキップ')
     }
@@ -70,15 +70,15 @@ describe('WebAssembly統合テスト', () => {
       // SHA-1ハッシュテスト
       const testMessage = new Uint32Array([0x12345678, 0x9ABCDEF0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
       const hashResult = wasm.calculate_sha1_hash(testMessage)
-      expect(hashResult.length).toBe(2)
-      console.log(`🔐 SHA-1ハッシュ: [0x${hashResult[0].toString(16)}, 0x${hashResult[1].toString(16)}]`)
+      expect(hashResult.length).toBe(6)
+      console.log(`🔐 SHA-1ハッシュ: [0x${hashResult[0].toString(16)}, 0x${hashResult[1].toString(16)}, 0x${hashResult[2].toString(16)}, 0x${hashResult[3].toString(16)}, 0x${hashResult[4].toString(16)}, 0x${hashResult[5].toString(16)}]`)
 
       // バッチ計算テスト
       const batchMessages = new Uint32Array(32) // 2メッセージ
       batchMessages.set([0x11111111, 0x22222222, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 0)
       batchMessages.set([0x33333333, 0x44444444, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 16)
       const batchResult = wasm.calculate_sha1_batch(batchMessages, 2)
-      expect(batchResult.length).toBe(4)
+      expect(batchResult.length).toBe(12)
       console.log(`📦 バッチ計算: [${Array.from(batchResult as Uint32Array).map(x => '0x' + x.toString(16)).join(', ')}]`)
     } else {
       console.log('⏭️ WebAssemblyが利用できないため個別関数テストをスキップ')

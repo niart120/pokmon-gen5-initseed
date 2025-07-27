@@ -21,7 +21,8 @@
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:run": "vitest run",
-        "test:wasm": "vitest run src/test/wasm"
+        "test:wasm": "vitest run src/test/wasm",
+        "copy-wasm": "node scripts/copy-wasm-files.js"
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",

@@ -97,7 +97,7 @@ pub fn hash_to_hex_string(h0: u32, h1: u32, h2: u32, h3: u32, h4: u32) -> String
 /// 複数のメッセージを一度に処理してWebAssembly通信オーバーヘッドを削減
 pub fn calculate_pokemon_sha1_batch(messages: &[u32], batch_size: u32) -> Vec<u32> {
     let batch_size = batch_size as usize;
-    let mut results = Vec::with_capacity(batch_size * 2);
+    let mut results = Vec::with_capacity(batch_size * 6);
     
     for i in 0..batch_size {
         let start_idx = i * 16;
@@ -105,12 +105,16 @@ pub fn calculate_pokemon_sha1_batch(messages: &[u32], batch_size: u32) -> Vec<u3
             let mut message = [0u32; 16];
             message.copy_from_slice(&messages[start_idx..start_idx + 16]);
             
-            let (h0, h1, _h2, _h3, _h4) = calculate_pokemon_sha1(&message);
+            let (h0, h1, h2, h3, h4) = calculate_pokemon_sha1(&message);
             let seed = calculate_pokemon_seed_from_hash(h0, h1);
             
-            // 個別処理と同じ形式: [seed, h1]
+            // 個別処理と同じ形式: [seed, h0, h1, h2, h3, h4]
             results.push(seed);
+            results.push(h0);
             results.push(h1);
+            results.push(h2);
+            results.push(h3);
+            results.push(h4);
         }
     }
     
@@ -160,23 +164,6 @@ pub fn swap_bytes_16(value: u16) -> u16 {
 #[wasm_bindgen]
 pub fn calculate_sha1_hash(message: &[u32]) -> Vec<u32> {
     if message.len() != 16 {
-        return vec![0, 0];
-    }
-    
-    let mut msg_array = [0u32; 16];
-    msg_array.copy_from_slice(message);
-    
-    let (h0, h1, _h2, _h3, _h4) = calculate_pokemon_sha1(&msg_array);
-    let seed = calculate_pokemon_seed_from_hash(h0, h1);
-    
-    // TypeScript版と同じ形式：[seed, h1] を返す（ハッシュ文字列生成用）
-    vec![seed, h1]
-}
-
-/// WebAssembly公開用完全SHA-1計算関数（seed + 完全ハッシュ文字列）
-#[wasm_bindgen]
-pub fn calculate_pokemon_seed_and_hash(message: &[u32]) -> Vec<u32> {
-    if message.len() != 16 {
         return vec![0];
     }
     
@@ -186,7 +173,7 @@ pub fn calculate_pokemon_seed_and_hash(message: &[u32]) -> Vec<u32> {
     let (h0, h1, h2, h3, h4) = calculate_pokemon_sha1(&msg_array);
     let seed = calculate_pokemon_seed_from_hash(h0, h1);
     
-    // [seed, h0, h1, h2, h3, h4] の形式で返す
+    // TypeScript版と同じ形式：[seed, h0, h1, h2, h3, h4] の形式で返す
     vec![seed, h0, h1, h2, h3, h4]
 }
 

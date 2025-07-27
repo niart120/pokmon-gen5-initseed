@@ -135,17 +135,25 @@ export class WasmSeedCalculator {
     const messageArray = new Uint32Array(message);
     const result = this.wasm.calculate_sha1_hash(messageArray);
     
-    if (result.length !== 2) {
+    if (result.length !== 6) {
       throw new Error('WebAssembly returned invalid result');
     }
 
-    const h0 = result[0];
-    const h1 = result[1];
+    const seed = result[0];
+    const h0 = result[1];
+    const h1 = result[2];
+    const h2 = result[3];
+    const h3 = result[4];
+    const h4 = result[5];
     
-    // Convert to hex string (similar to existing implementation)
-    const hash = h0.toString(16).padStart(8, '0') + h1.toString(16).padStart(8, '0');
+    // Convert to hex string (40-character hash like TypeScript version)
+    const hash = h0.toString(16).padStart(8, '0') + 
+                 h1.toString(16).padStart(8, '0') + 
+                 h2.toString(16).padStart(8, '0') + 
+                 h3.toString(16).padStart(8, '0') + 
+                 h4.toString(16).padStart(8, '0');
     
-    return { seed: h0, hash };
+    return { seed, hash };
   }
 
   /**
@@ -174,17 +182,24 @@ export class WasmSeedCalculator {
     // Call WebAssembly batch function
     const results = this.wasm.calculate_sha1_batch(flatMessages, messages.length);
     
-    if (results.length !== messages.length * 2) {
+    if (results.length !== messages.length * 6) {
       throw new Error('WebAssembly batch calculation failed');
     }
 
     // Convert results to seed/hash objects
     const output: Array<{ seed: number; hash: string }> = [];
     for (let i = 0; i < messages.length; i++) {
-      const h0 = results[i * 2];
-      const h1 = results[i * 2 + 1];
-      const seed = h0;
-      const hash = `${h0.toString(16).padStart(8, '0')}${h1.toString(16).padStart(8, '0')}`;
+      const seed = results[i * 6];
+      const h0 = results[i * 6 + 1];
+      const h1 = results[i * 6 + 2];
+      const h2 = results[i * 6 + 3];
+      const h3 = results[i * 6 + 4];
+      const h4 = results[i * 6 + 5];
+      const hash = h0.toString(16).padStart(8, '0') + 
+                   h1.toString(16).padStart(8, '0') + 
+                   h2.toString(16).padStart(8, '0') + 
+                   h3.toString(16).padStart(8, '0') + 
+                   h4.toString(16).padStart(8, '0');
       output.push({ seed, hash });
     }
 

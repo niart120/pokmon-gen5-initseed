@@ -178,8 +178,8 @@ export async function testLevel3_SHA1Single(): Promise<boolean> {
           return false;
         }
         
-        if (result.hash.length !== 16) {
-          console.error(`❌ hashの長さが正しくありません: ${result.hash.length} (期待値: 16)`);
+        if (result.hash.length !== 40) {
+          console.error(`❌ hashの長さが正しくありません: ${result.hash.length} (期待値: 40)`);
           return false;
         }
         
@@ -269,7 +269,7 @@ export async function testLevel4_SHA1Batch(): Promise<boolean> {
             return false;
           }
           
-          if (typeof result.hash !== 'string' || result.hash.length !== 16) {
+          if (typeof result.hash !== 'string' || result.hash.length !== 40) {
             console.error(`❌ 結果[${i}]のhashが正しくありません`);
             return false;
           }
