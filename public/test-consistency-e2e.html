@@ -473,7 +473,7 @@
                 const params = {
                     romVersion: CONSISTENCY_TEST_CONDITIONS.romVersion,
                     romRegion: CONSISTENCY_TEST_CONDITIONS.romRegion,
-                    nazo: [0x02215F1F, 0x00000C4E, 0x02000031, 0x42FFF7AD] // ブラック JPN のパラメータ
+                    nazo: [0x02215F10, 0x0221600C, 0x0221600C, 0x02216058, 0x02216058] // ブラック JPN のパラメータ (5個)
                 };
 
                 const searcher = new window.wasmModule.IntegratedSeedSearcher(
@@ -634,7 +634,7 @@
                 
                 const searcher = new window.wasmModule.IntegratedSeedSearcher(
                     new Uint8Array(CONSISTENCY_TEST_CONDITIONS.macAddress),
-                    new Uint32Array([0x02215F1F, 0x00000C4E, 0x02000031, 0x42FFF7AD]), // ブラック JPN のパラメータ
+                    new Uint32Array([0x02215F10, 0x0221600C, 0x0221600C, 0x02216058, 0x02216058]), // ブラック JPN のパラメータ (5個)
                     "DS", // hardware は文字列
                     CONSISTENCY_TEST_CONDITIONS.keyInput,
                     5, // version

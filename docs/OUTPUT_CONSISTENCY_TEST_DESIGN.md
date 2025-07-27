@@ -81,7 +81,7 @@ const localizedRange = {
 
 ### TestCase 2: 複数Seed一括検証 (E2Eテスト)
 **目的**: WebWorker・WASM統合環境での全Seedの一括検証
-**実装方式**: Playwright-MCP実アプリ検証
+**実装方式**: Playwright-MCP + 実アプリケーション検証
 
 **検証対象Seed** (重複Seed除外):
 ```typescript
@@ -94,14 +94,66 @@ const testSeeds = [
 ];
 ```
 
+**Playwright-MCP実行例**:
+```javascript
+// Target Seedsを設定
+await mcp_playwright_browser_type({
+  element: "Target Seeds input field",
+  ref: "e179",
+  text: "0x14B11BA6\n0x8A30480D\n0x9E02B0AE\n0xADFA2178"
+});
+
+// 探索実行
+await mcp_playwright_browser_click({
+  element: "Start Search button",
+  ref: "e543"
+});
+
+// 結果監視
+await mcp_playwright_browser_wait_for({ time: 60 });
+await mcp_playwright_browser_snapshot();
+```
+
 ### TestCase 3: 重複Seed検証 (E2Eテスト)
 **目的**: 同一Seedに対する複数解の正しい検出
-**実装方式**: Playwright-MCP実アプリ検証
+**実装方式**: Playwright-MCP + 実アプリケーション検証
 
 **検証対象**:
 - Seed `0xFC4AA3AC` に対する2つの解
 - `2025/10/18 02:48:49` と `2041/05/25 17:17:59`
 - 両方とも Timer0=`0xC7A`
+
+**Playwright-MCP実行例**:
+```javascript
+// 重複Seedを設定
+await mcp_playwright_browser_type({
+  element: "Target Seeds input field",
+  ref: "e179", 
+  text: "0xFC4AA3AC"
+});
+
+// 日付範囲を広めに設定
+await mcp_playwright_browser_type({
+  element: "Start Year input",
+  ref: "e100",
+  text: "2020"
+});
+
+await mcp_playwright_browser_type({
+  element: "End Year input", 
+  ref: "e122",
+  text: "2050"
+});
+
+// 探索実行・複数解確認
+await mcp_playwright_browser_click({
+  element: "Start Search button",
+  ref: "e543"
+});
+
+await mcp_playwright_browser_wait_for({ time: 120 });
+await mcp_playwright_browser_snapshot();
+```
 
 ## 未確定パラメータの推定 → 確定済み
 
@@ -123,7 +175,7 @@ const testSeeds = [
 3. 局所検索範囲での単一Seed検証テスト
 
 ### Phase 2: E2Eテスト環境構築  
-1. Playwright-MCP実アプリ検証スクリプト作成
+1. Playwright-MCP + 実アプリケーション検証スクリプト作成
 2. 複数Seed一括検証の自動化
 3. 重複Seed検証の自動化
 
@@ -139,7 +191,17 @@ const testSeeds = [
 - **期待データ定数**: `src/test-utils/consistency/test-data.ts`
 - **時刻変換ユーティリティ**: `src/test-utils/consistency/time-format.ts`
 - **単体テスト**: `src/test/consistency-unit.test.ts`
-- **E2Eテスト**: `public/test-consistency-e2e.html` (Playwright-MCP)
+- **E2Eテスト**: Playwright-MCP + メインアプリケーション (`http://localhost:5173/`)
+
+### Playwright-MCP テスト詳細
+**関連ドキュメント**:
+- `docs/E2E_TESTING_WITH_PLAYWRIGHT_MCP.md` - 詳細実行手順
+- `docs/PLAYWRIGHT_MCP_SCRIPTS.md` - 実行可能スクリプト集
+
+**実行環境**:
+- URL: `http://localhost:5173/`
+- 実際のプロダクションアプリケーション使用
+- 32並列Worker + WebAssembly統合環境
 
 ### 時刻フォーマット変換の実装
 ```typescript
