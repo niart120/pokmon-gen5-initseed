@@ -100,6 +100,32 @@ impl DateCodeGenerator {
         }
     }
     
+    /// 曜日を計算 (0=Sunday, 1=Monday, etc.)
+    /// 効率的なmod 7計算によるアプローチ
+    const fn get_day_of_week(year: u32, month: u32, day: u32) -> u32 {
+        // 各月の累積日数（非うるう年ベース）
+        const DAYS_BEFORE_MONTH: [u32; 13] = [0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        
+        // 2000年1月1日からの経過日数を計算
+        let years_since_2000 = year - 2000;
+        
+        // 完全な年の日数
+        let leap_years = (years_since_2000 + 3) / 4 - years_since_2000 / 100 + years_since_2000 / 400;
+        let days_from_years = years_since_2000 * 365 + leap_years;
+        
+        // 月の日数
+        let days_from_months = DAYS_BEFORE_MONTH[month as usize];
+        
+        // うるう年調整（3月以降の場合）
+        let leap_adjustment = if month > 2 && Self::is_leap_year(year) { 1 } else { 0 };
+        
+        // 日の分（1日から数えるので-1）
+        let total_days = days_from_years + days_from_months + leap_adjustment + day - 1;
+        
+        // 2000年1月1日は土曜日(6)なので、それに経過日数を加算してmod 7
+        (6 + total_days) % 7
+    }
+    
     /// 全100年分（36,525日）の日付コードを事前計算
     const fn generate_all_date_codes() -> [u32; 36525] {
         let mut codes = [0u32; 36525];
@@ -112,15 +138,18 @@ impl DateCodeGenerator {
                 let days = Self::days_in_month(year, month);
                 let mut day = 1;
                 while day <= days {
-                    // 日付のBCDエンコーディング
-                    let d_code = ((day / 10) << 20) | ((day % 10) << 16);
-                    let m_code = ((month / 10) << 12) | ((month % 10) << 8);
-                    let y_ones = year % 10;
-                    let y_tens = (year / 10) % 10;
-                    let y_code = (y_tens << 4) | y_ones;
+                    // 曜日を計算
+                    let day_of_week = Self::get_day_of_week(year, month, day);
                     
-                    // 統合日付コード
-                    codes[index] = d_code | m_code | y_code;
+                    // BCD-like encoding for YYMMDDWW format
+                    let year_val = year % 100;
+                    let yy_bcd = ((year_val / 10) << 4) | (year_val % 10);
+                    let mm_bcd = ((month / 10) << 4) | (month % 10);
+                    let dd_bcd = ((day / 10) << 4) | (day % 10);
+                    let ww_bcd = ((day_of_week / 10) << 4) | (day_of_week % 10);
+                    
+                    // 統合日付コード (YYMMDDWW format)
+                    codes[index] = (yy_bcd << 24) | (mm_bcd << 16) | (dd_bcd << 8) | ww_bcd;
                     
                     index += 1;
                     day += 1;
@@ -179,33 +208,62 @@ mod tests {
     fn test_time_code_generation() {
         // 境界値テスト
         assert_eq!(TimeCodeGenerator::get_time_code(0, 0, 0), 0x00000000);
-        assert_eq!(TimeCodeGenerator::get_time_code(12, 30, 45), 0x52304500);
-        assert_eq!(TimeCodeGenerator::get_time_code(23, 59, 59), 0x63595900);
+        assert_eq!(TimeCodeGenerator::get_time_code(12, 30, 45), 0x12304500);
+        assert_eq!(TimeCodeGenerator::get_time_code(23, 59, 59), 0x23595900);
     }
     
     #[test]
     fn test_date_code_generation() {
-        // 2000年1月1日のテスト
+        // 2000年1月1日のテスト (土曜日)
         let result_2000_01_01 = DateCodeGenerator::get_date_code(2000, 1, 1);
         println!("2000/1/1 result: 0x{:08X}", result_2000_01_01);
         
         // 手動でBCD計算を確認
-        // day=1: (1/10)<<20 | (1%10)<<16 = 0<<20 | 1<<16 = 0x00010000
-        // month=1: (1/10)<<12 | (1%10)<<8 = 0<<12 | 1<<8 = 0x00000100  
-        // year=2000: ((2000/10)%10)<<4 | (2000%10) = (200%10)<<4 | 0 = 0<<4 | 0 = 0x00000000
-        // 期待値: 0x00010000 | 0x00000100 | 0x00000000 = 0x00010100
-        assert_eq!(result_2000_01_01, 0x00010100);
+        // year=2000: year%100=0 → yy_bcd=((0/10)<<4)|(0%10)=0x00
+        // month=1: mm_bcd=((1/10)<<4)|(1%10)=0x01
+        // day=1: dd_bcd=((1/10)<<4)|(1%10)=0x01
+        // dayOfWeek=6 (土曜日): ww_bcd=((6/10)<<4)|(6%10)=0x06
+        // 期待値: (0x00<<24)|(0x01<<16)|(0x01<<8)|0x06 = 0x00010106
+        assert_eq!(result_2000_01_01, 0x00010106);
         
-        // 2024年12月31日のテスト
+        // 2024年12月31日のテスト (火曜日)
         let result_2024_12_31 = DateCodeGenerator::get_date_code(2024, 12, 31);
         println!("2024/12/31 result: 0x{:08X}", result_2024_12_31);
         
         // 手動でBCD計算を確認
-        // day=31: (31/10)<<20 | (31%10)<<16 = 3<<20 | 1<<16 = 0x00310000
-        // month=12: (12/10)<<12 | (12%10)<<8 = 1<<12 | 2<<8 = 0x00001200
-        // year=2024: ((2024/10)%10)<<4 | (2024%10) = (202%10)<<4 | 4 = 2<<4 | 4 = 0x00000024
-        // 期待値: 0x00310000 | 0x00001200 | 0x00000024 = 0x00311224
-        assert_eq!(result_2024_12_31, 0x00311224);
+        // year=2024: year%100=24 → yy_bcd=((24/10)<<4)|(24%10)=(2<<4)|4=0x24
+        // month=12: mm_bcd=((12/10)<<4)|(12%10)=(1<<4)|2=0x12
+        // day=31: dd_bcd=((31/10)<<4)|(31%10)=(3<<4)|1=0x31
+        // dayOfWeek=2 (火曜日): ww_bcd=((2/10)<<4)|(2%10)=0x02
+        // 期待値: (0x24<<24)|(0x12<<16)|(0x31<<8)|0x02 = 0x24123102
+        assert_eq!(result_2024_12_31, 0x24123102);
+        
+        // 2023年12月31日のテスト (日曜日) - TypeScript実装のテストケースと一致確認
+        let result_2023_12_31 = DateCodeGenerator::get_date_code(2023, 12, 31);
+        println!("2023/12/31 result: 0x{:08X}", result_2023_12_31);
+        
+        // 手動でBCD計算を確認
+        // year=2023: year%100=23 → yy_bcd=((23/10)<<4)|(23%10)=(2<<4)|3=0x23
+        // month=12: mm_bcd=((12/10)<<4)|(12%10)=(1<<4)|2=0x12
+        // day=31: dd_bcd=((31/10)<<4)|(31%10)=(3<<4)|1=0x31
+        // dayOfWeek=0 (日曜日): ww_bcd=((0/10)<<4)|(0%10)=0x00
+        // 期待値: (0x23<<24)|(0x12<<16)|(0x31<<8)|0x00 = 0x23123100
+        assert_eq!(result_2023_12_31, 0x23123100);
+    }
+    
+    #[test]
+    fn test_day_of_week_calculation() {
+        // 2000年1月1日は土曜日 (6)
+        assert_eq!(DateCodeGenerator::get_day_of_week(2000, 1, 1), 6);
+        
+        // 2023年12月31日は日曜日 (0)
+        assert_eq!(DateCodeGenerator::get_day_of_week(2023, 12, 31), 0);
+        
+        // 2024年12月31日は火曜日 (2)
+        assert_eq!(DateCodeGenerator::get_day_of_week(2024, 12, 31), 2);
+        
+        // 2024年1月1日は月曜日 (1)
+        assert_eq!(DateCodeGenerator::get_day_of_week(2024, 1, 1), 1);
     }
     
     #[test]
