@@ -6,7 +6,7 @@
 pub struct TimeCodeGenerator;
 
 impl TimeCodeGenerator {
-    /// 全86,400秒分の時刻コードを事前計算する関数
+    /// 全86,400秒分の時刻コードを事前計算する関数（24時間制ベース）
     /// 参考: yatsuna827/5genInitialSeedSearch
     const fn generate_all_time_codes() -> [u32; 86400] {
         let mut codes = [0u32; 86400];
@@ -14,15 +14,10 @@ impl TimeCodeGenerator {
         
         let mut hour = 0;
         while hour < 24 {
-            // 時間のBCDエンコーディング
+            // 時間のBCDエンコーディング（24時間制、PM flagなし）
             let h_tens = hour / 10;
             let h_ones = hour % 10;
-            let mut h_code = (h_tens << 28) | (h_ones << 24);
-            
-            // 12時間制フラグ（午後の場合）
-            if hour >= 12 {
-                h_code |= 0x40000000;
-            }
+            let h_code = (h_tens << 28) | (h_ones << 24);
             
             let mut minute = 0;
             while minute < 60 {
@@ -59,6 +54,28 @@ impl TimeCodeGenerator {
             Self::TIME_CODES[index]
         } else {
             0 // エラー値
+        }
+    }
+    
+    /// Hardware-specific time code generation
+    /// DS/DS_LITE applies PM flag (0x40000000) for afternoon hours (>=12), 3DS uses 24-hour format
+    #[inline]
+    pub fn get_time_code_for_hardware(hour: u32, minute: u32, second: u32, hardware: &str) -> u32 {
+        let base_code = Self::get_time_code(hour, minute, second);
+        
+        // For DS and DS_LITE, add PM flag for afternoon hours
+        match hardware {
+            "DS" | "DS_LITE" => {
+                if hour >= 12 {
+                    base_code | 0x40000000 // Add PM flag for afternoon
+                } else {
+                    base_code // Keep base code for morning
+                }
+            },
+            "3DS" => {
+                base_code // 3DS uses 24-hour format (no PM flag)
+            },
+            _ => base_code, // Fallback to base code
         }
     }
 }

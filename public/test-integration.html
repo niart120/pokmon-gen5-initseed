@@ -535,7 +535,7 @@
                 const mac = new Uint8Array([0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC]);
                 const nazo = new Uint32Array([0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000]);
                 
-                const searcher = new wasmModule.IntegratedSeedSearcher(mac, nazo, 5, 8);
+                const searcher = new wasmModule.IntegratedSeedSearcher(mac, nazo, "DS", 0x2FFF, 5, 8);
                 searcher.free(); // Test cleanup
                 
                 addResult('search-results', '✅ Direct WebAssembly search test passed', 'success');

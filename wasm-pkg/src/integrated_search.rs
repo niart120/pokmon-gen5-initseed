@@ -72,6 +72,10 @@ pub struct IntegratedSeedSearcher {
     version: u32,
     #[allow(dead_code)]
     frame: u32,
+    #[allow(dead_code)]
+    hardware: String,
+    #[allow(dead_code)]
+    key_input: u32,
     
     // キャッシュされた基本メッセージ
     base_message: [u32; 16],
@@ -81,16 +85,22 @@ pub struct IntegratedSeedSearcher {
 impl IntegratedSeedSearcher {
     /// コンストラクタ: 固定パラメータの事前計算
     #[wasm_bindgen(constructor)]
-    pub fn new(mac: &[u8], nazo: &[u32], _version: u32, frame: u32) -> Result<IntegratedSeedSearcher, JsValue> {
+    pub fn new(mac: &[u8], nazo: &[u32], hardware: &str, key_input: u32, _version: u32, frame: u32) -> Result<IntegratedSeedSearcher, JsValue> {
         // 初期化時のみログ出力（メモリリーク対策：1回のみ実行）
-        console_log!("🔧 IntegratedSeedSearcher initialized - Tables: Time={}, Date={}", 
-            TimeCodeGenerator::TIME_CODES.len(), DateCodeGenerator::DATE_CODES.len());
+        console_log!("🔧 IntegratedSeedSearcher initialized - Hardware: {}, KeyInput: 0x{:X}, Tables: Time={}, Date={}", 
+            hardware, key_input, TimeCodeGenerator::TIME_CODES.len(), DateCodeGenerator::DATE_CODES.len());
         
         if mac.len() != 6 {
             return Err(JsValue::from_str("MAC address must be 6 bytes"));
         }
         if nazo.len() != 5 {
             return Err(JsValue::from_str("nazo must be 5 32-bit words"));
+        }
+        
+        // Hardware type validation
+        match hardware {
+            "DS" | "DS_LITE" | "3DS" => {},
+            _ => return Err(JsValue::from_str("Hardware must be DS, DS_LITE, or 3DS")),
         }
 
         // MACアドレス配列をそのまま保持（直接使用）
@@ -130,8 +140,8 @@ impl IntegratedSeedSearcher {
         base_message[10] = 0x00000000;
         base_message[11] = 0x00000000;
         
-        // data[12]: Key input - 固定値として0x2FFF（キー入力なし）をセット
-        base_message[12] = to_little_endian_32(0x2FFF);
+        // data[12]: Key input (now configurable)
+        base_message[12] = to_little_endian_32(key_input);
         
         // data[13-15]: SHA-1 padding
         base_message[13] = 0x80000000;
@@ -143,6 +153,8 @@ impl IntegratedSeedSearcher {
             nazo: nazo_array,
             version: _version,
             frame,
+            hardware: hardware.to_string(),
+            key_input,
             base_message,
         })
     }
@@ -191,11 +203,10 @@ impl IntegratedSeedSearcher {
             if current_hour >= 24 {
                 current_date += current_hour / 24;
                 current_hour %= 24;
-                // 日付・月・年の正規化は簡略化
             }
 
-            // 事前計算テーブルから日時コードを高速取得
-            let time_code = TimeCodeGenerator::get_time_code(current_hour, current_minute, current_second);
+            // 事前計算テーブルから日時コードを高速取得（hardware-specific）
+            let time_code = TimeCodeGenerator::get_time_code_for_hardware(current_hour, current_minute, current_second, &self.hardware);
             let date_code = DateCodeGenerator::get_date_code(current_year, current_month, current_date);
 
             // Timer0とVCountの範囲探索

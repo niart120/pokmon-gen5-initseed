@@ -82,6 +82,8 @@ async function processBatchIntegrated(
       const searcher = new wasmModule.IntegratedSeedSearcher(
         conditions.macAddress,
         new Uint32Array(params.nazo),
+        conditions.hardware,
+        conditions.keyInput,
         5, // version
         8  // frame
       );

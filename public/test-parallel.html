@@ -404,6 +404,8 @@
                 const searcher = new wasmModule.IntegratedSeedSearcher(
                     macAddress,
                     nazoParams,
+                    "DS", // hardware type
+                    0x2FFF, // key input
                     version,
                     frame
                 );
@@ -498,7 +500,9 @@
                 
                 const searcher = new wasmModule.IntegratedSeedSearcher(
                     macAddress,
-                    nazoParams, 
+                    nazoParams,
+                    "DS", // hardware type
+                    0x2FFF, // key input
                     version,
                     frame
                 );
