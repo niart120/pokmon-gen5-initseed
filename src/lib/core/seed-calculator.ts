@@ -114,10 +114,10 @@ export class SeedCalculator {
     }
 
     // TypeScript implementation (fallback)
-    return ((value & 0xFF) << 24) | 
-           (((value >> 8) & 0xFF) << 16) | 
-           (((value >> 16) & 0xFF) << 8) | 
-           ((value >> 24) & 0xFF);
+    return (((value & 0xFF) << 24) | 
+           (((value >>> 8) & 0xFF) << 16) | 
+           (((value >>> 16) & 0xFF) << 8) | 
+           ((value >>> 24) & 0xFF)) >>> 0;
   }
 
   /**
@@ -134,7 +134,7 @@ export class SeedCalculator {
     }
 
     // TypeScript implementation (fallback)
-    return ((value & 0xFF) << 8) | ((value >> 8) & 0xFF);
+    return ((value & 0xFF) << 8) | ((value >>> 8) & 0xFF);
   }
 
   /**
@@ -161,17 +161,15 @@ export class SeedCalculator {
       message[i] = this.toLittleEndian32(params.nazo[i]);
     }
     
-    // data[5]: (VCount << 16) | Timer0 (Timer0 part needs little-endian conversion)
-    const timer0LE = this.toLittleEndian16(timer0);
-    message[5] = (vcount << 16) | timer0LE;
+    // data[5]: (VCount << 16) | (little-endian conversion needed)
+    message[5] = this.toLittleEndian32((vcount << 16) | timer0);
     
     // data[6]: MAC address lower 16 bits (no endian conversion)
     const macLower = (conditions.macAddress[4] << 8) | conditions.macAddress[5];
     message[6] = macLower;
     
     // data[7]: MAC address upper 32 bits XOR GxStat XOR Frame (little-endian conversion needed)
-    const macUpper = (conditions.macAddress[0] << 24) | (conditions.macAddress[1] << 16) | 
-                     (conditions.macAddress[2] << 8) | conditions.macAddress[3];
+    const macUpper = (conditions.macAddress[0] << 0) | (conditions.macAddress[1] << 8) | (conditions.macAddress[2] << 16) | (conditions.macAddress[3] << 24);
     const gxStat = 0x06000000;
     const frame = HARDWARE_FRAME_VALUES[conditions.hardware];
     const data7 = macUpper ^ gxStat ^ frame;
@@ -192,21 +190,20 @@ export class SeedCalculator {
     message[8] = (yyBCD << 24) | (mmBCD << 16) | (ddBCD << 8) | wwBCD;
     
     // data[9]: Time (HHMMSS00 format, DS/DS Lite adds 0x40 for PM, 10進数→16進数変換, no endian conversion)
-    let hour = datetime.getHours();
+    const hour = datetime.getHours();
     const minute = datetime.getMinutes();
     const second = datetime.getSeconds();
     
-    // DS/DS Lite hardware adds 0x40 for PM (hours >= 12)
-    if ((conditions.hardware === 'DS' || conditions.hardware === 'DS_LITE') && hour >= 12) {
-      hour += 0x40;
-    }
+
+    // DS/DS Lite hardware PM flag adjustment
+    const pmFlag = (conditions.hardware === 'DS' || conditions.hardware === 'DS_LITE') && hour >= 12 ? 0x1 : 0x0;
     
     // Build BCD-like decimal representation then treat as hex
     // Example: 23:59:59 → 63595900 (DS/DS Lite PM) → 0x3C98BC04 (hex)
     const hhBCD = Math.floor(hour / 10) * 16 + (hour % 10);
     const minBCD = Math.floor(minute / 10) * 16 + (minute % 10);
     const secBCD = Math.floor(second / 10) * 16 + (second % 10);
-    message[9] = (hhBCD << 24) | (minBCD << 16) | (secBCD << 8) | 0x00;
+    message[9] = (pmFlag << 30) | (hhBCD << 24) | (minBCD << 16) | (secBCD << 8) | 0x00;
     
     // data[10-11]: Fixed values 0x00000000
     message[10] = 0x00000000;
@@ -240,12 +237,22 @@ export class SeedCalculator {
 
     // TypeScript implementation (fallback)
     const result = this.sha1.calculateHash(message);
+
+    // Convert hash result to seed
+    const h0 = BigInt(this.toLittleEndian32(result.h0));
+    const h1 = BigInt(this.toLittleEndian32(result.h1));
     
-    // Extract upper 32 bits as initial seed (H0 + A)
-    const seed = result.h0;
-    const hash = SHA1.hashToHex(result.h0, result.h1);
+    // 64bit値を構築
+    const lcgSeed = (h1 << 32n) | h0;
+
+    // 64bit演算
+    const multiplier = 0x5D588B656C078965n;
+    const addValue = 0x269EC3n;
     
-    return { seed, hash };
+    const seed = lcgSeed * multiplier + addValue;
+    
+    // 上位32bitを取得
+    return {seed: Number((seed >> 32n) & 0xFFFFFFFFn), hash: SHA1.hashToHex(result.h0, result.h1, result.h2, result.h3, result.h4)};
   }
 
   /**
