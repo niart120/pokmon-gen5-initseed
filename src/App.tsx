@@ -7,19 +7,21 @@ import { runDevelopmentVerification } from './lib/initialization/development-ver
 function App() {
   const { targetSeeds } = useAppStore();
 
-  // Initialize application on mount
+  // Initialize application on mount (only once)
   React.useEffect(() => {
     const initializeApp = async () => {
       const initResult = await initializeApplication();
       
       // Run development verification (only in development)
       await runDevelopmentVerification(initResult);
-
-      // Debug: Show target seeds on load
-      console.log('📋 Target seeds loaded:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
     };
 
     initializeApp();
+  }, []); // Empty dependency array - run only once
+
+  // Debug: Show target seeds when they change (separate effect)
+  React.useEffect(() => {
+    console.log('📋 Target seeds loaded:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
   }, [targetSeeds.seeds]);
 
   return (
