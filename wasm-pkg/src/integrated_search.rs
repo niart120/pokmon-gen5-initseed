@@ -240,9 +240,9 @@ impl IntegratedSeedSearcher {
                     // data[9]: Time (HHMMSS00 format + PM flag) - no endian conversion  
                     message[9] = time_code;
 
-                    // SHA-1計算
-                    let (h0, _h1) = calculate_pokemon_sha1(&message);
-                    let seed = h0;
+                    // SHA-1計算とLCG seed計算
+                    let (h0, h1, _h2, _h3, _h4) = calculate_pokemon_sha1(&message);
+                    let seed = crate::sha1::calculate_pokemon_seed_from_hash(h0, h1);
 
                     // ターゲットシードと照合
                     for &target in target_seeds {
