@@ -2,7 +2,7 @@
 /// メッセージ生成とSHA-1計算を一体化し、WebAssembly内で完結する高速探索を実現
 use wasm_bindgen::prelude::*;
 use crate::datetime_codes::{TimeCodeGenerator, DateCodeGenerator};
-use crate::sha1::{calculate_pokemon_sha1, to_little_endian_32, to_little_endian_16};
+use crate::sha1::{calculate_pokemon_sha1, to_little_endian_32};
 
 // Import the `console.log` function from the browser console
 #[wasm_bindgen]
@@ -93,31 +93,53 @@ impl IntegratedSeedSearcher {
             return Err(JsValue::from_str("nazo must be 5 32-bit words"));
         }
 
-        // MACアドレスをリトルエンディアンに変換
-        let mac_le = [
-            to_little_endian_32((mac[0] as u32) << 24 | (mac[1] as u32) << 16 | (mac[2] as u32) << 8 | (mac[3] as u32)),
-            to_little_endian_32((mac[4] as u32) << 24 | (mac[5] as u32) << 16),
-        ];
+        // MACアドレス配列をそのまま保持（直接使用）
+        if mac.len() != 6 {
+            return Err(JsValue::from_str("MAC address must be 6 bytes"));
+        }
+        if nazo.len() != 5 {
+            return Err(JsValue::from_str("nazo must be 5 32-bit words"));
+        }
 
         // nazoをコピー
         let mut nazo_array = [0u32; 5];
         nazo_array.copy_from_slice(nazo);
 
-        // 基本メッセージテンプレートを事前構築
+        // 基本メッセージテンプレートを事前構築（TypeScript側レイアウトに準拠）
         let mut base_message = [0u32; 16];
         
-        // 固定部分をセット
-        base_message[..5].copy_from_slice(&nazo_array);
-        base_message[5] = mac_le[0];
-        base_message[6] = mac_le[1];
-        // インデックス7, 8は日時で動的に設定
-        base_message[9] = to_little_endian_16(0) as u32; // VCount (動的設定)
-        base_message[10] = to_little_endian_32(frame);
-        // インデックス11はTimer0で動的に設定
-        // インデックス12-15は0で固定
+        // data[0-4]: Nazo values (little-endian conversion already applied)
+        for i in 0..5 {
+            base_message[i] = to_little_endian_32(nazo_array[i]);
+        }
+        
+        // data[5]: (VCount << 16) | Timer0 - 動的に設定
+        // data[6]: MAC address lower 16 bits (no endian conversion)
+        let mac_lower = ((mac[4] as u32) << 8) | (mac[5] as u32);
+        base_message[6] = mac_lower;
+        
+        // data[7]: MAC address upper 32 bits XOR GxStat XOR Frame (little-endian conversion needed)
+        let mac_upper = (mac[0] as u32) | ((mac[1] as u32) << 8) | ((mac[2] as u32) << 16) | ((mac[3] as u32) << 24);
+        let gx_stat = 0x06000000u32;
+        let data7 = mac_upper ^ gx_stat ^ frame;
+        base_message[7] = to_little_endian_32(data7);
+        
+        // data[8]: Date (YYMMDDWW format) - 動的に設定
+        // data[9]: Time (HHMMSS00 format + PM flag) - 動的に設定
+        // data[10-11]: Fixed values 0x00000000
+        base_message[10] = 0x00000000;
+        base_message[11] = 0x00000000;
+        
+        // data[12]: Key input - 固定値として0x2FFF（キー入力なし）をセット
+        base_message[12] = to_little_endian_32(0x2FFF);
+        
+        // data[13-15]: SHA-1 padding
+        base_message[13] = 0x80000000;
+        base_message[14] = 0x00000000;
+        base_message[15] = 0x000001A0;
 
         Ok(IntegratedSeedSearcher {
-            mac_le,
+            mac_le: [0, 0], // 使用しないため仮値
             nazo: nazo_array,
             version: _version,
             frame,
@@ -179,12 +201,17 @@ impl IntegratedSeedSearcher {
             // Timer0とVCountの範囲探索
             for timer0 in timer0_min..=timer0_max {
                 for vcount in vcount_min..=vcount_max {
-                    // メッセージを動的に構築（コピーベース）
+                    // メッセージを動的に構築（TypeScript側レイアウトに準拠）
                     let mut message = self.base_message;
-                    message[7] = date_code;
-                    message[8] = time_code;
-                    message[9] = to_little_endian_16(vcount as u16) as u32;
-                    message[11] = to_little_endian_16(timer0 as u16) as u32;
+                    
+                    // data[5]: (VCount << 16) | Timer0 (little-endian conversion needed)
+                    message[5] = to_little_endian_32((vcount << 16) | timer0);
+                    
+                    // data[8]: Date (YYMMDDWW format) - no endian conversion
+                    message[8] = date_code;
+                    
+                    // data[9]: Time (HHMMSS00 format + PM flag) - no endian conversion  
+                    message[9] = time_code;
 
                     // SHA-1計算
                     let (h0, _h1) = calculate_pokemon_sha1(&message);
