@@ -60,12 +60,12 @@ describe('WebAssembly統合テスト', () => {
     if (isWasmAvailableForTesting()) {
       const wasm = getWasmForTesting()
       
-      // エンディアン変換テスト
-      const endian32 = wasm.to_little_endian_32_wasm(0x12345678)
-      const endian16 = wasm.to_little_endian_16_wasm(0x1234)
+      // バイトスワップテスト
+      const endian32 = wasm.swap_bytes_32_wasm(0x12345678)
+      const endian16 = wasm.swap_bytes_16_wasm(0x1234)
       expect(typeof endian32).toBe('number')
       expect(typeof endian16).toBe('number')
-      console.log(`🔄 エンディアン変換: 32bit=0x${endian32.toString(16)}, 16bit=0x${endian16.toString(16)}`)
+      console.log(`🔄 バイトスワップ: 32bit=0x${endian32.toString(16)}, 16bit=0x${endian16.toString(16)}`)
 
       // SHA-1ハッシュテスト
       const testMessage = new Uint32Array([0x12345678, 0x9ABCDEF0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])

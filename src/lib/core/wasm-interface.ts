@@ -5,8 +5,8 @@
 
 // WebAssembly module interface
 interface WasmModule {
-  to_little_endian_32_wasm(value: number): number;
-  to_little_endian_16_wasm(value: number): number;
+  swap_bytes_32_wasm(value: number): number;
+  swap_bytes_16_wasm(value: number): number;
   calculate_sha1_hash(message: Uint32Array): Uint32Array;
   calculate_sha1_batch(messages: Uint32Array, batch_size: number): Uint32Array;
   
@@ -59,8 +59,8 @@ export async function initWasm(): Promise<WasmModule> {
       await module.default();
       
       wasmModule = {
-        to_little_endian_32_wasm: module.to_little_endian_32_wasm,
-        to_little_endian_16_wasm: module.to_little_endian_16_wasm,
+        swap_bytes_32_wasm: module.swap_bytes_32_wasm,
+        swap_bytes_16_wasm: module.swap_bytes_16_wasm,
         calculate_sha1_hash: module.calculate_sha1_hash,
         calculate_sha1_batch: module.calculate_sha1_batch,
         IntegratedSeedSearcher: module.IntegratedSeedSearcher,
@@ -108,17 +108,17 @@ export class WasmSeedCalculator {
   }
 
   /**
-   * Convert 32-bit value to little-endian
+   * Convert 32-bit value to byte-swapped format
    */
   toLittleEndian32(value: number): number {
-    return this.wasm.to_little_endian_32_wasm(value);
+    return this.wasm.swap_bytes_32_wasm(value);
   }
 
   /**
-   * Convert 16-bit value to little-endian
+   * Convert 16-bit value to byte-swapped format
    */
   toLittleEndian16(value: number): number {
-    return this.wasm.to_little_endian_16_wasm(value);
+    return this.wasm.swap_bytes_16_wasm(value);
   }
 
   /**

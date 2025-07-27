@@ -29,8 +29,8 @@ describe('WebAssembly基本動作テスト', () => {
 
   test('必要な関数が全て存在する', () => {
     const requiredFunctions = [
-      'to_little_endian_32_wasm',
-      'to_little_endian_16_wasm', 
+      'swap_bytes_32_wasm',
+      'swap_bytes_16_wasm', 
       'calculate_sha1_hash',
       'calculate_sha1_batch'
     ]
@@ -40,14 +40,14 @@ describe('WebAssembly基本動作テスト', () => {
     }
   })
 
-  test('エンディアン変換が動作する', () => {
+  test('バイトスワップが動作する', () => {
     const testValue32 = 0x12345678
-    const result32 = wasm.to_little_endian_32_wasm(testValue32)
+    const result32 = wasm.swap_bytes_32_wasm(testValue32)
     expect(typeof result32).toBe('number')
     expect(result32).not.toBe(0)
     
     const testValue16 = 0x1234
-    const result16 = wasm.to_little_endian_16_wasm(testValue16)
+    const result16 = wasm.swap_bytes_16_wasm(testValue16)
     expect(typeof result16).toBe('number')
     expect(result16).not.toBe(0)
   })

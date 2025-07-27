@@ -2,7 +2,7 @@
 /// メッセージ生成とSHA-1計算を一体化し、WebAssembly内で完結する高速探索を実現
 use wasm_bindgen::prelude::*;
 use crate::datetime_codes::{TimeCodeGenerator, DateCodeGenerator};
-use crate::sha1::{calculate_pokemon_sha1, to_little_endian_32};
+use crate::sha1::{calculate_pokemon_sha1, swap_bytes_32};
 use chrono::{NaiveDate, Datelike, Timelike};
 
 // Import the `console.log` function from the browser console
@@ -124,7 +124,7 @@ impl IntegratedSeedSearcher {
         
         // data[0-4]: Nazo values (little-endian conversion already applied)
         for i in 0..5 {
-            base_message[i] = to_little_endian_32(nazo_array[i]);
+            base_message[i] = swap_bytes_32(nazo_array[i]);
         }
         
         // data[5]: (VCount << 16) | Timer0 - 動的に設定
@@ -136,7 +136,7 @@ impl IntegratedSeedSearcher {
         let mac_upper = (mac[0] as u32) | ((mac[1] as u32) << 8) | ((mac[2] as u32) << 16) | ((mac[3] as u32) << 24);
         let gx_stat = 0x06000000u32;
         let data7 = mac_upper ^ gx_stat ^ frame;
-        base_message[7] = to_little_endian_32(data7);
+        base_message[7] = swap_bytes_32(data7);
         
         // data[8]: Date (YYMMDDWW format) - 動的に設定
         // data[9]: Time (HHMMSS00 format + PM flag) - 動的に設定
@@ -145,7 +145,7 @@ impl IntegratedSeedSearcher {
         base_message[11] = 0x00000000;
         
         // data[12]: Key input (now configurable)
-        base_message[12] = to_little_endian_32(key_input);
+        base_message[12] = swap_bytes_32(key_input);
         
         // data[13-15]: SHA-1 padding
         base_message[13] = 0x80000000;
@@ -232,7 +232,7 @@ impl IntegratedSeedSearcher {
                     let mut message = self.base_message;
                     
                     // data[5]: (VCount << 16) | Timer0 (little-endian conversion needed)
-                    message[5] = to_little_endian_32((vcount << 16) | timer0);
+                    message[5] = swap_bytes_32((vcount << 16) | timer0);
                     
                     // data[8]: Date (YYMMDDWW format) - no endian conversion
                     message[8] = date_code;

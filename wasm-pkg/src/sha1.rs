@@ -71,9 +71,9 @@ pub fn calculate_pokemon_sha1(message: &[u32; 16]) -> (u32, u32, u32, u32, u32) 
 /// ポケモンBW/BW2用LCG計算
 /// SHA-1ハッシュ値からTypeScript版と同じ方式で最終seedを計算
 pub fn calculate_pokemon_seed_from_hash(h0: u32, h1: u32) -> u32 {
-    // TypeScript版と同じエンディアン変換とLCG計算
-    let h0_le = to_little_endian_32(h0) as u64;
-    let h1_le = to_little_endian_32(h1) as u64;
+    // TypeScript版と同じバイトスワップとLCG計算
+    let h0_le = swap_bytes_32(h0) as u64;
+    let h1_le = swap_bytes_32(h1) as u64;
     
     // 64bit値を構築
     let lcg_seed = (h1_le << 32) | h0_le;
@@ -141,14 +141,19 @@ fn left_rotate(value: u32, amount: u32) -> u32 {
     (value << amount) | (value >> (32 - amount))
 }
 
-/// エンディアン変換関数（32bit）
-pub fn to_little_endian_32(value: u32) -> u32 {
-    value.to_le()
+/// バイトスワップ関数（32bit）
+/// TypeScript版と同じバイトスワップ処理を実行
+pub fn swap_bytes_32(value: u32) -> u32 {
+    ((value & 0xFF) << 24) | 
+    (((value >> 8) & 0xFF) << 16) | 
+    (((value >> 16) & 0xFF) << 8) | 
+    ((value >> 24) & 0xFF)
 }
 
-/// エンディアン変換関数（16bit）
-pub fn to_little_endian_16(value: u16) -> u16 {
-    value.to_le()
+/// バイトスワップ関数（16bit）
+/// TypeScript版と同じバイトスワップ処理を実行
+pub fn swap_bytes_16(value: u16) -> u16 {
+    ((value & 0xFF) << 8) | ((value >> 8) & 0xFF)
 }
 
 /// WebAssembly公開用SHA-1関数（TypeScript版と完全互換）
@@ -191,16 +196,16 @@ pub fn calculate_sha1_batch(messages: &[u32], batch_size: u32) -> Vec<u32> {
     calculate_pokemon_sha1_batch(messages, batch_size)
 }
 
-/// WebAssembly公開用エンディアン変換関数（32bit）
+/// WebAssembly公開用バイトスワップ関数（32bit）
 #[wasm_bindgen]
-pub fn to_little_endian_32_wasm(value: u32) -> u32 {
-    to_little_endian_32(value)
+pub fn swap_bytes_32_wasm(value: u32) -> u32 {
+    swap_bytes_32(value)
 }
 
-/// WebAssembly公開用エンディアン変換関数（16bit）
+/// WebAssembly公開用バイトスワップ関数（16bit）
 #[wasm_bindgen]
-pub fn to_little_endian_16_wasm(value: u16) -> u16 {
-    to_little_endian_16(value)
+pub fn swap_bytes_16_wasm(value: u16) -> u16 {
+    swap_bytes_16(value)
 }
 
 #[cfg(test)]
@@ -290,9 +295,9 @@ mod tests {
     }
     
     #[test]
-    fn test_endian_conversion() {
-        // Windowsはリトルエンディアンなので、to_le()は値をそのまま返す
-        assert_eq!(to_little_endian_32(0x12345678), 0x12345678);
-        assert_eq!(to_little_endian_16(0x1234), 0x1234);
+    fn test_byte_swap() {
+        // バイトスワップ結果をテスト
+        assert_eq!(swap_bytes_32(0x12345678), 0x78563412);
+        assert_eq!(swap_bytes_16(0x1234), 0x3412);
     }
 }

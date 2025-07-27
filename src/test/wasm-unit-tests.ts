@@ -23,8 +23,8 @@ export async function testLevel1_WasmLoading(): Promise<boolean> {
     
     // 基本的な関数が存在するかチェック
     const requiredFunctions = [
-      'to_little_endian_32_wasm',
-      'to_little_endian_16_wasm', 
+      'swap_bytes_32_wasm',
+      'swap_bytes_16_wasm', 
       'calculate_sha1_hash',
       'calculate_sha1_batch'
     ];
@@ -84,7 +84,7 @@ export async function testLevel2_EndianConversion(): Promise<boolean> {
     ];
     
     for (const value of test32Values) {
-      const result = wasm.to_little_endian_32_wasm(value);
+      const result = wasm.swap_bytes_32_wasm(value);
       console.log(`  入力: 0x${value.toString(16).padStart(8, '0')} → 出力: 0x${result.toString(16).padStart(8, '0')}`);
       
       // 結果が数値であることを確認
@@ -105,7 +105,7 @@ export async function testLevel2_EndianConversion(): Promise<boolean> {
     ];
     
     for (const value of test16Values) {
-      const result = wasm.to_little_endian_16_wasm(value);
+      const result = wasm.swap_bytes_16_wasm(value);
       console.log(`  入力: 0x${value.toString(16).padStart(4, '0')} → 出力: 0x${result.toString(16).padStart(4, '0')}`);
       
       // 結果が数値であることを確認
