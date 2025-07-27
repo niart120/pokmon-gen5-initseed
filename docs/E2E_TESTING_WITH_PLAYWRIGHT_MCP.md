@@ -6,6 +6,12 @@
 
 従来のJavaScriptテストページでの手動テストをPlaywright-MCPで自動化し、実際のユーザーワークフローを検証します。
 
+## コンテキスト効率化の原則
+
+- **必要最小限のデータ取得**: スナップショットやログは検証に必要な場合のみ
+- **バッチ処理**: 複数操作をまとめて実行後に一度確認
+- **選択的検証**: 重要なポイントでのみ詳細確認
+
 ## 前提条件
 
 - Playwright-MCPが有効であること
@@ -32,18 +38,16 @@
 3. UI要素の表示確認
 4. 基本設定の確認
 
-**Playwright-MCP実行例**:
+**Playwright-MCP実行例** (効率化版):
 ```javascript
 // ページナビゲーション
 await mcp_playwright_browser_navigate({ url: "http://localhost:5173/" });
 
-// ページスナップショット取得
-await mcp_playwright_browser_snapshot();
-
-// WebAssembly初期化ログ確認
+// WebAssembly初期化待機（スナップショット不要）
 await mcp_playwright_browser_wait_for({ time: 2 });
-const messages = await mcp_playwright_browser_console_messages();
-// "WebAssembly acceleration enabled!" の確認
+
+// 重要: 初期化完了をテキストで確認（ログ全取得不要）
+await mcp_playwright_browser_wait_for({ text: "WebAssembly acceleration enabled" });
 ```
 
 **期待結果**:
@@ -62,25 +66,25 @@ const messages = await mcp_playwright_browser_console_messages();
 - Worker数: 32
 - 日付範囲: 2000/01/01 12:00:00 ～ 2099/12/31 12:01:59
 
-**Playwright-MCP実行例**:
+**Playwright-MCP実行例** (効率化版):
 ```javascript
-// Start Searchボタンクリック
+// 探索開始（バッチ操作）
 await mcp_playwright_browser_click({
   element: "Start Search button",
   ref: "e543"
 });
 
-// 進捗監視（3秒間）
+// 進捗待機（詳細確認不要）
 await mcp_playwright_browser_wait_for({ time: 3 });
 
-// 現在の状況確認
-await mcp_playwright_browser_snapshot();
-
-// Stopボタンクリック
+// 停止操作
 await mcp_playwright_browser_click({
   element: "Stop button", 
   ref: "e257"
 });
+
+// 最終確認のみスナップショット取得
+await mcp_playwright_browser_snapshot();
 ```
 
 **期待結果**:
@@ -116,16 +120,15 @@ const VERIFICATION_SEEDS = [
 ];
 ```
 
-**Playwright-MCP実行例**:
+**Playwright-MCP実行例** (効率化版):
 ```javascript
-// Target Seedsフィールドに検証用Seedを入力
+// 設定入力（一括実行）
 await mcp_playwright_browser_type({
   element: "Target Seeds input field",
   ref: "e179",
   text: "0x14B11BA6\n0x8A30480D\n0x9E02B0AE\n0xADFA2178"
 });
 
-// 日付範囲を該当期間に設定
 await mcp_playwright_browser_type({
   element: "Start Year input",
   ref: "e100", 
@@ -144,10 +147,11 @@ await mcp_playwright_browser_click({
   ref: "e543"
 });
 
-// 結果が見つかるまで待機（またはタイムアウト）
-await mcp_playwright_browser_wait_for({ time: 30 });
+// 結果待機（テキストベース確認）
+await mcp_playwright_browser_wait_for({ text: "Found seed:" });
 
-// 結果確認
+// 結果確認（必要時のみスナップショット）
+```
 await mcp_playwright_browser_snapshot();
 ```
 
@@ -236,7 +240,7 @@ await mcp_playwright_browser_snapshot();
 - 設定変更が即座に反映される
 - アクセシビリティが保たれている
 
-## 統合テスト実行手順
+## 統合テスト実行手順 (効率化版)
 
 ### 1. 環境準備
 ```bash
@@ -247,49 +251,27 @@ npm run dev
 npm run build:wasm
 ```
 
-### 2. Playwright-MCPでの基本動作確認
+### 2. 基本動作確認（最小限）
 ```javascript
-// ブラウザでアプリケーション起動
-await mcp_playwright_browser_navigate({ 
-  url: "http://localhost:5173/" 
-});
-
-// 初期状態確認
-await mcp_playwright_browser_snapshot();
+// アプリケーション起動・WebAssembly初期化確認
+await mcp_playwright_browser_navigate({ url: "http://localhost:5173/" });
+await mcp_playwright_browser_wait_for({ text: "WebAssembly acceleration enabled" });
 ```
 
-### 3. WebAssembly統合確認
+### 3. 核心機能テスト（バッチ実行）
 ```javascript
-// コンソールメッセージでWebAssembly初期化確認
-const messages = await mcp_playwright_browser_console_messages();
-// "WebAssembly acceleration enabled!" を確認
+// 探索テスト（設定→実行→確認）
+await mcp_playwright_browser_click({ element: "Start Search button", ref: "e543" });
+await mcp_playwright_browser_wait_for({ time: 3 });
+await mcp_playwright_browser_click({ element: "Stop button", ref: "e257" });
 ```
 
-### 4. 実際の探索実行
+### 4. 結果検証（最終確認のみ）
 ```javascript
-// 探索開始
-await mcp_playwright_browser_click({
-  element: "Start Search button",
-  ref: "e543"
-});
-
-// 進捗監視
-await mcp_playwright_browser_wait_for({ time: 5 });
-
-// 停止・状態確認
-await mcp_playwright_browser_click({
-  element: "Stop button",
-  ref: "e257"
-});
-```
-
-### 5. 結果検証
-```javascript
+// エラーなし確認（テキストベース）
+await mcp_playwright_browser_wait_for({ textGone: "Error:" });
 // 最終状態確認
 await mcp_playwright_browser_snapshot();
-
-// エラーがないことの確認
-const finalMessages = await mcp_playwright_browser_console_messages();
 ```
 
 ## パフォーマンス指標
