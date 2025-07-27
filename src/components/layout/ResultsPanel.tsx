@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
-import { useAppStore } from '../store/app-store';
-import { ResultsHeaderCard, type SortField } from './results/ResultsHeaderCard';
-import { ResultsTableCard } from './results/ResultsTableCard';
-import { ResultDetailsDialog } from './results/ResultDetailsDialog';
-import type { InitialSeedResult, SearchResult } from '../types/pokemon';
+import { useAppStore } from '../../store/app-store';
+import { ResultsHeaderCard, type SortField } from '../results/ResultsHeaderCard';
+import { ResultsTableCard } from '../results/ResultsTableCard';
+import { ResultDetailsDialog } from '../results/ResultDetailsDialog';
+import type { InitialSeedResult, SearchResult } from '../../types/pokemon';
 
 export function ResultsPanel() {
   const { searchResults } = useAppStore();

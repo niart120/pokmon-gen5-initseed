@@ -3,9 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { MagnifyingGlass, Info, Gear } from '@phosphor-icons/react';
 import { useAppStore } from '@/store/app-store';
-import { SearchPanel } from '@/components/SearchPanel';
-import { OptionPanel } from '@/components/OptionPanel';
-import { HelpPanel } from '@/components/layout';
+import { SearchPanel } from './SearchPanel';
+import { OptionPanel } from './OptionPanel';
+import { HelpPanel } from './HelpPanel';
 
 export function MainContent() {
   const { activeTab, setActiveTab, targetSeeds, searchResults } = useAppStore();
