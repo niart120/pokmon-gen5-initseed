@@ -64,7 +64,6 @@ export class SearchWorkerManager {
 
     switch (response.type) {
       case 'READY':
-        console.log('🚀 Search worker ready');
         break;
 
       case 'PROGRESS':
@@ -245,8 +244,6 @@ export class SearchWorkerManager {
     if (enabled && !this.multiWorkerManager) {
       this.multiWorkerManager = new MultiWorkerSearchManager();
     }
-    
-    console.log(`🔧 Search mode: ${enabled ? 'Parallel' : 'Single'} worker`);
   }
 
   /**

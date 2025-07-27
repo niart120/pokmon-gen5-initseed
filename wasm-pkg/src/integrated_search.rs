@@ -12,11 +12,6 @@ extern "C" {
     fn log(s: &str);
 }
 
-// Define a macro to make console.log easier to use
-macro_rules! console_log {
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
-
 /// 2000年1月1日 00:00:00 UTCのUnix時間戳
 const EPOCH_2000_UNIX: i64 = 946684800;
 
@@ -90,10 +85,6 @@ impl IntegratedSeedSearcher {
     /// コンストラクタ: 固定パラメータの事前計算
     #[wasm_bindgen(constructor)]
     pub fn new(mac: &[u8], nazo: &[u32], hardware: &str, key_input: u32, _version: u32, frame: u32) -> Result<IntegratedSeedSearcher, JsValue> {
-        // 初期化時のみログ出力（メモリリーク対策：1回のみ実行）
-        console_log!("🔧 IntegratedSeedSearcher initialized - Hardware: {}, KeyInput: 0x{:X}, Tables: Time={}, Date={}", 
-            hardware, key_input, TimeCodeGenerator::TIME_CODES.len(), DateCodeGenerator::DATE_CODES.len());
-        
         if mac.len() != 6 {
             return Err(JsValue::from_str("MAC address must be 6 bytes"));
         }
@@ -191,8 +182,6 @@ impl IntegratedSeedSearcher {
         {
             Some(datetime) => datetime,
             None => {
-                console_log!("Invalid start datetime: {}/{}/{} {}:{}:{}", 
-                    year_start, month_start, date_start, hour_start, minute_start, second_start);
                 return results;
             }
         };

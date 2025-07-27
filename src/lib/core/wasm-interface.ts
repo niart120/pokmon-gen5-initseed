@@ -65,8 +65,6 @@ export async function initWasm(): Promise<WasmModule> {
         calculate_sha1_batch: module.calculate_sha1_batch,
         IntegratedSeedSearcher: module.IntegratedSeedSearcher,
       };
-
-      console.log('🦀 WebAssembly module loaded successfully');
       
       return wasmModule;
     } catch (error) {

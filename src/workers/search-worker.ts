@@ -50,9 +50,8 @@ async function initializeCalculator() {
     // Initialize WebAssembly for integrated search
     try {
       await calculator.initializeWasm();
-      console.log('🦀 WebAssembly initialized in worker');
     } catch (error) {
-      console.warn('⚠️ WebAssembly failed in worker, using TypeScript fallback:', error);
+      console.warn('WebAssembly failed in worker, using TypeScript fallback:', error);
     }
   }
 }
@@ -237,8 +236,7 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
     const progressUpdateInterval = 500; // Update progress every 500ms
 
     // Search using integrated approach
-    console.log(`🚀 Using integrated search (WebAssembly: ${calculator.isUsingWasm()})`);
-
+    
     // Search loop using integrated search
     for (let timer0 = conditions.timer0Range.min; timer0 <= conditions.timer0Range.max; timer0++) {
       if (searchState.shouldStop) break;

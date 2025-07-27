@@ -30,14 +30,12 @@ export class SeedCalculator {
    */
   public async initializeWasm(): Promise<boolean> {
     try {
-      console.log('🔧 Initializing WebAssembly module...');
       const wasm = await initWasm();
       this.wasmCalculator = createWasmCalculator(wasm);
       this.useWasm = true;
-      console.log('✅ WebAssembly module initialized successfully');
       return true;
     } catch (error) {
-      console.warn('⚠️ WebAssembly initialization failed, falling back to TypeScript:', error);
+      console.warn('WebAssembly initialization failed, falling back to TypeScript:', error);
       this.useWasm = false;
       return false;
     }

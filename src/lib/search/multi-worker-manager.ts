@@ -45,11 +45,10 @@ export class MultiWorkerSearchManager {
    */
   public setMaxWorkers(count: number): void {
     if (this.searchRunning) {
-      console.warn('⚠️ Cannot change worker count during active search');
+      console.warn('Cannot change worker count during active search');
       return;
     }
     this.maxWorkers = Math.max(1, Math.min(count, navigator.hardwareConcurrency || 4));
-    console.log(`🔧 Updated max workers to: ${this.maxWorkers}`);
   }
 
   /**
@@ -77,8 +76,6 @@ export class MultiWorkerSearchManager {
     this.resetState();
 
     try {
-      console.log('🚀 Starting parallel search with', this.maxWorkers, 'workers');
-
       // チャンク分割計算
       const chunks = ChunkCalculator.calculateOptimalChunks(
         conditions, 
@@ -89,10 +86,6 @@ export class MultiWorkerSearchManager {
         throw new Error('No valid chunks created for search');
       }
 
-      console.log(`📊 Created ${chunks.length} chunks for processing (${this.maxWorkers} workers)`);
-      const metrics = ChunkCalculator.evaluateChunkDistribution(chunks);
-      console.log(`📈 Load balance score: ${metrics.loadBalanceScore}/100`);
-
       // 各チャンクに対してWorker初期化
       for (const chunk of chunks) {
         await this.initializeWorker(chunk, conditions, targetSeeds);
@@ -101,10 +94,8 @@ export class MultiWorkerSearchManager {
       // 進捗監視開始
       this.startProgressMonitoring();
 
-      console.log('✅ All workers initialized and started');
-
     } catch (error) {
-      console.error('❌ Failed to start parallel search:', error);
+      console.error('Failed to start parallel search:', error);
       this.cleanup();
       callbacks.onError(error instanceof Error ? error.message : 'Unknown error');
     }
@@ -368,11 +359,9 @@ export class MultiWorkerSearchManager {
     this.callbacks?.onProgress(finalProgress);
     
     // onCompleteコールバックを先に実行してからクリーンアップ
-    console.log('🔄 About to call onComplete callback:', this.callbacks?.onComplete ? 'exists' : 'missing');
     this.callbacks?.onComplete(
       `Parallel search completed. Found ${totalResults} matches in ${Math.round(totalElapsed / 1000)}s`
     );
-    console.log('✅ onComplete callback called');
     
     // コールバック実行後にクリーンアップ
     this.cleanup();
@@ -382,7 +371,7 @@ export class MultiWorkerSearchManager {
    * Workerエラー処理
    */
   private handleWorkerError(workerId: number, error: Error): void {
-    console.error(`❌ Worker ${workerId} error:`, error);
+    console.error(`Worker ${workerId} error:`, error);
     
     const progress = this.workerProgresses.get(workerId);
     if (progress) {
@@ -438,7 +427,6 @@ export class MultiWorkerSearchManager {
    * 全Worker停止
    */
   public terminateAll(): void {
-    console.log('🛑 Terminating all workers');
     const callbacks = this.callbacks; // コールバックを保存
     this.cleanup();
     callbacks?.onStopped();
@@ -448,7 +436,6 @@ export class MultiWorkerSearchManager {
    * 一時停止
    */
   public pauseAll(): void {
-    console.log('⏸️ Pausing all workers');
     for (const worker of this.workers.values()) {
       const request: ParallelWorkerRequest = {
         type: 'PAUSE_SEARCH',
@@ -463,7 +450,6 @@ export class MultiWorkerSearchManager {
    * 再開
    */
   public resumeAll(): void {
-    console.log('▶️ Resuming all workers');
     for (const worker of this.workers.values()) {
       const request: ParallelWorkerRequest = {
         type: 'RESUME_SEARCH',

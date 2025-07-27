@@ -11,23 +11,15 @@ export interface InitializationResult {
 }
 
 export async function initializeApplication(): Promise<InitializationResult> {
-  console.log('🚀 Initializing Pokemon BW/BW2 Seed Search App...');
-
   try {
     const { SeedCalculator } = await import('@/lib/core/seed-calculator');
     const calculator = new SeedCalculator();
     const wasmSuccess = await calculator.initializeWasm();
     
     if (wasmSuccess) {
-      console.log('🦀 WebAssembly acceleration enabled!');
-      
       // Test integrated search availability
       const wasmModule = calculator.getWasmModule();
       const integratedSearchAvailable = wasmModule && wasmModule.IntegratedSeedSearcher;
-      
-      if (integratedSearchAvailable) {
-        console.log('🚀 Integrated search available for optimal performance');
-      }
 
       return {
         wasmEnabled: true,
@@ -35,7 +27,6 @@ export async function initializeApplication(): Promise<InitializationResult> {
         calculator
       };
     } else {
-      console.log('⚠️ Running with TypeScript implementation');
       return {
         wasmEnabled: false,
         integratedSearchAvailable: false,
@@ -43,7 +34,7 @@ export async function initializeApplication(): Promise<InitializationResult> {
       };
     }
   } catch (error) {
-    console.warn('⚠️ Failed to initialize WebAssembly, using TypeScript fallback:', error);
+    console.warn('Failed to initialize WebAssembly, using TypeScript fallback:', error);
     return {
       wasmEnabled: false,
       integratedSearchAvailable: false

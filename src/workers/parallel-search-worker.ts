@@ -32,9 +32,8 @@ async function initializeCalculator(): Promise<void> {
     calculator = new SeedCalculator();
     try {
       await calculator.initializeWasm();
-      console.log(`🦀 Worker ${searchState.workerId}: WebAssembly initialized`);
     } catch (error) {
-      console.warn(`⚠️ Worker ${searchState.workerId}: WebAssembly failed, using TypeScript fallback:`, error);
+      console.warn(`Worker ${searchState.workerId}: WebAssembly failed, using TypeScript fallback:`, error);
     }
   }
 }
@@ -50,8 +49,6 @@ async function processChunk(
     throw new Error('No chunk assigned to worker');
   }
 
-  console.log(`🚀 Worker ${searchState.workerId}: Starting chunk processing`);
-  
   searchState.startTime = Date.now();
   let processedOperations = 0;
   let matchesFound = 0;
@@ -127,8 +124,6 @@ async function processChunkWithWasm(
     const totalOperations = rangeSeconds * 
       (conditions.timer0Range.max - conditions.timer0Range.min + 1) *
       (conditions.vcountRange.max - conditions.vcountRange.min + 1);
-
-    console.log(`🔍 Worker ${searchState.workerId}: Processing ${rangeSeconds} seconds with WebAssembly (WITH sub-chunking)`);
 
     // 初期進捗報告
     reportProgress(0, totalOperations, 0);
@@ -227,8 +222,6 @@ async function processChunkWithTypeScript(
   const totalSeconds = Math.floor((endTime - startTime) / 1000) + 1;
   const totalOperations = totalSeconds * 
     (conditions.timer0Range.max - conditions.timer0Range.min + 1);
-
-  console.log(`🔍 Worker ${searchState.workerId}: Processing ${totalOperations} operations with TypeScript`);
 
   // Timer0範囲をループ
   for (let timer0 = conditions.timer0Range.min; timer0 <= conditions.timer0Range.max; timer0++) {
