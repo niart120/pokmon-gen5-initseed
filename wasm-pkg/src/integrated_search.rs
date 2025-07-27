@@ -3,6 +3,7 @@
 use wasm_bindgen::prelude::*;
 use crate::datetime_codes::{TimeCodeGenerator, DateCodeGenerator};
 use crate::sha1::{calculate_pokemon_sha1, to_little_endian_32};
+use chrono::{NaiveDate, Datelike, Timelike};
 
 // Import the `console.log` function from the browser console
 #[wasm_bindgen]
@@ -15,6 +16,9 @@ extern "C" {
 macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
+
+/// 2000年1月1日 00:00:00 UTCのUnix時間戳
+const EPOCH_2000_UNIX: i64 = 946684800;
 
 /// 探索結果構造体
 #[wasm_bindgen]
@@ -181,33 +185,45 @@ impl IntegratedSeedSearcher {
         
         let results = js_sys::Array::new();
 
-        // 日時範囲の探索
+        // 開始日時をUnix時間に変換（ループ外で1回のみ実行）
+        let start_datetime = match NaiveDate::from_ymd_opt(year_start as i32, month_start, date_start)
+            .and_then(|date| date.and_hms_opt(hour_start, minute_start, second_start)) 
+        {
+            Some(datetime) => datetime,
+            None => {
+                console_log!("Invalid start datetime: {}/{}/{} {}:{}:{}", 
+                    year_start, month_start, date_start, hour_start, minute_start, second_start);
+                return results;
+            }
+        };
+        
+        let start_unix = start_datetime.and_utc().timestamp();
+        let base_seconds_since_2000 = start_unix - EPOCH_2000_UNIX;
+
+        // 日時範囲の探索（Unix時間ベース）
         for second_offset in 0..range_seconds {
-            // 現在の秒数計算
-            let mut current_second = second_start + second_offset;
-            let mut current_minute = minute_start;
-            let mut current_hour = hour_start;
-            let mut current_date = date_start;
-            let current_month = month_start;
-            let current_year = year_start;
+            let current_seconds_since_2000 = base_seconds_since_2000 + second_offset as i64;
+            
+            // 負の値チェック（2000年以前）
+            if current_seconds_since_2000 < 0 {
+                continue;
+            }
+            
+            // 日時インデックス計算
+            let time_index = (current_seconds_since_2000 % 86400) as u32;
+            let date_index = (current_seconds_since_2000 / 86400) as u32;
 
-            // 時刻の正規化
-            if current_second >= 60 {
-                current_minute += current_second / 60;
-                current_second %= 60;
-            }
-            if current_minute >= 60 {
-                current_hour += current_minute / 60;
-                current_minute %= 60;
-            }
-            if current_hour >= 24 {
-                current_date += current_hour / 24;
-                current_hour %= 24;
-            }
+            // 事前計算テーブルから日時コードを高速取得
+            let time_code = TimeCodeGenerator::get_time_code_for_hardware(time_index, &self.hardware);
+            let date_code = DateCodeGenerator::get_date_code(date_index);
 
-            // 事前計算テーブルから日時コードを高速取得（hardware-specific）
-            let time_code = TimeCodeGenerator::get_time_code_for_hardware(current_hour, current_minute, current_second, &self.hardware);
-            let date_code = DateCodeGenerator::get_date_code(current_year, current_month, current_date);
+            // 結果表示用の日時を逆算
+            let result_datetime = match chrono::DateTime::from_timestamp(current_seconds_since_2000 + EPOCH_2000_UNIX, 0) {
+                Some(dt) => dt.naive_utc(),
+                None => continue,
+            };
+            let (current_year, current_month, current_date) = (result_datetime.year() as u32, result_datetime.month(), result_datetime.day());
+            let (current_hour, current_minute, current_second) = (result_datetime.hour(), result_datetime.minute(), result_datetime.second());
 
             // Timer0とVCountの範囲探索
             for timer0 in timer0_min..=timer0_max {

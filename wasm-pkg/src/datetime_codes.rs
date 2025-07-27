@@ -48,24 +48,25 @@ impl TimeCodeGenerator {
     
     /// 時刻コードを高速取得（O(1)）
     #[inline]
-    pub fn get_time_code(hour: u32, minute: u32, second: u32) -> u32 {
-        let index = (hour * 3600 + minute * 60 + second) as usize;
+    pub fn get_time_code(seconds_of_day: u32) -> u32 {
+        let index = seconds_of_day as usize;
         if index < Self::TIME_CODES.len() {
             Self::TIME_CODES[index]
         } else {
             0 // エラー値
         }
     }
-    
+
     /// Hardware-specific time code generation
     /// DS/DS_LITE applies PM flag (0x40000000) for afternoon hours (>=12), 3DS uses 24-hour format
     #[inline]
-    pub fn get_time_code_for_hardware(hour: u32, minute: u32, second: u32, hardware: &str) -> u32 {
-        let base_code = Self::get_time_code(hour, minute, second);
+    pub fn get_time_code_for_hardware(seconds_of_day: u32, hardware: &str) -> u32 {
+        let base_code = Self::get_time_code(seconds_of_day);
         
         // For DS and DS_LITE, add PM flag for afternoon hours
         match hardware {
             "DS" | "DS_LITE" => {
+                let hour = seconds_of_day / 3600;
                 if hour >= 12 {
                     base_code | 0x40000000 // Add PM flag for afternoon
                 } else {
@@ -165,38 +166,15 @@ impl DateCodeGenerator {
     /// コンパイル時に事前計算されたテーブル（定数時間アクセス）
     pub const DATE_CODES: [u32; 36525] = Self::generate_all_date_codes();
     
-    /// 2000/1/1からの日数を計算
-    const fn days_since_2000(year: u32, month: u32, day: u32) -> u32 {
-        let mut total_days = 0;
-        
-        // 年の分
-        let mut y = 2000;
-        while y < year {
-            total_days += if Self::is_leap_year(y) { 366 } else { 365 };
-            y += 1;
-        }
-        
-        // 月の分
-        let mut m = 1;
-        while m < month {
-            total_days += Self::days_in_month(year, m);
-            m += 1;
-        }
-        
-        // 日の分（1日から数えるので-1）
-        total_days + day - 1
-    }
-    
     /// 日付コードを高速取得（O(1)）
     #[inline]
-    pub fn get_date_code(year: u32, month: u32, day: u32) -> u32 {
-        if (2000..2100).contains(&year) && (1..=12).contains(&month) {
-            let index = Self::days_since_2000(year, month, day) as usize;
-            if index < Self::DATE_CODES.len() {
-                return Self::DATE_CODES[index];
-            }
+    pub fn get_date_code(days_since_2000: u32) -> u32 {
+        let index = days_since_2000 as usize;
+        if index < Self::DATE_CODES.len() {
+            Self::DATE_CODES[index]
+        } else {
+            0 // エラー値
         }
-        0 // エラー値
     }
 }
 
@@ -204,18 +182,40 @@ impl DateCodeGenerator {
 mod tests {
     use super::*;
 
+    /// テスト用ヘルパー関数: 2000/1/1からの日数を計算
+    fn days_since_2000(year: u32, month: u32, day: u32) -> u32 {
+        let mut total_days = 0;
+        
+        // 年の分
+        let mut y = 2000;
+        while y < year {
+            total_days += if DateCodeGenerator::is_leap_year(y) { 366 } else { 365 };
+            y += 1;
+        }
+        
+        // 月の分
+        let mut m = 1;
+        while m < month {
+            total_days += DateCodeGenerator::days_in_month(year, m);
+            m += 1;
+        }
+        
+        // 日の分（1日から数えるので-1）
+        total_days + day - 1
+    }
+
     #[test]
     fn test_time_code_generation() {
-        // 境界値テスト
-        assert_eq!(TimeCodeGenerator::get_time_code(0, 0, 0), 0x00000000);
-        assert_eq!(TimeCodeGenerator::get_time_code(12, 30, 45), 0x12304500);
-        assert_eq!(TimeCodeGenerator::get_time_code(23, 59, 59), 0x23595900);
+        // 境界値テスト - 新しいAPIを使用
+        assert_eq!(TimeCodeGenerator::get_time_code(0), 0x00000000);  // 00:00:00
+        assert_eq!(TimeCodeGenerator::get_time_code(12 * 3600 + 30 * 60 + 45), 0x12304500);  // 12:30:45
+        assert_eq!(TimeCodeGenerator::get_time_code(23 * 3600 + 59 * 60 + 59), 0x23595900);  // 23:59:59
     }
     
     #[test]
     fn test_date_code_generation() {
-        // 2000年1月1日のテスト (土曜日)
-        let result_2000_01_01 = DateCodeGenerator::get_date_code(2000, 1, 1);
+        // 2000年1月1日のテスト (土曜日) - 新しいAPIを使用
+        let result_2000_01_01 = DateCodeGenerator::get_date_code(0);
         println!("2000/1/1 result: 0x{:08X}", result_2000_01_01);
         
         // 手動でBCD計算を確認
@@ -226,8 +226,9 @@ mod tests {
         // 期待値: (0x00<<24)|(0x01<<16)|(0x01<<8)|0x06 = 0x00010106
         assert_eq!(result_2000_01_01, 0x00010106);
         
-        // 2024年12月31日のテスト (火曜日)
-        let result_2024_12_31 = DateCodeGenerator::get_date_code(2024, 12, 31);
+        // 2024年12月31日のテスト (火曜日) - 日数インデックス計算が必要
+        let days_2024_12_31 = days_since_2000(2024, 12, 31);
+        let result_2024_12_31 = DateCodeGenerator::get_date_code(days_2024_12_31);
         println!("2024/12/31 result: 0x{:08X}", result_2024_12_31);
         
         // 手動でBCD計算を確認
@@ -239,7 +240,8 @@ mod tests {
         assert_eq!(result_2024_12_31, 0x24123102);
         
         // 2023年12月31日のテスト (日曜日) - TypeScript実装のテストケースと一致確認
-        let result_2023_12_31 = DateCodeGenerator::get_date_code(2023, 12, 31);
+        let days_2023_12_31 = days_since_2000(2023, 12, 31);
+        let result_2023_12_31 = DateCodeGenerator::get_date_code(days_2023_12_31);
         println!("2023/12/31 result: 0x{:08X}", result_2023_12_31);
         
         // 手動でBCD計算を確認
