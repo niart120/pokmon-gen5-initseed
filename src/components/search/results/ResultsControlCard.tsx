@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { ExportButton } from '../../ExportButton';
+import { ExportButton } from './ExportButton';
 import { useAppStore } from '../../../store/app-store';
 import type { SearchResult } from '../../../types/pokemon';
 

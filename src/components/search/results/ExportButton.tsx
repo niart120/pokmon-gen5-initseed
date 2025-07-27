@@ -5,8 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download, Copy, Check } from '@phosphor-icons/react';
-import { ResultExporter, type ExportOptions } from '../lib/export/result-exporter';
-import type { SearchResult } from '../types/pokemon';
+import { ResultExporter, type ExportOptions } from '../../../lib/export/result-exporter';
+import type { SearchResult } from '../../../types/pokemon';
 
 interface ExportButtonProps {
   results: SearchResult[];
