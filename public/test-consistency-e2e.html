@@ -364,23 +364,23 @@
         }
 
         // WebAssembly初期化
-        let wasmModule = null;
-        let isWasmLoaded = false;
-
+        window.wasmModule = null;
+        window.isWasmLoaded = false;
+        
         async function initWasm() {
             try {
                 const wasmPath = '/wasm/wasm_pkg.js';
                 const { default: init, IntegratedSeedSearcher, SHA1Calculator } = await import(wasmPath);
                 
                 await init('/wasm/wasm_pkg_bg.wasm');
-                wasmModule = { IntegratedSeedSearcher, SHA1Calculator };
-                isWasmLoaded = true;
+                window.wasmModule = { IntegratedSeedSearcher, SHA1Calculator };
+                window.isWasmLoaded = true;
                 
                 console.log('WebAssembly loaded successfully');
                 return true;
             } catch (error) {
                 console.error('Failed to load WebAssembly:', error);
-                isWasmLoaded = false;
+                window.isWasmLoaded = false;
                 return false;
             }
         }
@@ -459,7 +459,7 @@
                 updateStatus('bulk-status', 'WebAssembly初期化中...', 'loading');
                 logToElement('bulk-log', 'E2E複数Seed一括検証を開始します');
                 
-                if (!isWasmLoaded) {
+                if (!window.isWasmLoaded) {
                     const wasmInitialized = await initWasm();
                     if (!wasmInitialized) {
                         throw new Error('WebAssembly初期化に失敗しました');
@@ -470,7 +470,20 @@
                 logToElement('bulk-log', `${E2E_TEST_SEEDS.length}個のSeedを検索中`);
                 
                 const results = [];
-                const searcher = new wasmModule.IntegratedSeedSearcher();
+                const params = {
+                    romVersion: CONSISTENCY_TEST_CONDITIONS.romVersion,
+                    romRegion: CONSISTENCY_TEST_CONDITIONS.romRegion,
+                    nazo: [0x02215F1F, 0x00000C4E, 0x02000031, 0x42FFF7AD] // ブラック JPN のパラメータ
+                };
+
+                const searcher = new window.wasmModule.IntegratedSeedSearcher(
+                    new Uint8Array(CONSISTENCY_TEST_CONDITIONS.macAddress),
+                    new Uint32Array(params.nazo),
+                    "DS", // hardware は文字列
+                    CONSISTENCY_TEST_CONDITIONS.keyInput,
+                    5, // version
+                    8  // frame
+                );
                 
                 for (let i = 0; i < E2E_TEST_SEEDS.length; i++) {
                     const seed = E2E_TEST_SEEDS[i];
@@ -479,29 +492,24 @@
                     logToElement('bulk-log', `Seed 0x${seed.toString(16).toUpperCase()} を検索中...`);
                     
                     try {
-                        // WebAssemblyで検索実行
-                        const searchResults = searcher.search_with_conditions(
-                            CONSISTENCY_TEST_CONDITIONS.romVersion,
-                            CONSISTENCY_TEST_CONDITIONS.romRegion,
-                            CONSISTENCY_TEST_CONDITIONS.hardware,
-                            new Uint8Array(CONSISTENCY_TEST_CONDITIONS.macAddress),
-                            CONSISTENCY_TEST_CONDITIONS.keyInput,
+
+                        const startDate = new Date(FULL_RANGE_DATE_SEARCH.startYear, 0, 1, 0, 0, 0);
+                        const endDate = new Date(FULL_RANGE_DATE_SEARCH.endYear, 11, 31, 23, 59, 59);
+                        const rangeSeconds = Math.floor((endDate.getTime() - startDate.getTime()) / 1000);
+
+                        const searchResults = searcher.search_seeds_integrated(
+                            startDate.getFullYear(),
+                            startDate.getMonth() + 1,
+                            startDate.getDate(),
+                            startDate.getHours(),
+                            startDate.getMinutes(),
+                            startDate.getSeconds(),
+                            rangeSeconds,
                             CONSISTENCY_TEST_CONDITIONS.timer0Range.min,
                             CONSISTENCY_TEST_CONDITIONS.timer0Range.max,
                             CONSISTENCY_TEST_CONDITIONS.vcountRange.min,
                             CONSISTENCY_TEST_CONDITIONS.vcountRange.max,
-                            FULL_RANGE_DATE_SEARCH.startYear,
-                            FULL_RANGE_DATE_SEARCH.endYear,
-                            FULL_RANGE_DATE_SEARCH.startMonth,
-                            FULL_RANGE_DATE_SEARCH.endMonth,
-                            FULL_RANGE_DATE_SEARCH.startDay,
-                            FULL_RANGE_DATE_SEARCH.endDay,
-                            FULL_RANGE_DATE_SEARCH.startHour,
-                            FULL_RANGE_DATE_SEARCH.endHour,
-                            FULL_RANGE_DATE_SEARCH.startMinute,
-                            FULL_RANGE_DATE_SEARCH.endMinute,
-                            FULL_RANGE_DATE_SEARCH.startSecond,
-                            FULL_RANGE_DATE_SEARCH.endSecond
+                            new Uint32Array([seed])
                         );
                         
                         // 期待結果との比較
@@ -513,10 +521,38 @@
                         };
                         
                         const expected = expectedResults[seed];
-                        const found = searchResults.find(result => result.seed === seed);
+                        
+                        // searchResultsはWebAssemblyから返されるjs_sys::Arrayオブジェクト
+                        console.log('WebAssembly search results:', searchResults);
+                        console.log('Results length:', searchResults ? searchResults.length : 'undefined');
+                        
+                        let found = null;
+                        if (searchResults && searchResults.length > 0) {
+                            // 配列内の各結果をチェック
+                            for (let i = 0; i < searchResults.length; i++) {
+                                const result = searchResults[i];
+                                console.log(`Result ${i}:`, result);
+                                
+                                // WebAssembly SearchResultオブジェクトのプロパティアクセス
+                                if (result && result.seed === seed) {
+                                    found = {
+                                        seed: result.seed,
+                                        year: result.year,
+                                        month: result.month,
+                                        date: result.date,
+                                        hour: result.hour,
+                                        minute: result.minute,
+                                        second: result.second,
+                                        timer0: result.timer0,
+                                        vcount: result.vcount
+                                    };
+                                    break;
+                                }
+                            }
+                        }
                         
                         if (found && expected) {
-                            const actualDateTime = formatDateTime(new Date(found.datetime));
+                            const actualDateTime = `${found.year}/${String(found.month).padStart(2, '0')}/${String(found.date).padStart(2, '0')} ${String(found.hour).padStart(2, '0')}:${String(found.minute).padStart(2, '0')}:${String(found.second).padStart(2, '0')}`;
                             const match = actualDateTime === expected.datetime && found.timer0 === expected.timer0;
                             
                             results.push({
@@ -583,7 +619,7 @@
                 updateStatus('duplicate-status', 'WebAssembly初期化中...', 'loading');
                 logToElement('duplicate-log', '重複Seed検証を開始します');
                 
-                if (!isWasmLoaded) {
+                if (!window.isWasmLoaded) {
                     const wasmInitialized = await initWasm();
                     if (!wasmInitialized) {
                         throw new Error('WebAssembly初期化に失敗しました');
@@ -596,37 +632,58 @@
                 const seed = DUPLICATE_SEED_TEST.seed;
                 logToElement('duplicate-log', `Seed 0x${seed.toString(16).toUpperCase()} の複数解を検索中...`);
                 
-                const searcher = new wasmModule.IntegratedSeedSearcher();
+                const searcher = new window.wasmModule.IntegratedSeedSearcher(
+                    new Uint8Array(CONSISTENCY_TEST_CONDITIONS.macAddress),
+                    new Uint32Array([0x02215F1F, 0x00000C4E, 0x02000031, 0x42FFF7AD]), // ブラック JPN のパラメータ
+                    "DS", // hardware は文字列
+                    CONSISTENCY_TEST_CONDITIONS.keyInput,
+                    5, // version
+                    8  // frame
+                );
                 
                 // WebAssemblyで検索実行
-                const searchResults = searcher.search_with_conditions(
-                    CONSISTENCY_TEST_CONDITIONS.romVersion,
-                    CONSISTENCY_TEST_CONDITIONS.romRegion,
-                    CONSISTENCY_TEST_CONDITIONS.hardware,
-                    new Uint8Array(CONSISTENCY_TEST_CONDITIONS.macAddress),
-                    CONSISTENCY_TEST_CONDITIONS.keyInput,
+                const startDate = new Date(FULL_RANGE_DATE_SEARCH.startYear, 0, 1, 0, 0, 0);
+                const endDate = new Date(FULL_RANGE_DATE_SEARCH.endYear, 11, 31, 23, 59, 59);
+                const rangeSeconds = Math.floor((endDate.getTime() - startDate.getTime()) / 1000);
+
+                const searchResults = searcher.search_seeds_integrated(
+                    startDate.getFullYear(),
+                    startDate.getMonth() + 1,
+                    startDate.getDate(),
+                    startDate.getHours(),
+                    startDate.getMinutes(),
+                    startDate.getSeconds(),
+                    rangeSeconds,
                     CONSISTENCY_TEST_CONDITIONS.timer0Range.min,
                     CONSISTENCY_TEST_CONDITIONS.timer0Range.max,
                     CONSISTENCY_TEST_CONDITIONS.vcountRange.min,
                     CONSISTENCY_TEST_CONDITIONS.vcountRange.max,
-                    FULL_RANGE_DATE_SEARCH.startYear,
-                    FULL_RANGE_DATE_SEARCH.endYear,
-                    FULL_RANGE_DATE_SEARCH.startMonth,
-                    FULL_RANGE_DATE_SEARCH.endMonth,
-                    FULL_RANGE_DATE_SEARCH.startDay,
-                    FULL_RANGE_DATE_SEARCH.endDay,
-                    FULL_RANGE_DATE_SEARCH.startHour,
-                    FULL_RANGE_DATE_SEARCH.endHour,
-                    FULL_RANGE_DATE_SEARCH.startMinute,
-                    FULL_RANGE_DATE_SEARCH.endMinute,
-                    FULL_RANGE_DATE_SEARCH.startSecond,
-                    FULL_RANGE_DATE_SEARCH.endSecond
+                    new Uint32Array([seed])
                 );
                 
                 updateProgress('duplicate-progress', 100);
                 
                 // 対象Seedの結果を抽出
-                const duplicateResults = searchResults.filter(result => result.seed === seed);
+                const duplicateResults = [];
+                if (searchResults && searchResults.length > 0) {
+                    for (let i = 0; i < searchResults.length; i++) {
+                        const result = searchResults[i];
+                        if (result && result.seed === seed) {
+                            duplicateResults.push({
+                                seed: result.seed,
+                                year: result.year,
+                                month: result.month,
+                                date: result.date,
+                                hour: result.hour,
+                                minute: result.minute,
+                                second: result.second,
+                                timer0: result.timer0,
+                                vcount: result.vcount
+                            });
+                        }
+                    }
+                }
+                
                 logToElement('duplicate-log', `${duplicateResults.length}個の解を検出`);
                 
                 // 期待結果との比較
@@ -638,12 +695,12 @@
                     const expectedTimer0 = expected.timer0;
                     
                     const found = duplicateResults.find(result => {
-                        const actualDateTime = formatDateTime(new Date(result.datetime));
+                        const actualDateTime = `${result.year}/${String(result.month).padStart(2, '0')}/${String(result.date).padStart(2, '0')} ${String(result.hour).padStart(2, '0')}:${String(result.minute).padStart(2, '0')}:${String(result.second).padStart(2, '0')}`;
                         return actualDateTime === expectedDateTime && result.timer0 === expectedTimer0;
                     });
                     
                     if (found) {
-                        const actualDateTime = formatDateTime(new Date(found.datetime));
+                        const actualDateTime = `${found.year}/${String(found.month).padStart(2, '0')}/${String(found.date).padStart(2, '0')} ${String(found.hour).padStart(2, '0')}:${String(found.minute).padStart(2, '0')}:${String(found.second).padStart(2, '0')}`;
                         results.push({
                             seed,
                             expected: expectedDateTime,
