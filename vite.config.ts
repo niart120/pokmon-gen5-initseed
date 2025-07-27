@@ -6,9 +6,13 @@ import { resolve } from 'path'
 
 const projectRoot = process.env.PROJECT_ROOT || import.meta.dirname
 
+// GitHub Pages用のベースパス設定（本番ビルド時のみ適用）
+const isProduction = process.env.NODE_ENV === 'production'
+const base = isProduction ? '/pokmon-gen5-initseed/' : '/'
+
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/pokmon-gen5-initseed/', // GitHub Pages用ベースパス
+  base,
   plugins: [
     react(),
     tailwindcss(),
