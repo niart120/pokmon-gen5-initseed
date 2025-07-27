@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAppStore } from '../../store/app-store';
-import { parseHexInput, formatHexDisplay } from '../../lib/utils/hex-parser';
+import { useAppStore } from '../../../store/app-store';
+import { parseHexInput, formatHexDisplay } from '../../../lib/utils/hex-parser';
 
 export function Timer0VCountCard() {
   const { searchConditions, setSearchConditions } = useAppStore();

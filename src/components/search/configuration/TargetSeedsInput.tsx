@@ -6,8 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trash, Upload, Download, Warning } from '@phosphor-icons/react';
-import { useAppStore } from '../../store/app-store';
-import { SeedCalculator } from '../../lib/core/seed-calculator';
+import { useAppStore } from '../../../store/app-store';
+import { SeedCalculator } from '../../../lib/core/seed-calculator';
 
 export function TargetSeedsInput() {
   const {

@@ -6,10 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Play, Pause, Square, Gear } from '@phosphor-icons/react';
-import { useAppStore } from '../../store/app-store';
-import { getSearchWorkerManager, resetSearchWorkerManager } from '../../lib/search/search-worker-manager';
-import { useIsMobile } from '../../hooks/use-mobile';
-import type { InitialSeedResult } from '../../types/pokemon';
+import { useAppStore } from '../../../store/app-store';
+import { getSearchWorkerManager, resetSearchWorkerManager } from '../../../lib/search/search-worker-manager';
+import { useIsMobile } from '../../../hooks/use-mobile';
+import type { InitialSeedResult } from '../../../types/pokemon';
 
 export function SearchControlCard() {
   const {

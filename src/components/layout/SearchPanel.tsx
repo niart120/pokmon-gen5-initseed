@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/app-store';
 import { getFullTimer0Range, getValidVCounts } from '../../lib/utils/rom-parameter-helpers';
-import { ROMConfigurationCard } from '../search/ROMConfigurationCard';
-import { Timer0VCountCard } from '../search/Timer0VCountCard';
-import { DateRangeCard } from '../search/DateRangeCard';
-import { MACAddressCard } from '../search/MACAddressCard';
-import { SearchProgressCard } from '../search/SearchProgressCard';
-import { SearchControlCard } from '../search/SearchControlCard';
-import { TargetSeedsInput } from '../search/TargetSeedsInput';
+import { 
+  ROMConfigurationCard, 
+  Timer0VCountCard, 
+  DateRangeCard, 
+  MACAddressCard, 
+  TargetSeedsInput 
+} from '../search/configuration';
+import { SearchControlCard, SearchProgressCard } from '../search/control';
 import { ResultsControlCard, ResultsHeaderCard, ResultsTableCard, ResultDetailsDialog, type SortField } from '../results';
 import { useIsMobile } from '../../hooks/use-mobile';
 import type { InitialSeedResult, SearchResult } from '../../types/pokemon';

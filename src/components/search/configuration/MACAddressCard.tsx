@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAppStore } from '../../store/app-store';
-import { parseMacByte, formatHexDisplay } from '../../lib/utils/hex-parser';
+import { useAppStore } from '../../../store/app-store';
+import { parseMacByte, formatHexDisplay } from '../../../lib/utils/hex-parser';
 
 export function MACAddressCard() {
   const { searchConditions, setSearchConditions } = useAppStore();

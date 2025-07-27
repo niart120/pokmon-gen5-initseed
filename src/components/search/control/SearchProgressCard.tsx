@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CaretDown, CaretUp } from '@phosphor-icons/react';
-import { useAppStore } from '../../store/app-store';
+import { useAppStore } from '../../../store/app-store';
 
 export function SearchProgressCard() {
   const { searchProgress, parallelProgress, parallelSearchSettings } = useAppStore();

@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { MagnifyingGlass } from '@phosphor-icons/react';
-import { useAppStore } from '../../store/app-store';
-import type { ROMVersion, ROMRegion, Hardware } from '../../types/pokemon';
+import { useAppStore } from '../../../store/app-store';
+import type { ROMVersion, ROMRegion, Hardware } from '../../../types/pokemon';
 
 const ROM_VERSIONS: { value: ROMVersion; label: string }[] = [
   { value: 'B', label: 'Black (B)' },
