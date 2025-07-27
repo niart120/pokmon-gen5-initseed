@@ -22,6 +22,8 @@
         "test:ui": "vitest --ui",
         "test:run": "vitest run",
         "test:wasm": "vitest run src/test/wasm",
+        "test:e2e:consistency": "node scripts/run-e2e-consistency-test.js",
+        "test:e2e:help": "node scripts/run-e2e-consistency-test.js --help",
         "copy-wasm": "node scripts/copy-wasm-files.js"
     },
     "dependencies": {

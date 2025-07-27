@@ -53,3 +53,15 @@ src/wasm/*
 
 public/wasm/*
 !public/wasm/.gitignore
+
+# ====================
+# E2Eテスト一時ファイル
+# ====================
+
+# テストログ・レポート (テスト実行時に生成)
+test-logs/
+test-screenshots/
+
+# テスト結果ファイル
+**/e2e-test-report-*.json
+**/e2e-test-report-*.txt

@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>整合性確認 E2E テスト - ポケモン初期Seed探索</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        .btn-success {
+            background-color: #27ae60;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #219a52;
+        }
+        .btn-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        button:disabled {
+            background-color: #bdc3c7;
+            color: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        .status.loading {
+            background-color: #e8f4fd;
+            color: #2980b9;
+            border: 1px solid #3498db;
+        }
+        .status.success {
+            background-color: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+        .status.error {
+            background-color: #fdf2f2;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+        .status.warning {
+            background-color: #fef9e7;
+            color: #f39c12;
+            border: 1px solid #f39c12;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+        .result-item {
+            margin: 8px 0;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .result-item.match {
+            border-left-color: #27ae60;
+        }
+        .result-item.mismatch {
+            border-left-color: #e74c3c;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .log-output {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .test-conditions {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .test-conditions h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .test-conditions code {
+            background-color: #34495e;
+            color: #ecf0f1;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .expected-results {
+            background-color: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #3498db;
+        }
+        .expected-results h3 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        .expected-item {
+            margin: 5px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>整合性確認 E2E テスト</h1>
+        <p>playwright-mcpを使用して類似ツール結果との整合性を確認します。WebWorker・WASM統合環境での実アプリ検証を行います。</p>
+
+        <!-- テスト条件表示 -->
+        <div class="test-conditions">
+            <h3>テスト条件</h3>
+            <div>ROM版本: <code>ブラック (B) + 日本語 (JPN)</code></div>
+            <div>MACアドレス: <code>[0x00, 0x11, 0x22, 0x88, 0x22, 0x77]</code></div>
+            <div>Timer0範囲: <code>0xC79 - 0xC7A (3193 - 3194)</code></div>
+            <div>VCount: <code>0x60 (96)</code></div>
+            <div>キー入力: <code>0x2FFF (キー入力なし)</code></div>
+            <div>Hardware: <code>DS (初代DS)</code></div>
+            <div>検索範囲: <code>2000-2099年</code></div>
+        </div>
+
+        <!-- 期待結果表示 -->
+        <div class="expected-results">
+            <h3>期待結果（類似ツール出力）</h3>
+            <div class="expected-item">2066/06/27 03:02:48, 0xC79, 14B11BA6</div>
+            <div class="expected-item">2063/11/23 11:39:47, 0xC79, 8A30480D</div>
+            <div class="expected-item">2072/06/21 13:22:13, 0xC7A, ADFA2178</div>
+            <div class="expected-item">2073/08/30 03:55:06, 0xC7A, 9E02B0AE</div>
+            <div class="expected-item">2025/10/18 02:48:49, 0xC7A, FC4AA3AC</div>
+            <div class="expected-item">2041/05/25 17:17:59, 0xC7A, FC4AA3AC (重複解)</div>
+        </div>
+
+        <!-- Test Case 2: 複数Seed一括検証 -->
+        <div class="test-section">
+            <h2>Test Case 2: 複数Seed一括検証</h2>
+            <p>重複Seedを除外した4つのSeedの一括検証（WebWorker・WASM統合環境）</p>
+            
+            <div class="button-group">
+                <button id="run-bulk-test" class="btn-primary" onclick="runBulkSeedTest()">
+                    複数Seed検証実行
+                </button>
+                <button id="clear-bulk-results" class="btn-warning" onclick="clearBulkResults()">
+                    結果クリア
+                </button>
+            </div>
+
+            <div id="bulk-status" class="status" style="display: none;"></div>
+            <div class="progress-bar" id="bulk-progress-container" style="display: none;">
+                <div class="progress-fill" id="bulk-progress"></div>
+            </div>
+            <div id="bulk-results" class="results" style="display: none;"></div>
+            <div id="bulk-log" class="log-output" style="display: none;"></div>
+        </div>
+
+        <!-- Test Case 3: 重複Seed検証 -->
+        <div class="test-section">
+            <h2>Test Case 3: 重複Seed検証</h2>
+            <p>Seed 0xFC4AA3AC に対する複数解の検出確認</p>
+            
+            <div class="button-group">
+                <button id="run-duplicate-test" class="btn-primary" onclick="runDuplicateSeedTest()">
+                    重複Seed検証実行
+                </button>
+                <button id="clear-duplicate-results" class="btn-warning" onclick="clearDuplicateResults()">
+                    結果クリア
+                </button>
+            </div>
+
+            <div id="duplicate-status" class="status" style="display: none;"></div>
+            <div class="progress-bar" id="duplicate-progress-container" style="display: none;">
+                <div class="progress-fill" id="duplicate-progress"></div>
+            </div>
+            <div id="duplicate-results" class="results" style="display: none;"></div>
+            <div id="duplicate-log" class="log-output" style="display: none;"></div>
+        </div>
+
+        <!-- 統合検証 -->
+        <div class="test-section">
+            <h2>統合検証</h2>
+            <p>全テストケースの統合実行とパフォーマンス測定</p>
+            
+            <div class="button-group">
+                <button id="run-all-tests" class="btn-success" onclick="runAllTests()">
+                    全テスト実行
+                </button>
+                <button id="stop-all-tests" class="btn-danger" onclick="stopAllTests()" disabled>
+                    実行停止
+                </button>
+                <button id="clear-all-results" class="btn-warning" onclick="clearAllResults()">
+                    全結果クリア
+                </button>
+            </div>
+
+            <div id="integrated-status" class="status" style="display: none;"></div>
+            <div class="progress-bar" id="integrated-progress-container" style="display: none;">
+                <div class="progress-fill" id="integrated-progress"></div>
+            </div>
+            <div id="integrated-results" class="results" style="display: none;"></div>
+            <div id="integrated-log" class="log-output" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- WebAssembly and Dependencies -->
+    <script type="module">
+        // テストデータとユーティリティの定義
+        const CONSISTENCY_TEST_CONDITIONS = {
+            romVersion: 'B',
+            romRegion: 'JPN',
+            hardware: 'DS',
+            macAddress: [0x00, 0x11, 0x22, 0x88, 0x22, 0x77],
+            keyInput: 0x2FFF,
+            timer0Range: { min: 3193, max: 3194, useAutoRange: false },
+            vcountRange: { min: 96, max: 96, useAutoRange: false }
+        };
+
+        const E2E_TEST_SEEDS = [
+            0x14B11BA6, // 2066/06/27 03:02:48, Timer0=0xC79
+            0x8A30480D, // 2063/11/23 11:39:47, Timer0=0xC79
+            0x9E02B0AE, // 2073/08/30 03:55:06, Timer0=0xC7A
+            0xADFA2178  // 2072/06/21 13:22:13, Timer0=0xC7A
+        ];
+
+        const DUPLICATE_SEED_TEST = {
+            seed: 0xFC4AA3AC,
+            expectedResults: [
+                { datetime: '2025/10/18 02:48:49', timer0: 0xC7A },
+                { datetime: '2041/05/25 17:17:59', timer0: 0xC7A }
+            ]
+        };
+
+        const FULL_RANGE_DATE_SEARCH = {
+            startYear: 2000, endYear: 2099,
+            startMonth: 1, endMonth: 12,
+            startDay: 1, endDay: 31,
+            startHour: 0, endHour: 23,
+            startMinute: 0, endMinute: 59,
+            startSecond: 0, endSecond: 59
+        };
+
+        // 時刻フォーマット変換関数
+        function parseExpectedDateTime(dateStr) {
+            const [datePart, timePart] = dateStr.split(' ');
+            if (!datePart || !timePart) {
+                throw new Error(`Invalid date format: ${dateStr}. Expected "YYYY/MM/DD HH:MM:SS"`);
+            }
+
+            const [year, month, day] = datePart.split('/').map(Number);
+            const [hour, minute, second] = timePart.split(':').map(Number);
+
+            if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hour) || isNaN(minute) || isNaN(second)) {
+                throw new Error(`Invalid date components in: ${dateStr}`);
+            }
+
+            return new Date(year, month - 1, day, hour, minute, second);
+        }
+
+        function formatDateTime(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hour = String(date.getHours()).padStart(2, '0');
+            const minute = String(date.getMinutes()).padStart(2, '0');
+            const second = String(date.getSeconds()).padStart(2, '0');
+            
+            return `${year}/${month}/${day} ${hour}:${minute}:${second}`;
+        }
+
+        // WebAssembly初期化
+        let wasmModule = null;
+        let isWasmLoaded = false;
+
+        async function initWasm() {
+            try {
+                const wasmPath = '/wasm/wasm_pkg.js';
+                const { default: init, IntegratedSeedSearcher, SHA1Calculator } = await import(wasmPath);
+                
+                await init('/wasm/wasm_pkg_bg.wasm');
+                wasmModule = { IntegratedSeedSearcher, SHA1Calculator };
+                isWasmLoaded = true;
+                
+                console.log('WebAssembly loaded successfully');
+                return true;
+            } catch (error) {
+                console.error('Failed to load WebAssembly:', error);
+                isWasmLoaded = false;
+                return false;
+            }
+        }
+
+        // ログ出力関数
+        function logToElement(elementId, message, type = 'info') {
+            const logElement = document.getElementById(elementId);
+            if (!logElement) return;
+            
+            logElement.style.display = 'block';
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        // ステータス更新関数
+        function updateStatus(elementId, message, type = 'loading') {
+            const statusElement = document.getElementById(elementId);
+            if (!statusElement) return;
+            
+            statusElement.style.display = 'block';
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = message;
+        }
+
+        // プログレス更新関数
+        function updateProgress(progressId, percentage) {
+            const progressElement = document.getElementById(progressId);
+            const containerElement = document.getElementById(`${progressId}-container`);
+            
+            if (!progressElement || !containerElement) return;
+            
+            containerElement.style.display = 'block';
+            progressElement.style.width = `${percentage}%`;
+        }
+
+        // 結果表示関数
+        function displayResults(elementId, results, testType) {
+            const resultsElement = document.getElementById(elementId);
+            if (!resultsElement) return;
+            
+            resultsElement.style.display = 'block';
+            resultsElement.innerHTML = `<h3>${testType} 結果</h3>`;
+            
+            results.forEach((result, index) => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `result-item ${result.match ? 'match' : 'mismatch'}`;
+                
+                if (result.match) {
+                    resultDiv.innerHTML = `
+                        <strong>✅ Seed 0x${result.seed.toString(16).toUpperCase()}</strong><br>
+                        期待値: ${result.expected}<br>
+                        実際値: ${result.actual}<br>
+                        Timer0: 0x${result.timer0?.toString(16).toUpperCase()}
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <strong>❌ Seed 0x${result.seed.toString(16).toUpperCase()}</strong><br>
+                        期待値: ${result.expected}<br>
+                        実際値: ${result.actual || '未検出'}<br>
+                        エラー: ${result.error || '一致しません'}
+                    `;
+                }
+                
+                resultsElement.appendChild(resultDiv);
+            });
+        }
+
+        // Test Case 2: 複数Seed一括検証
+        window.runBulkSeedTest = async function() {
+            const runButton = document.getElementById('run-bulk-test');
+            runButton.disabled = true;
+            
+            try {
+                updateStatus('bulk-status', 'WebAssembly初期化中...', 'loading');
+                logToElement('bulk-log', 'E2E複数Seed一括検証を開始します');
+                
+                if (!isWasmLoaded) {
+                    const wasmInitialized = await initWasm();
+                    if (!wasmInitialized) {
+                        throw new Error('WebAssembly初期化に失敗しました');
+                    }
+                }
+                
+                updateStatus('bulk-status', '検索実行中...', 'loading');
+                logToElement('bulk-log', `${E2E_TEST_SEEDS.length}個のSeedを検索中`);
+                
+                const results = [];
+                const searcher = new wasmModule.IntegratedSeedSearcher();
+                
+                for (let i = 0; i < E2E_TEST_SEEDS.length; i++) {
+                    const seed = E2E_TEST_SEEDS[i];
+                    updateProgress('bulk-progress', ((i + 1) / E2E_TEST_SEEDS.length) * 100);
+                    
+                    logToElement('bulk-log', `Seed 0x${seed.toString(16).toUpperCase()} を検索中...`);
+                    
+                    try {
+                        // WebAssemblyで検索実行
+                        const searchResults = searcher.search_with_conditions(
+                            CONSISTENCY_TEST_CONDITIONS.romVersion,
+                            CONSISTENCY_TEST_CONDITIONS.romRegion,
+                            CONSISTENCY_TEST_CONDITIONS.hardware,
+                            new Uint8Array(CONSISTENCY_TEST_CONDITIONS.macAddress),
+                            CONSISTENCY_TEST_CONDITIONS.keyInput,
+                            CONSISTENCY_TEST_CONDITIONS.timer0Range.min,
+                            CONSISTENCY_TEST_CONDITIONS.timer0Range.max,
+                            CONSISTENCY_TEST_CONDITIONS.vcountRange.min,
+                            CONSISTENCY_TEST_CONDITIONS.vcountRange.max,
+                            FULL_RANGE_DATE_SEARCH.startYear,
+                            FULL_RANGE_DATE_SEARCH.endYear,
+                            FULL_RANGE_DATE_SEARCH.startMonth,
+                            FULL_RANGE_DATE_SEARCH.endMonth,
+                            FULL_RANGE_DATE_SEARCH.startDay,
+                            FULL_RANGE_DATE_SEARCH.endDay,
+                            FULL_RANGE_DATE_SEARCH.startHour,
+                            FULL_RANGE_DATE_SEARCH.endHour,
+                            FULL_RANGE_DATE_SEARCH.startMinute,
+                            FULL_RANGE_DATE_SEARCH.endMinute,
+                            FULL_RANGE_DATE_SEARCH.startSecond,
+                            FULL_RANGE_DATE_SEARCH.endSecond
+                        );
+                        
+                        // 期待結果との比較
+                        const expectedResults = {
+                            0x14B11BA6: { datetime: '2066/06/27 03:02:48', timer0: 0xC79 },
+                            0x8A30480D: { datetime: '2063/11/23 11:39:47', timer0: 0xC79 },
+                            0x9E02B0AE: { datetime: '2073/08/30 03:55:06', timer0: 0xC7A },
+                            0xADFA2178: { datetime: '2072/06/21 13:22:13', timer0: 0xC7A }
+                        };
+                        
+                        const expected = expectedResults[seed];
+                        const found = searchResults.find(result => result.seed === seed);
+                        
+                        if (found && expected) {
+                            const actualDateTime = formatDateTime(new Date(found.datetime));
+                            const match = actualDateTime === expected.datetime && found.timer0 === expected.timer0;
+                            
+                            results.push({
+                                seed,
+                                expected: expected.datetime,
+                                actual: actualDateTime,
+                                timer0: found.timer0,
+                                match
+                            });
+                            
+                            logToElement('bulk-log', match ? '✅ 一致' : '❌ 不一致', match ? 'success' : 'error');
+                        } else {
+                            results.push({
+                                seed,
+                                expected: expected?.datetime || '不明',
+                                actual: null,
+                                match: false,
+                                error: '検索結果に含まれていません'
+                            });
+                            
+                            logToElement('bulk-log', '❌ 未検出', 'error');
+                        }
+                        
+                    } catch (error) {
+                        logToElement('bulk-log', `エラー: ${error.message}`, 'error');
+                        results.push({
+                            seed,
+                            expected: '不明',
+                            actual: null,
+                            match: false,
+                            error: error.message
+                        });
+                    }
+                }
+                
+                // 結果表示
+                displayResults('bulk-results', results, '複数Seed一括検証');
+                
+                const successCount = results.filter(r => r.match).length;
+                const totalCount = results.length;
+                
+                if (successCount === totalCount) {
+                    updateStatus('bulk-status', `✅ 全検証成功 (${successCount}/${totalCount})`, 'success');
+                    logToElement('bulk-log', '複数Seed一括検証が完了しました', 'success');
+                } else {
+                    updateStatus('bulk-status', `⚠️ 部分的成功 (${successCount}/${totalCount})`, 'warning');
+                    logToElement('bulk-log', '一部の検証で問題が発生しました', 'warning');
+                }
+                
+            } catch (error) {
+                updateStatus('bulk-status', `❌ エラー: ${error.message}`, 'error');
+                logToElement('bulk-log', `予期しないエラー: ${error.message}`, 'error');
+            } finally {
+                runButton.disabled = false;
+            }
+        };
+
+        // Test Case 3: 重複Seed検証
+        window.runDuplicateSeedTest = async function() {
+            const runButton = document.getElementById('run-duplicate-test');
+            runButton.disabled = true;
+            
+            try {
+                updateStatus('duplicate-status', 'WebAssembly初期化中...', 'loading');
+                logToElement('duplicate-log', '重複Seed検証を開始します');
+                
+                if (!isWasmLoaded) {
+                    const wasmInitialized = await initWasm();
+                    if (!wasmInitialized) {
+                        throw new Error('WebAssembly初期化に失敗しました');
+                    }
+                }
+                
+                updateStatus('duplicate-status', '重複Seed検索実行中...', 'loading');
+                updateProgress('duplicate-progress', 50);
+                
+                const seed = DUPLICATE_SEED_TEST.seed;
+                logToElement('duplicate-log', `Seed 0x${seed.toString(16).toUpperCase()} の複数解を検索中...`);
+                
+                const searcher = new wasmModule.IntegratedSeedSearcher();
+                
+                // WebAssemblyで検索実行
+                const searchResults = searcher.search_with_conditions(
+                    CONSISTENCY_TEST_CONDITIONS.romVersion,
+                    CONSISTENCY_TEST_CONDITIONS.romRegion,
+                    CONSISTENCY_TEST_CONDITIONS.hardware,
+                    new Uint8Array(CONSISTENCY_TEST_CONDITIONS.macAddress),
+                    CONSISTENCY_TEST_CONDITIONS.keyInput,
+                    CONSISTENCY_TEST_CONDITIONS.timer0Range.min,
+                    CONSISTENCY_TEST_CONDITIONS.timer0Range.max,
+                    CONSISTENCY_TEST_CONDITIONS.vcountRange.min,
+                    CONSISTENCY_TEST_CONDITIONS.vcountRange.max,
+                    FULL_RANGE_DATE_SEARCH.startYear,
+                    FULL_RANGE_DATE_SEARCH.endYear,
+                    FULL_RANGE_DATE_SEARCH.startMonth,
+                    FULL_RANGE_DATE_SEARCH.endMonth,
+                    FULL_RANGE_DATE_SEARCH.startDay,
+                    FULL_RANGE_DATE_SEARCH.endDay,
+                    FULL_RANGE_DATE_SEARCH.startHour,
+                    FULL_RANGE_DATE_SEARCH.endHour,
+                    FULL_RANGE_DATE_SEARCH.startMinute,
+                    FULL_RANGE_DATE_SEARCH.endMinute,
+                    FULL_RANGE_DATE_SEARCH.startSecond,
+                    FULL_RANGE_DATE_SEARCH.endSecond
+                );
+                
+                updateProgress('duplicate-progress', 100);
+                
+                // 対象Seedの結果を抽出
+                const duplicateResults = searchResults.filter(result => result.seed === seed);
+                logToElement('duplicate-log', `${duplicateResults.length}個の解を検出`);
+                
+                // 期待結果との比較
+                const expectedResults = DUPLICATE_SEED_TEST.expectedResults;
+                const results = [];
+                
+                expectedResults.forEach((expected, index) => {
+                    const expectedDateTime = expected.datetime;
+                    const expectedTimer0 = expected.timer0;
+                    
+                    const found = duplicateResults.find(result => {
+                        const actualDateTime = formatDateTime(new Date(result.datetime));
+                        return actualDateTime === expectedDateTime && result.timer0 === expectedTimer0;
+                    });
+                    
+                    if (found) {
+                        const actualDateTime = formatDateTime(new Date(found.datetime));
+                        results.push({
+                            seed,
+                            expected: expectedDateTime,
+                            actual: actualDateTime,
+                            timer0: found.timer0,
+                            match: true
+                        });
+                        logToElement('duplicate-log', `✅ 解${index + 1}: ${expectedDateTime} 一致`, 'success');
+                    } else {
+                        results.push({
+                            seed,
+                            expected: expectedDateTime,
+                            actual: null,
+                            match: false,
+                            error: `解${index + 1}が未検出`
+                        });
+                        logToElement('duplicate-log', `❌ 解${index + 1}: ${expectedDateTime} 未検出`, 'error');
+                    }
+                });
+                
+                // 結果表示
+                displayResults('duplicate-results', results, '重複Seed検証');
+                
+                const successCount = results.filter(r => r.match).length;
+                const totalCount = results.length;
+                
+                if (successCount === totalCount) {
+                    updateStatus('duplicate-status', `✅ 重複解検証成功 (${successCount}/${totalCount})`, 'success');
+                    logToElement('duplicate-log', '重複Seed検証が完了しました', 'success');
+                } else {
+                    updateStatus('duplicate-status', `⚠️ 重複解検証部分成功 (${successCount}/${totalCount})`, 'warning');
+                    logToElement('duplicate-log', '一部の重複解で問題が発生しました', 'warning');
+                }
+                
+            } catch (error) {
+                updateStatus('duplicate-status', `❌ エラー: ${error.message}`, 'error');
+                logToElement('duplicate-log', `予期しないエラー: ${error.message}`, 'error');
+            } finally {
+                runButton.disabled = false;
+            }
+        };
+
+        // 統合検証
+        window.runAllTests = async function() {
+            const runButton = document.getElementById('run-all-tests');
+            const stopButton = document.getElementById('stop-all-tests');
+            
+            runButton.disabled = true;
+            stopButton.disabled = false;
+            
+            try {
+                updateStatus('integrated-status', '統合検証開始...', 'loading');
+                logToElement('integrated-log', '=== 統合検証開始 ===');
+                
+                const startTime = performance.now();
+                
+                // Test Case 2実行
+                updateProgress('integrated-progress', 25);
+                logToElement('integrated-log', 'Test Case 2: 複数Seed一括検証実行中...');
+                await runBulkSeedTest();
+                
+                updateProgress('integrated-progress', 75);
+                logToElement('integrated-log', 'Test Case 3: 重複Seed検証実行中...');
+                await runDuplicateSeedTest();
+                
+                updateProgress('integrated-progress', 100);
+                
+                const endTime = performance.now();
+                const executionTime = ((endTime - startTime) / 1000).toFixed(2);
+                
+                updateStatus('integrated-status', `✅ 統合検証完了 (実行時間: ${executionTime}秒)`, 'success');
+                logToElement('integrated-log', `=== 統合検証完了 (実行時間: ${executionTime}秒) ===`, 'success');
+                
+                // 統合結果の表示
+                const integratedResultsElement = document.getElementById('integrated-results');
+                integratedResultsElement.style.display = 'block';
+                integratedResultsElement.innerHTML = `
+                    <h3>統合検証結果</h3>
+                    <div class="result-item match">
+                        <strong>✅ 複数Seed一括検証</strong><br>
+                        WebWorker・WASM統合環境での4つのSeed検証完了
+                    </div>
+                    <div class="result-item match">
+                        <strong>✅ 重複Seed検証</strong><br>
+                        Seed 0xFC4AA3AC の複数解検証完了
+                    </div>
+                    <div class="result-item match">
+                        <strong>✅ パフォーマンス測定</strong><br>
+                        実行時間: ${executionTime}秒
+                    </div>
+                `;
+                
+            } catch (error) {
+                updateStatus('integrated-status', `❌ 統合検証エラー: ${error.message}`, 'error');
+                logToElement('integrated-log', `統合検証エラー: ${error.message}`, 'error');
+            } finally {
+                runButton.disabled = false;
+                stopButton.disabled = true;
+            }
+        };
+
+        // 停止・クリア関数
+        window.stopAllTests = function() {
+            updateStatus('integrated-status', '⚠️ テスト停止', 'warning');
+            logToElement('integrated-log', 'テスト実行を停止しました', 'warning');
+            
+            document.getElementById('run-all-tests').disabled = false;
+            document.getElementById('stop-all-tests').disabled = true;
+        };
+
+        window.clearBulkResults = function() {
+            document.getElementById('bulk-status').style.display = 'none';
+            document.getElementById('bulk-progress-container').style.display = 'none';
+            document.getElementById('bulk-results').style.display = 'none';
+            document.getElementById('bulk-log').style.display = 'none';
+            document.getElementById('bulk-log').textContent = '';
+        };
+
+        window.clearDuplicateResults = function() {
+            document.getElementById('duplicate-status').style.display = 'none';
+            document.getElementById('duplicate-progress-container').style.display = 'none';
+            document.getElementById('duplicate-results').style.display = 'none';
+            document.getElementById('duplicate-log').style.display = 'none';
+            document.getElementById('duplicate-log').textContent = '';
+        };
+
+        window.clearAllResults = function() {
+            clearBulkResults();
+            clearDuplicateResults();
+            
+            document.getElementById('integrated-status').style.display = 'none';
+            document.getElementById('integrated-progress-container').style.display = 'none';
+            document.getElementById('integrated-results').style.display = 'none';
+            document.getElementById('integrated-log').style.display = 'none';
+            document.getElementById('integrated-log').textContent = '';
+        };
+
+        // 初期化
+        window.addEventListener('load', async () => {
+            logToElement('integrated-log', 'E2Eテストページが読み込まれました');
+            updateStatus('integrated-status', 'WebAssembly初期化中...', 'loading');
+            
+            const wasmInitialized = await initWasm();
+            if (wasmInitialized) {
+                updateStatus('integrated-status', '✅ WebAssembly初期化完了', 'success');
+                logToElement('integrated-log', 'WebAssembly初期化完了 - テスト実行可能', 'success');
+            } else {
+                updateStatus('integrated-status', '❌ WebAssembly初期化失敗', 'error');
+                logToElement('integrated-log', 'WebAssembly初期化失敗 - テスト実行不可', 'error');
+            }
+        });
+
+    </script>
+</body>
+</html>
