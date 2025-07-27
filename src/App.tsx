@@ -1,244 +1,32 @@
 import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { MagnifyingGlass, Target, ChartBar, Info, Gear } from '@phosphor-icons/react';
 import { useAppStore } from './store/app-store';
-import { SearchPanel } from './components/SearchPanel';
-import { OptionPanel } from './components/OptionPanel';
-import { verifySearchImplementation } from './test-utils/verification/search-verification';
-import { verifyWebAssemblyImplementation } from './test-utils/verification/wasm-verification';
+import { AppHeader, AppFooter, MainContent } from './components/layout';
+import { initializeApplication } from './lib/initialization/app-initializer';
+import { runDevelopmentVerification } from './lib/initialization/development-verification';
 
 function App() {
-  const { activeTab, setActiveTab, targetSeeds, searchResults, searchProgress } = useAppStore();
+  const { targetSeeds } = useAppStore();
 
-  // Run verification on component mount and initialize WebAssembly
+  // Initialize application on mount
   React.useEffect(() => {
     const initializeApp = async () => {
-      console.log('🚀 Initializing Pokemon BW/BW2 Seed Search App...');
-
-      // Try to initialize WebAssembly for improved performance
-      let calculator: any = null;
-      let wasmSuccess = false;
-      try {
-        const { SeedCalculator } = await import('./lib/core/seed-calculator');
-        calculator = new SeedCalculator();
-        wasmSuccess = await calculator.initializeWasm();
-        
-        if (wasmSuccess) {
-          console.log('🦀 WebAssembly acceleration enabled!');
-          
-          // Test integrated search availability
-          const wasmModule = calculator.getWasmModule();
-          if (wasmModule && wasmModule.IntegratedSeedSearcher) {
-            console.log('🚀 Integrated search available for optimal performance');
-          }
-        } else {
-          console.log('⚠️ Running with TypeScript implementation');
-        }
-      } catch (error) {
-        console.warn('⚠️ Failed to initialize WebAssembly, using TypeScript fallback:', error);
-      }
-
-      // Run verification tests
-      console.log('Running comprehensive search verification...');
-      const verificationPassed = verifySearchImplementation();
-      console.log('Basic verification result:', verificationPassed ? 'PASSED ✅' : 'FAILED ❌');
+      const initResult = await initializeApplication();
       
-      // Run WebAssembly comparison tests
-      if (wasmSuccess) {
-        console.log('Running WebAssembly vs TypeScript comparison...');
-        const wasmVerificationPassed = await verifyWebAssemblyImplementation();
-        console.log('WebAssembly verification result:', wasmVerificationPassed ? 'PASSED ✅' : 'FAILED ❌');
-        
-        if (!wasmVerificationPassed) {
-          console.warn('⚠️ WebAssembly verification failed. Disabling WebAssembly for safety.');
-          calculator.setUseWasm(false);
-        }
-      }
-      
-      if (!verificationPassed) {
-        console.warn('⚠️ Some verification tests failed. Please check the implementation.');
-      } else {
-        console.log('🎉 All verification tests passed! Search implementation is ready.');
-      }
+      // Run development verification (only in development)
+      await runDevelopmentVerification(initResult);
 
       // Debug: Show target seeds on load
       console.log('📋 Target seeds loaded:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
     };
 
     initializeApp();
-  }, []);
+  }, [targetSeeds.seeds]);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-foreground">
-                Pokémon BW/BW2 Initial Seed Search
-              </h1>
-              <p className="text-muted-foreground text-xs mt-0.5">
-                Advanced seed calculation for competitive RNG
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Target Seeds</div>
-                <Badge variant="secondary">{targetSeeds.seeds.length}</Badge>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Matches Found</div>
-                <Badge variant={searchResults.length > 0 ? "default" : "secondary"}>
-                  {searchResults.length}
-                </Badge>
-              </div>
-              {searchProgress.isRunning && (
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Status</div>
-                  <Badge variant="outline" className="animate-pulse">
-                    {searchProgress.isPaused ? 'Paused' : 'Searching...'}
-                  </Badge>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="px-1 py-2 max-w-full">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
-          <TabsList className="grid grid-cols-3 w-full max-w-6xl mx-auto">
-            <TabsTrigger value="search" className="flex items-center gap-2">
-              <MagnifyingGlass size={16} />
-              Search
-              {targetSeeds.seeds.length > 0 && (
-                <Badge variant="secondary" className="ml-1">
-                  {targetSeeds.seeds.length}
-                </Badge>
-              )}
-              {searchResults.length > 0 && (
-                <Badge variant="default" className="ml-1">
-                  {searchResults.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <Gear size={16} />
-              Option
-            </TabsTrigger>
-            <TabsTrigger value="help" className="flex items-center gap-2">
-              <Info size={16} />
-              Help
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="search">
-            <SearchPanel />
-          </TabsContent>
-
-          <TabsContent value="history">
-            <OptionPanel />
-          </TabsContent>
-
-          <TabsContent value="help">
-            <Card>
-              <CardHeader>
-                <CardTitle>How to Use</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Getting Started</h3>
-                  <ol className="list-decimal list-inside space-y-2 text-sm">
-                    <li>Go to the <strong>Target Seeds</strong> tab and enter the initial seed values you want to find</li>
-                    <li>Return to the <strong>Search Setup</strong> tab and configure your ROM parameters</li>
-                    <li>Set your search date range and other parameters</li>
-                    <li>Click <strong>Start Search</strong> to begin the calculation</li>
-                    <li>View matches in the <strong>Results</strong> tab</li>
-                  </ol>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">ROM Configuration</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>ROM Version:</strong> Select your game version (Black, White, Black 2, White 2)</p>
-                    <p><strong>ROM Region:</strong> Choose your game's region (JPN, USA, EUR, etc.)</p>
-                    <p><strong>Hardware:</strong> Select the system you're using (DS, DS Lite, 3DS)</p>
-                    <p><strong>Auto Parameters:</strong> Enable to use recommended Timer0 and VCount ranges for your ROM</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Target Seed Format</h3>
-                  <div className="space-y-2 text-sm">
-                    <p>Enter one seed per line in hexadecimal format:</p>
-                    <div className="bg-muted p-3 rounded font-mono text-sm">
-                      0x12345678<br />
-                      ABCDEF00<br />
-                      0xDEADBEEF
-                    </div>
-                    <p>Both uppercase and lowercase are accepted. The 0x prefix is optional.</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">MAC Address</h3>
-                  <div className="text-sm">
-                    <p>Enter your DS system's MAC address in the 6-byte format. This is hardware-specific and typically remains constant for your searches. You can find this in your DS system settings or use a network scanner.</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Search Performance</h3>
-                  <div className="space-y-2 text-sm">
-                    <p>Search time depends on your date range and parameter ranges:</p>
-                    <ul className="list-disc list-inside space-y-1 ml-4">
-                      <li>Narrow date ranges search faster</li>
-                      <li>Auto Timer0/VCount ranges are optimized for each ROM</li>
-                      <li>You can pause and resume long searches</li>
-                      <li>Results are displayed in real-time as matches are found</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Algorithm Reference</h3>
-                  <div className="text-sm">
-                    <p>
-                      This tool implements the SHA-1 based initial seed generation algorithm used by 
-                      Pokémon Black/White and Black2/White2. The implementation is based on the 
-                      Project_Veni reference and generates seeds identical to the original games.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t bg-muted/50 mt-3">
-        <div className="container mx-auto px-4 py-2">
-          <div className="text-center text-xs text-muted-foreground">
-            <p>Pokémon BW/BW2 Initial Seed Search - Educational & competitive RNG research tool</p>
-          </div>
-        </div>
-      </footer>
+      <AppHeader />
+      <MainContent />
+      <AppFooter />
     </div>
   );
 }
