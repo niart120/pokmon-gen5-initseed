@@ -6,7 +6,7 @@ import {
   Timer0VCountCard, 
   DateRangeCard, 
   MACAddressCard, 
-  TargetSeedsInput 
+  TargetSeedsCard 
 } from '../search/configuration';
 import { SearchControlCard, SearchProgressCard } from '../search/control';
 import { ResultsControlCard, ResultsHeaderCard, ResultsTableCard, ResultDetailsDialog, type SortField } from '../search/results';
@@ -141,7 +141,7 @@ export function SearchPanel() {
         <Timer0VCountCard />
         <DateRangeCard />
         <MACAddressCard />
-        <TargetSeedsInput />
+        <TargetSeedsCard />
         <SearchControlCard />
         <SearchProgressCard />
         <ResultsControlCard
@@ -176,7 +176,7 @@ export function SearchPanel() {
         <Timer0VCountCard />
         <DateRangeCard />
         <MACAddressCard />
-        <TargetSeedsInput />
+        <TargetSeedsCard />
       </div>
       
       {/* 中央カラム: 検索制御・進捗エリア */}

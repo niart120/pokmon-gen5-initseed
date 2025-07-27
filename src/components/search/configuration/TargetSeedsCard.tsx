@@ -9,7 +9,7 @@ import { Trash, Upload, Download, Warning } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
 import { SeedCalculator } from '../../../lib/core/seed-calculator';
 
-export function TargetSeedsInput() {
+export function TargetSeedsCard() {
   const {
     targetSeeds,
     setTargetSeeds,
