@@ -1,0 +1,87 @@
+import { Settings } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { ExportButton } from '../ExportButton';
+import { useAppStore } from '../../store/app-store';
+import type { SearchResult } from '../../types/pokemon';
+
+export type SortField = 'datetime' | 'seed' | 'timer0' | 'vcount';
+
+interface ResultsControlCardProps {
+  filteredResultsCount: number;
+  convertedResults: SearchResult[];
+  filterSeed: string;
+  setFilterSeed: (value: string) => void;
+  sortField: SortField;
+  setSortField: (field: SortField) => void;
+}
+
+export function ResultsControlCard({
+  filteredResultsCount,
+  convertedResults,
+  filterSeed,
+  setFilterSeed,
+  sortField,
+  setSortField,
+}: ResultsControlCardProps) {
+  const { searchResults, clearSearchResults } = useAppStore();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Settings size={20} />
+            Results Control
+          </div>
+          <div className="flex gap-2">
+            <ExportButton 
+              results={convertedResults}
+              disabled={filteredResultsCount === 0}
+            />
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={clearSearchResults}
+              disabled={searchResults.length === 0}
+            >
+              Clear Results
+            </Button>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Filters */}
+        <div className="flex gap-4 items-end">
+          <div className="flex-1">
+            <Label htmlFor="filter-seed">Filter by Seed</Label>
+            <Input
+              id="filter-seed"
+              placeholder="Enter seed value (hex)"
+              value={filterSeed}
+              onChange={(e) => setFilterSeed(e.target.value)}
+              className="font-mono"
+            />
+          </div>
+          <div>
+            <Label htmlFor="sort-field">Sort by</Label>
+            <Select value={sortField} onValueChange={(value) => setSortField(value as SortField)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="datetime">Date/Time</SelectItem>
+                <SelectItem value="seed">Seed Value</SelectItem>
+                <SelectItem value="timer0">Timer0</SelectItem>
+                <SelectItem value="vcount">VCount</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
