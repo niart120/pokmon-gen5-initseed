@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAppStore } from '../../../store/app-store';
 import { parseHexInput, formatHexDisplay } from '../../../lib/utils/hex-parser';
+import { getFullTimer0Range, getValidVCounts } from '../../../lib/utils/rom-parameter-helpers';
 
 export function Timer0VCountCard() {
   const { searchConditions, setSearchConditions } = useAppStore();
@@ -32,6 +33,39 @@ export function Timer0VCountCard() {
       max: formatHexDisplay(searchConditions.vcountRange.max)
     });
   }, [searchConditions.timer0Range, searchConditions.vcountRange]);
+
+  // useAutoRangeフラグ変更時の自動範囲適用
+  useEffect(() => {
+    if (searchConditions.timer0Range.useAutoRange) {
+      const timer0Range = getFullTimer0Range(searchConditions.romVersion, searchConditions.romRegion);
+      if (timer0Range) {
+        setSearchConditions({
+          timer0Range: {
+            ...searchConditions.timer0Range,
+            min: timer0Range.min,
+            max: timer0Range.max,
+          },
+        });
+      }
+    }
+  }, [searchConditions.timer0Range.useAutoRange, searchConditions.romVersion, searchConditions.romRegion]);
+
+  useEffect(() => {
+    if (searchConditions.vcountRange.useAutoRange) {
+      const validVCounts = getValidVCounts(searchConditions.romVersion, searchConditions.romRegion);
+      if (validVCounts.length > 0) {
+        const minVCount = Math.min(...validVCounts);
+        const maxVCount = Math.max(...validVCounts);
+        setSearchConditions({
+          vcountRange: {
+            ...searchConditions.vcountRange,
+            min: minVCount,
+            max: maxVCount,
+          },
+        });
+      }
+    }
+  }, [searchConditions.vcountRange.useAutoRange, searchConditions.romVersion, searchConditions.romRegion]);
 
   const handleTimer0InputChange = (field: 'min' | 'max', value: string) => {
     // 最大4桁(Timer0)の16進数文字のみ許可
@@ -121,6 +155,10 @@ export function Timer0VCountCard() {
     }
   };
 
+  // 範囲妥当性チェック
+  const isTimer0RangeValid = searchConditions.timer0Range.min <= searchConditions.timer0Range.max;
+  const isVCountRangeValid = searchConditions.vcountRange.min <= searchConditions.vcountRange.max;
+
   return (
     <Card>
       <CardHeader>
@@ -173,6 +211,11 @@ export function Timer0VCountCard() {
                 />
               </div>
             </div>
+            {!isTimer0RangeValid && !searchConditions.timer0Range.useAutoRange && (
+              <p className="text-sm text-red-600">
+                Warning: Min value (0x{searchConditions.timer0Range.min.toString(16).toUpperCase()}) is greater than Max value (0x{searchConditions.timer0Range.max.toString(16).toUpperCase()})
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -220,6 +263,11 @@ export function Timer0VCountCard() {
                 />
               </div>
             </div>
+            {!isVCountRangeValid && !searchConditions.vcountRange.useAutoRange && (
+              <p className="text-sm text-red-600">
+                Warning: Min value (0x{searchConditions.vcountRange.min.toString(16).toUpperCase()}) is greater than Max value (0x{searchConditions.vcountRange.max.toString(16).toUpperCase()})
+              </p>
+            )}
           </div>
         </div>
       </CardContent>
