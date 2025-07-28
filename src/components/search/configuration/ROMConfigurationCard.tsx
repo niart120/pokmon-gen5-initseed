@@ -7,26 +7,26 @@ import { useAppStore } from '../../../store/app-store';
 import type { ROMVersion, ROMRegion, Hardware } from '../../../types/pokemon';
 
 const ROM_VERSIONS: { value: ROMVersion; label: string }[] = [
-  { value: 'B', label: 'Black (B)' },
-  { value: 'W', label: 'White (W)' },
-  { value: 'B2', label: 'Black 2 (B2)' },
-  { value: 'W2', label: 'White 2 (W2)' },
+  { value: 'B', label: 'B' },
+  { value: 'W', label: 'W' },
+  { value: 'B2', label: 'B2' },
+  { value: 'W2', label: 'W2' },
 ];
 
 const ROM_REGIONS: { value: ROMRegion; label: string }[] = [
-  { value: 'JPN', label: 'Japan (JPN)' },
-  { value: 'KOR', label: 'Korea (KOR)' },
-  { value: 'USA', label: 'USA (USA)' },
-  { value: 'GER', label: 'Germany (GER)' },
-  { value: 'FRA', label: 'France (FRA)' },
-  { value: 'SPA', label: 'Spain (SPA)' },
-  { value: 'ITA', label: 'Italy (ITA)' },
+  { value: 'JPN', label: 'JPN' },
+  { value: 'KOR', label: 'KOR' },
+  { value: 'USA', label: 'USA' },
+  { value: 'GER', label: 'GER' },
+  { value: 'FRA', label: 'FRA' },
+  { value: 'SPA', label: 'SPA' },
+  { value: 'ITA', label: 'ITA' },
 ];
 
 const HARDWARE_OPTIONS: { value: Hardware; label: string }[] = [
-  { value: 'DS', label: 'Nintendo DS' },
-  { value: 'DS_LITE', label: 'Nintendo DS Lite' },
-  { value: '3DS', label: 'Nintendo 3DS' },
+  { value: 'DS', label: 'DS' },
+  { value: 'DS_LITE', label: 'DS Lite' },
+  { value: '3DS', label: '3DS' },
 ];
 
 export function ROMConfigurationCard() {
@@ -41,14 +41,14 @@ export function ROMConfigurationCard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="rom-version">ROM Version</Label>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex-1">
+            <Label htmlFor="rom-version" className="text-xs sm:text-sm">ROM Version</Label>
             <Select
               value={searchConditions.romVersion}
               onValueChange={(value) => setSearchConditions({ romVersion: value as ROMVersion })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select ROM version" />
               </SelectTrigger>
               <SelectContent>
@@ -61,13 +61,13 @@ export function ROMConfigurationCard() {
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="rom-region">ROM Region</Label>
+          <div className="flex-1">
+            <Label htmlFor="rom-region" className="text-xs sm:text-sm">ROM Region</Label>
             <Select
               value={searchConditions.romRegion}
               onValueChange={(value) => setSearchConditions({ romRegion: value as ROMRegion })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select region" />
               </SelectTrigger>
               <SelectContent>
@@ -80,13 +80,13 @@ export function ROMConfigurationCard() {
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="hardware">Hardware</Label>
+          <div className="flex-1">
+            <Label htmlFor="hardware" className="text-xs sm:text-sm">Hardware Version</Label>
             <Select
               value={searchConditions.hardware}
               onValueChange={(value) => setSearchConditions({ hardware: value as Hardware })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select hardware" />
               </SelectTrigger>
               <SelectContent>
