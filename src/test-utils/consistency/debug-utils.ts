@@ -58,14 +58,14 @@ export async function debugConsistencyTest() {
   console.log('🔍 Testing exact expected conditions...');
   console.log(`Date: ${formatDateTime(expectedDate)}`);
   console.log(`Timer0: 0x${testCase.expectedTimer0.toString(16)} (${testCase.expectedTimer0})`);
-  console.log(`VCount: 0x${CONSISTENCY_TEST_CONDITIONS.vcountRange.min.toString(16)} (${CONSISTENCY_TEST_CONDITIONS.vcountRange.min})`);
+  console.log(`VCount: 0x${CONSISTENCY_TEST_CONDITIONS.timer0VCountConfig.vcountRange.min.toString(16)} (${CONSISTENCY_TEST_CONDITIONS.timer0VCountConfig.vcountRange.min})`);
   console.log('');
 
   try {
     const message = calculator.generateMessage(
       searchConditions, 
       testCase.expectedTimer0, 
-      CONSISTENCY_TEST_CONDITIONS.vcountRange.min, 
+      CONSISTENCY_TEST_CONDITIONS.timer0VCountConfig.vcountRange.min, 
       expectedDate
     );
     
@@ -137,12 +137,12 @@ export async function debugSearchRangeSample() {
   for (let timestamp = startTime.getTime(); timestamp <= endTime.getTime() && sampleCount < maxSamples; timestamp += 10000) { // 10秒間隔
     const currentDate = new Date(timestamp);
     
-    for (let timer0 = CONSISTENCY_TEST_CONDITIONS.timer0Range.min; timer0 <= CONSISTENCY_TEST_CONDITIONS.timer0Range.max; timer0++) {
+    for (let timer0 = CONSISTENCY_TEST_CONDITIONS.timer0VCountConfig.timer0Range.min; timer0 <= CONSISTENCY_TEST_CONDITIONS.timer0VCountConfig.timer0Range.max; timer0++) {
       try {
         const message = calculator.generateMessage(
           searchConditions, 
           timer0, 
-          CONSISTENCY_TEST_CONDITIONS.vcountRange.min, 
+          CONSISTENCY_TEST_CONDITIONS.timer0VCountConfig.vcountRange.min, 
           currentDate
         );
         

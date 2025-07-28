@@ -76,16 +76,16 @@ export class ChunkCalculator {
         const estimatedOperations = this.estimateOperations(
           chunkStartDate,
           chunkEndDate,
-          conditions.timer0Range,
-          conditions.vcountRange
+          conditions.timer0VCountConfig.timer0Range,
+          conditions.timer0VCountConfig.vcountRange
         );
 
         chunks.push({
           workerId: i,
           startDateTime: chunkStartDate,
           endDateTime: chunkEndDate,
-          timer0Range: conditions.timer0Range,
-          vcountRange: conditions.vcountRange,
+          timer0Range: conditions.timer0VCountConfig.timer0Range,
+          vcountRange: conditions.timer0VCountConfig.vcountRange,
           estimatedOperations
         });
       }
@@ -118,8 +118,8 @@ export class ChunkCalculator {
     totalOperations: number;
   } {
     const totalSeconds = this.getTotalSeconds(conditions.dateRange);
-    const timer0Count = conditions.timer0Range.max - conditions.timer0Range.min + 1;
-    const vcountCount = conditions.vcountRange.max - conditions.vcountRange.min + 1;
+    const timer0Count = conditions.timer0VCountConfig.timer0Range.max - conditions.timer0VCountConfig.timer0Range.min + 1;
+    const vcountCount = conditions.timer0VCountConfig.vcountRange.max - conditions.timer0VCountConfig.vcountRange.min + 1;
     
     const totalOperations = totalSeconds * timer0Count * vcountCount;
     

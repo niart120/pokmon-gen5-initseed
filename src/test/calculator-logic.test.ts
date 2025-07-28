@@ -76,8 +76,11 @@ describe('WebAssembly計算ロジックテスト', () => {
       romVersion: 'B' as const,
       romRegion: 'JPN' as const,
       hardware: 'DS' as const,
-      timer0Range: { min: 1000, max: 1100, useAutoRange: false },
-      vcountRange: { min: 90, max: 100, useAutoRange: false },
+      timer0VCountConfig: {
+    useAutoConfiguration: false,
+    timer0Range: { min: 1000, max: 1100 },
+    vcountRange: { min: 90, max: 100 }
+  },
       dateRange: {
         startYear: 2011,
         startMonth: 3,

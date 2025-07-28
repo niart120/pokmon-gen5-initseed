@@ -14,16 +14,16 @@ export interface SearchConditions {
   romRegion: ROMRegion;
   hardware: Hardware;
   
-  timer0Range: {
-    min: number;
-    max: number;
-    useAutoRange: boolean;
-  };
-  
-  vcountRange: {
-    min: number;
-    max: number;
-    useAutoRange: boolean;
+  timer0VCountConfig: {
+    useAutoConfiguration: boolean;
+    timer0Range: {
+      min: number;
+      max: number;
+    };
+    vcountRange: {
+      min: number;
+      max: number;
+    };
   };
   
   dateRange: {

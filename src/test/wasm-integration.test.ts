@@ -170,8 +170,11 @@ describe('WebAssembly統合テスト', () => {
       romVersion: 'B' as const,
       romRegion: 'JPN' as const,
       hardware: 'DS' as const,
-      timer0Range: { min: 1000, max: 1000, useAutoRange: false },
-      vcountRange: { min: 95, max: 95, useAutoRange: false },
+      timer0VCountConfig: {
+    useAutoConfiguration: false,
+    timer0Range: { min: 1000, max: 1000 },
+    vcountRange: { min: 95, max: 95 }
+  },
       dateRange: {
         startYear: 2011,
         startMonth: 3,

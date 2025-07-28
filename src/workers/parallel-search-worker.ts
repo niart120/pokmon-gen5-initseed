@@ -122,8 +122,8 @@ async function processChunkWithWasm(
     const endDate = chunk.endDateTime;
     const rangeSeconds = Math.floor((endDate.getTime() - startDate.getTime()) / 1000) + 1;
     const totalOperations = rangeSeconds * 
-      (conditions.timer0Range.max - conditions.timer0Range.min + 1) *
-      (conditions.vcountRange.max - conditions.vcountRange.min + 1);
+      (conditions.timer0VCountConfig.timer0Range.max - conditions.timer0VCountConfig.timer0Range.min + 1) *
+      (conditions.timer0VCountConfig.vcountRange.max - conditions.timer0VCountConfig.vcountRange.min + 1);
 
     // 初期進捗報告
     reportProgress(0, totalOperations, 0);
@@ -152,10 +152,10 @@ async function processChunkWithWasm(
         subChunkStart.getMinutes(),
         subChunkStart.getSeconds(),
         subChunkRange,
-        conditions.timer0Range.min,
-        conditions.timer0Range.max,
-        conditions.vcountRange.min,
-        conditions.vcountRange.max,
+        conditions.timer0VCountConfig.timer0Range.min,
+        conditions.timer0VCountConfig.timer0Range.max,
+        conditions.timer0VCountConfig.vcountRange.min,
+        conditions.timer0VCountConfig.vcountRange.max,
         new Uint32Array(targetSeeds)
       );
 
@@ -187,8 +187,8 @@ async function processChunkWithWasm(
 
       // サブチャンク完了後の進捗報告
       const subChunkOperations = subChunkRange * 
-        (conditions.timer0Range.max - conditions.timer0Range.min + 1) *
-        (conditions.vcountRange.max - conditions.vcountRange.min + 1);
+        (conditions.timer0VCountConfig.timer0Range.max - conditions.timer0VCountConfig.timer0Range.min + 1) *
+        (conditions.timer0VCountConfig.vcountRange.max - conditions.timer0VCountConfig.vcountRange.min + 1);
       processedOperations += subChunkOperations;
       reportProgress(processedOperations, totalOperations, allResults.length);
     }
@@ -221,10 +221,10 @@ async function processChunkWithTypeScript(
   const endTime = chunk.endDateTime.getTime();
   const totalSeconds = Math.floor((endTime - startTime) / 1000) + 1;
   const totalOperations = totalSeconds * 
-    (conditions.timer0Range.max - conditions.timer0Range.min + 1);
+    (conditions.timer0VCountConfig.timer0Range.max - conditions.timer0VCountConfig.timer0Range.min + 1);
 
   // Timer0範囲をループ
-  for (let timer0 = conditions.timer0Range.min; timer0 <= conditions.timer0Range.max; timer0++) {
+  for (let timer0 = conditions.timer0VCountConfig.timer0Range.min; timer0 <= conditions.timer0VCountConfig.timer0Range.max; timer0++) {
     if (searchState.shouldStop) break;
     
     // VCount値取得（BW2のオフセット処理含む）

@@ -198,8 +198,8 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
     }
 
     // Calculate search space
-    const timer0Range = conditions.timer0Range.max - conditions.timer0Range.min + 1;
-    const vcountRange = conditions.vcountRange.max - conditions.vcountRange.min + 1;
+    const timer0Range = conditions.timer0VCountConfig.timer0Range.max - conditions.timer0VCountConfig.timer0Range.min + 1;
+    const vcountRange = conditions.timer0VCountConfig.vcountRange.max - conditions.timer0VCountConfig.vcountRange.min + 1;
     
     const startDate = new Date(
       conditions.dateRange.startYear,
@@ -238,11 +238,16 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
     // Search using integrated approach
     
     // Search loop using integrated search
-    for (let timer0 = conditions.timer0Range.min; timer0 <= conditions.timer0Range.max; timer0++) {
+    for (let timer0 = conditions.timer0VCountConfig.timer0Range.min; timer0 <= conditions.timer0VCountConfig.timer0Range.max; timer0++) {
       if (searchState.shouldStop) break;
       
       // Get actual VCount value with offset handling for BW2
       const actualVCount = calculator.getVCountForTimer0(params, timer0);
+      
+      // Note: User manual settings are respected even if outside ROM optimal ranges
+      if (actualVCount < conditions.timer0VCountConfig.vcountRange.min || actualVCount > conditions.timer0VCountConfig.vcountRange.max) {
+        console.log(`ℹ️ [WORKER] Calculated VCount ${actualVCount} (0x${actualVCount.toString(16)}) is outside user range ${conditions.timer0VCountConfig.vcountRange.min}-${conditions.timer0VCountConfig.vcountRange.max}, but continuing search as requested.`);
+      }
       
       // Process in time ranges using integrated search with optimized batch size
       const timeRangeSize = Math.min(BATCH_SIZE_SECONDS, dateRange);
