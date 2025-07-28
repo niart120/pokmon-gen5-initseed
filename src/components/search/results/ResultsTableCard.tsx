@@ -48,11 +48,11 @@ export function ResultsTableCard({
           </div>
         ) : (
           <div className="overflow-auto flex-1">
-            <Table>
+            <Table className="table-auto min-w-full">
               <TableHeader>
                 <TableRow>
                   <TableHead 
-                    className="cursor-pointer select-none"
+                    className="cursor-pointer select-none whitespace-normal sm:whitespace-nowrap min-w-[80px]"
                     onClick={() => handleSort('seed')}
                   >
                     <div className="flex items-center gap-1">
@@ -60,7 +60,7 @@ export function ResultsTableCard({
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="cursor-pointer select-none"
+                    className="cursor-pointer select-none whitespace-normal sm:whitespace-nowrap min-w-[100px]"
                     onClick={() => handleSort('datetime')}
                   >
                     <div className="flex items-center gap-1">
@@ -68,7 +68,7 @@ export function ResultsTableCard({
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="cursor-pointer select-none"
+                    className="cursor-pointer select-none whitespace-normal sm:whitespace-nowrap min-w-[70px]"
                     onClick={() => handleSort('timer0')}
                   >
                     <div className="flex items-center gap-1">
@@ -76,36 +76,36 @@ export function ResultsTableCard({
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="cursor-pointer select-none"
+                    className="cursor-pointer select-none whitespace-normal sm:whitespace-nowrap min-w-[70px]"
                     onClick={() => handleSort('vcount')}
                   >
                     <div className="flex items-center gap-1">
                       VCount (Hex) {getSortIcon('vcount')}
                     </div>
                   </TableHead>
-                  <TableHead>ROM Info</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="whitespace-normal sm:whitespace-nowrap min-w-[80px]">ROM Info</TableHead>
+                  <TableHead className="whitespace-normal sm:whitespace-nowrap min-w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAndSortedResults.map((result, index) => (
                   <TableRow key={index}>
-                    <TableCell className="font-mono">
+                    <TableCell className="font-mono whitespace-normal sm:whitespace-nowrap break-all sm:break-normal min-w-[80px]">
                       0x{result.seed.toString(16).toUpperCase().padStart(8, '0')}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-normal sm:whitespace-nowrap min-w-[100px]">
                       <div className="flex items-center gap-1">
-                        <Calendar size={16} className="text-muted-foreground" />
-                        <span className="font-mono text-sm">
+                        <Calendar size={16} className="text-muted-foreground flex-shrink-0" />
+                        <span className="font-mono text-sm break-all sm:break-normal">
                           {formatDateTime(result.datetime)}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono">0x{result.timer0.toString(16).toUpperCase().padStart(4, '0')}</TableCell>
-                    <TableCell className="font-mono">0x{result.vcount.toString(16).toUpperCase().padStart(2, '0')}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-mono whitespace-normal sm:whitespace-nowrap break-all sm:break-normal min-w-[70px]">0x{result.timer0.toString(16).toUpperCase().padStart(4, '0')}</TableCell>
+                    <TableCell className="font-mono whitespace-normal sm:whitespace-nowrap break-all sm:break-normal min-w-[70px]">0x{result.vcount.toString(16).toUpperCase().padStart(2, '0')}</TableCell>
+                    <TableCell className="whitespace-normal sm:whitespace-nowrap min-w-[80px]">
                       <div className="space-y-1">
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="text-xs">
                           {result.conditions.romVersion} {result.conditions.romRegion}
                         </Badge>
                         <div className="text-xs text-muted-foreground">
@@ -113,13 +113,14 @@ export function ResultsTableCard({
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-normal sm:whitespace-nowrap min-w-[80px]">
                       <Button 
                         variant="outline" 
                         size="sm"
                         onClick={() => onShowDetails(result)}
+                        className="text-xs px-2 py-1"
                       >
-                        <Eye size={16} className="mr-1" />
+                        <Eye size={14} className="mr-1" />
                         Details
                       </Button>
                     </TableCell>

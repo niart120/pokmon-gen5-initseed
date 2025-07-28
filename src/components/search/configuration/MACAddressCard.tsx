@@ -65,7 +65,7 @@ export function MACAddressCard() {
         <CardTitle className="text-base">MAC Address</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 min-h-0 flex flex-col">
-        <div className="grid grid-cols-6 gap-2 flex-shrink-0">
+        <div className="grid grid-cols-6 gap-1 sm:gap-2 flex-shrink-0">
           {searchConditions.macAddress.map((byte, index) => (
             <div key={index}>
               <Input
@@ -77,7 +77,7 @@ export function MACAddressCard() {
                 onChange={(e) => handleInputChange(index, e.target.value)}
                 onBlur={() => handleBlur(index)}
                 onFocus={() => handleFocus(index)}
-                className="font-mono text-center"
+                className="font-mono text-center min-w-[48px] text-sm"
               />
             </div>
           ))}

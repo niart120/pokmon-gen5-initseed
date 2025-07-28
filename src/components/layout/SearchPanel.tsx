@@ -138,7 +138,7 @@ export function SearchPanel() {
   return (
     <div className="flex gap-2 max-w-full h-full min-h-0 min-w-fit">
       {/* 左カラム: 設定エリア */}
-      <div className="flex-1 flex flex-col gap-3 min-w-0 min-w-64" style={{ minHeight: 0 }}>
+      <div className="flex-1 flex flex-col gap-3 min-w-0 sm:min-w-64" style={{ minHeight: 0 }}>
         <div className="flex-none">
           <ROMConfigurationCard />
         </div>
@@ -157,7 +157,7 @@ export function SearchPanel() {
       </div>
       
       {/* 中央カラム: 検索制御・進捗エリア */}
-      <div className="flex-1 flex flex-col gap-3 min-w-0 min-w-64" style={{ minHeight: 0 }}>
+      <div className="flex-1 flex flex-col gap-3 min-w-0 sm:min-w-64" style={{ minHeight: 0 }}>
         <div className="flex-none">
           <SearchControlCard />
         </div>
@@ -167,7 +167,7 @@ export function SearchPanel() {
       </div>
       
       {/* 右カラム: 結果エリア */}
-      <div className="flex-1 flex flex-col gap-3 min-w-0 min-w-64" style={{ minHeight: 0 }}>
+      <div className="flex-1 flex flex-col gap-3 min-w-0 sm:min-w-64" style={{ minHeight: 0 }}>
         <div className="flex-none">
           <ResultsControlCard
             filteredResultsCount={filteredAndSortedResults.length}

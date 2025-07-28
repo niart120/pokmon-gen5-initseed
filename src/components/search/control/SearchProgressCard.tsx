@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CaretDown, CaretUp } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
+import { useIsMobile } from '../../../hooks/use-mobile';
 import { 
   formatElapsedTime, 
   formatRemainingTime, 
@@ -17,6 +18,7 @@ import { TimeDisplay } from './TimeDisplay';
 export function SearchProgressCard() {
   const { searchProgress, parallelProgress, parallelSearchSettings } = useAppStore();
   const [isWorkerDetailsExpanded, setIsWorkerDetailsExpanded] = useState(true);
+  const isMobile = useIsMobile();
 
   const isParallelMode = parallelSearchSettings.enabled;
   const isRunning = searchProgress.isRunning;
@@ -24,8 +26,18 @@ export function SearchProgressCard() {
   // 起動したワーカー総数を基準にする（停止・完了含む）
   const totalWorkerCount = parallelProgress?.workerProgresses?.size || 0;
 
-  // ワーカー数に応じたレイアウト決定
+  // ワーカー数に応じたレイアウト決定（モバイル考慮）
   const getWorkerLayout = (count: number) => {
+    // モバイル表示時は最大2列に制限し、多数の場合は簡略化
+    if (isMobile) {
+      if (count <= 2) return { cols: 2, showProgress: true }; // 2個以下でも2列で表示
+      if (count <= 8) return { cols: 2, showProgress: true };
+      if (count <= 16) return { cols: 2, showProgress: true };
+      if (count <= 32) return { cols: 2, showProgress: true };
+      return { cols: 2, showProgress: false }; // 32超過は簡略化
+    }
+    
+    // デスクトップ表示（元の設定）
     if (count <= 4) return { cols: 2, showProgress: true };
     if (count <= 8) return { cols: 2, showProgress: true };
     if (count <= 16) return { cols: 3, showProgress: true };
@@ -125,14 +137,16 @@ export function SearchProgressCard() {
                     <div className="space-y-2 flex-1 flex flex-col">
                       <div className="flex-1 overflow-y-auto pr-1 min-h-0">
                         <div className={`grid gap-2 ${
-                          workerLayout.cols === 2 ? 'grid-cols-2' :
-                          workerLayout.cols === 3 ? 'grid-cols-3' :
-                          'grid-cols-4'
+                          isMobile 
+                            ? 'grid-cols-2' // モバイル: 2列固定
+                            : workerLayout.cols === 2 ? 'grid-cols-2' :
+                              workerLayout.cols === 3 ? 'grid-cols-3' :
+                              'grid-cols-4'
                         }`}>
                           {Array.from(parallelProgress.workerProgresses.entries()).map(([workerId, progress]) => (
                             <div
                               key={workerId}
-                              className="p-2 rounded border bg-muted/20 space-y-1.5 min-h-[4rem]"
+                              className="p-2 rounded border bg-muted/20 space-y-1.5 min-h-[4rem] min-w-[90px] sm:min-w-[120px]"
                             >
                               <div className="flex justify-between items-center text-xs">
                                 <div className="flex items-center gap-1.5">
