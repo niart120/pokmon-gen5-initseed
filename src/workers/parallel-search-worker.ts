@@ -106,14 +106,21 @@ async function processChunkWithWasm(
     throw new Error(`No ROM parameters found for ${conditions.romVersion} ${conditions.romRegion}`);
   }
 
+  // Hardware別のframe値を設定
+  const HARDWARE_FRAME_VALUES: Record<string, number> = {
+    'DS': 8,
+    'DS_LITE': 6,
+    '3DS': 9
+  };
+  const frameValue = HARDWARE_FRAME_VALUES[conditions.hardware] || 8;
+
   // WebAssembly searcher作成
   const searcher = new wasmModule.IntegratedSeedSearcher(
     conditions.macAddress,
     new Uint32Array(params.nazo),
     conditions.hardware,
     conditions.keyInput,
-    5, // version
-    8  // frame
+    frameValue
   );
 
   try {

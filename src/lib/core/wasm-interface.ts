@@ -16,7 +16,6 @@ interface WasmModule {
     nazo: Uint32Array,
     hardware: string,
     key_input: number,
-    version: number,
     frame: number
   ) => {
     search_seeds_integrated(

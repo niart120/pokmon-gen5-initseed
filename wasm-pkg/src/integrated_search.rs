@@ -62,19 +62,8 @@ impl SearchResult {
 /// 固定パラメータを事前計算し、日時範囲を高速探索する
 #[wasm_bindgen]
 pub struct IntegratedSeedSearcher {
-    // 事前計算された固定パラメータ（将来の拡張用に保持）
-    #[allow(dead_code)]
-    mac_le: [u32; 2],
-    #[allow(dead_code)]
-    nazo: [u32; 5],
-    #[allow(dead_code)]
-    version: u32,
-    #[allow(dead_code)]
-    frame: u32,
-    #[allow(dead_code)]
+    // 実行時に必要なパラメータ
     hardware: String,
-    #[allow(dead_code)]
-    key_input: u32,
     
     // キャッシュされた基本メッセージ
     base_message: [u32; 16],
@@ -84,7 +73,11 @@ pub struct IntegratedSeedSearcher {
 impl IntegratedSeedSearcher {
     /// コンストラクタ: 固定パラメータの事前計算
     #[wasm_bindgen(constructor)]
-    pub fn new(mac: &[u8], nazo: &[u32], hardware: &str, key_input: u32, _version: u32, frame: u32) -> Result<IntegratedSeedSearcher, JsValue> {
+    pub fn new(mac: &[u8], nazo: &[u32], hardware: &str, key_input: u32, frame: u32) -> Result<IntegratedSeedSearcher, JsValue> {
+        if mac.len() != 6 {
+            return Err(JsValue::from_str("MAC address must be 6 bytes"));
+        }
+        // バリデーション
         if mac.len() != 6 {
             return Err(JsValue::from_str("MAC address must be 6 bytes"));
         }
@@ -98,24 +91,12 @@ impl IntegratedSeedSearcher {
             _ => return Err(JsValue::from_str("Hardware must be DS, DS_LITE, or 3DS")),
         }
 
-        // MACアドレス配列をそのまま保持（直接使用）
-        if mac.len() != 6 {
-            return Err(JsValue::from_str("MAC address must be 6 bytes"));
-        }
-        if nazo.len() != 5 {
-            return Err(JsValue::from_str("nazo must be 5 32-bit words"));
-        }
-
-        // nazoをコピー
-        let mut nazo_array = [0u32; 5];
-        nazo_array.copy_from_slice(nazo);
-
         // 基本メッセージテンプレートを事前構築（TypeScript側レイアウトに準拠）
         let mut base_message = [0u32; 16];
         
         // data[0-4]: Nazo values (little-endian conversion already applied)
         for i in 0..5 {
-            base_message[i] = swap_bytes_32(nazo_array[i]);
+            base_message[i] = swap_bytes_32(nazo[i]);
         }
         
         // data[5]: (VCount << 16) | Timer0 - 動的に設定
@@ -144,12 +125,7 @@ impl IntegratedSeedSearcher {
         base_message[15] = 0x000001A0;
 
         Ok(IntegratedSeedSearcher {
-            mac_le: [0, 0], // 使用しないため仮値
-            nazo: nazo_array,
-            version: _version,
-            frame,
             hardware: hardware.to_string(),
-            key_input,
             base_message,
         })
     }
