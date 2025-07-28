@@ -25,7 +25,6 @@ export function ResultsCard({
   onShowDetails,
 }: ResultsCardProps) {
   const { lastSearchDuration } = useAppStore();
-
   const formatDateTime = (date: Date): string => {
     return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
   };
@@ -43,7 +42,7 @@ export function ResultsCard({
 
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center gap-2 flex-wrap">
           <Hash size={20} className="flex-shrink-0" />
           <span className="flex-shrink-0">Search Results</span>
@@ -57,7 +56,7 @@ export function ResultsCard({
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 flex flex-col h-full">
+      <CardContent className="flex flex-col h-full flex-1 min-h-0 p-0">
         {filteredAndSortedResults.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             {searchResultsLength === 0 

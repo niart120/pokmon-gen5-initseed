@@ -146,7 +146,7 @@ export function SearchProgressCard() {
                           {Array.from(parallelProgress.workerProgresses.entries()).map(([workerId, progress]) => (
                             <div
                               key={workerId}
-                              className="p-2 rounded border bg-muted/20 space-y-1.5 min-h-[4rem] min-w-[90px] sm:min-w-[120px]"
+                              className="p-2 rounded border bg-muted/20 space-y-1.5 min-h-[4rem] min-w-[70px] sm:min-w-[70px]"
                             >
                               <div className="flex justify-between items-center text-xs">
                                 <div className="flex items-center gap-1.5">
