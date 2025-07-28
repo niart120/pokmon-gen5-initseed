@@ -116,13 +116,12 @@ export function SearchControlCard() {
             const matchesFound = useAppStore.getState().searchProgress.matchesFound;
             const totalSteps = useAppStore.getState().searchProgress.totalSteps;
             
-            // 少し遅延してからアラートを表示（状態更新の確実な完了を待つ）
+            // 結果が0件の場合のみアラートを表示（状態更新の確実な完了を待つ）
             setTimeout(() => {
               if (matchesFound === 0) {
                 alert(`Search completed. No matches found in ${totalSteps.toLocaleString()} combinations.\n\nTry:\n- Expanding the date range\n- Checking Timer0/VCount ranges\n- Verifying target seed format\n\nCheck browser console for detailed debug information.`);
-              } else {
-                alert(`🎉 Search completed successfully!\n\nFound ${matchesFound} matching seed${matchesFound === 1 ? '' : 's'} out of ${totalSteps.toLocaleString()} combinations.\n\nCheck the Results tab for details.`);
               }
+              // 結果が見つかった場合はダイアログを表示しない（ユーザーは結果タブで確認可能）
             }, 100);
           },
           onError: (error: string) => {
