@@ -180,14 +180,14 @@ export class SearchWorkerManager {
         },
         onResult: callbacks.onResult,
         onComplete: (message: string) => {
-          // 並列進捗をクリア
-          if (callbacks.onParallelProgress) {
-            callbacks.onParallelProgress(null);
-          }
+          // 📊 並列進捗は保持（統計表示のため）
+          // if (callbacks.onParallelProgress) {
+          //   callbacks.onParallelProgress(null);
+          // }
           callbacks.onComplete(message);
         },
         onError: (error: string) => {
-          // 並列進捗をクリア
+          // エラー時は進捗をクリア（不正な状態を避けるため）
           if (callbacks.onParallelProgress) {
             callbacks.onParallelProgress(null);
           }

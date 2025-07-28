@@ -48,7 +48,8 @@ export function SearchProgressCard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 flex-1 flex flex-col min-h-0">
-        {isRunning ? (
+        {/* 基本進捗表示 - 実行中・完了後も表示 */}
+        {(isRunning || (isParallelMode && parallelProgress)) && (
           <>
             <Progress value={(searchProgress.currentStep / searchProgress.totalSteps) * 100} />
             
@@ -81,7 +82,10 @@ export function SearchProgressCard() {
               </div>
             )}
           </>
-        ) : (
+        )}
+
+        {/* 検索未実行時のメッセージ */}
+        {!isRunning && (!isParallelMode || !parallelProgress || totalWorkerCount === 0) && searchProgress.totalSteps === 0 && (
           <div className="text-center py-4 text-muted-foreground text-sm">
             Ready to search
           </div>
