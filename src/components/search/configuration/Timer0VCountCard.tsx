@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAppStore } from '../../../store/app-store';
 import { parseHexInput, formatHexDisplay } from '../../../lib/utils/hex-parser';
 import { getFullTimer0Range, getValidVCounts, isValidTimer0VCountPair } from '../../../lib/utils/rom-parameter-helpers';
+import { resetApplicationState } from '../../../lib/utils/error-recovery';
 
 export function Timer0VCountCard() {
   const { searchConditions, setSearchConditions } = useAppStore();
@@ -16,14 +17,29 @@ export function Timer0VCountCard() {
   // 旧データ構造との互換性チェック
   if (!config) {
     console.error('timer0VCountConfig is missing from searchConditions:', searchConditions);
+    
     return (
       <Card>
         <CardHeader>
           <CardTitle>Timer0 & VCount Configuration</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-red-600 p-4">
-            Configuration error: Timer0/VCount settings not found. Please refresh the page.
+          <div className="text-red-600 p-4 space-y-4">
+            <div className="font-semibold">設定データの読み込みエラー</div>
+            <div className="text-sm">
+              古いバージョンのデータが残っているため、設定を正しく読み込めません。
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={resetApplicationState}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                設定をリセットして修復
+              </button>
+              <div className="text-xs text-gray-600">
+                ※ 保存された設定とプリセットがクリアされ、初期設定に戻ります
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
