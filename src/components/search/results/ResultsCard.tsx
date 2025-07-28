@@ -1,12 +1,13 @@
-import { Calendar, ChevronDown, ChevronUp, Eye, Filter } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Eye, Hash } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
-import { Card, CardContent } from '../../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
+import { useAppStore } from '../../../store/app-store';
 import type { InitialSeedResult } from '../../../types/pokemon';
 import type { SortField } from './ResultsControlCard';
 
-interface ResultsTableCardProps {
+interface ResultsCardProps {
   filteredAndSortedResults: InitialSeedResult[];
   searchResultsLength: number;
   sortField: SortField;
@@ -15,14 +16,16 @@ interface ResultsTableCardProps {
   onShowDetails: (result: InitialSeedResult) => void;
 }
 
-export function ResultsTableCard({
+export function ResultsCard({
   filteredAndSortedResults,
   searchResultsLength,
   sortField,
   sortOrder,
   onSort,
   onShowDetails,
-}: ResultsTableCardProps) {
+}: ResultsCardProps) {
+  const { lastSearchDuration } = useAppStore();
+
   const formatDateTime = (date: Date): string => {
     return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
   };
@@ -36,8 +39,24 @@ export function ResultsTableCard({
     onSort(field);
   };
 
+  const filteredResultsCount = filteredAndSortedResults.length;
+
   return (
     <Card className="flex flex-col h-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 flex-wrap">
+          <Hash size={20} className="flex-shrink-0" />
+          <span className="flex-shrink-0">Search Results</span>
+          <Badge variant="secondary" className="flex-shrink-0">
+            {filteredResultsCount} result{filteredResultsCount !== 1 ? 's' : ''}
+          </Badge>
+          {lastSearchDuration !== null && (
+            <Badge variant="outline" className="flex-shrink-0 text-xs">
+              Search completed in {(lastSearchDuration / 1000).toFixed(1)}s
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
       <CardContent className="p-0 flex flex-col h-full">
         {filteredAndSortedResults.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">

@@ -8,7 +8,7 @@ import {
   TargetSeedsCard 
 } from '../search/configuration';
 import { SearchControlCard, SearchProgressCard } from '../search/control';
-import { ResultsControlCard, ResultsHeaderCard, ResultsTableCard, ResultDetailsDialog, type SortField } from '../search/results';
+import { ResultsControlCard, ResultsCard, ResultDetailsDialog, type SortField } from '../search/results';
 import { useIsStackLayout } from '../../hooks/use-mobile';
 import type { InitialSeedResult, SearchResult } from '../../types/pokemon';
 
@@ -119,10 +119,7 @@ export function SearchPanel() {
           sortField={sortField}
           setSortField={setSortField}
         />
-        <ResultsHeaderCard
-          filteredResultsCount={filteredAndSortedResults.length}
-      />
-        <ResultsTableCard
+        <ResultsCard
           filteredAndSortedResults={filteredAndSortedResults}
           searchResultsLength={searchResults.length}
           sortField={sortField}
@@ -178,13 +175,8 @@ export function SearchPanel() {
             setSortField={setSortField}
           />
         </div>
-        <div className="flex-none">
-          <ResultsHeaderCard
-            filteredResultsCount={filteredAndSortedResults.length}
-          />
-        </div>
         <div className="flex-1 min-h-0">
-          <ResultsTableCard
+          <ResultsCard
             filteredAndSortedResults={filteredAndSortedResults}
             searchResultsLength={searchResults.length}
             sortField={sortField}
