@@ -9,12 +9,12 @@ import {
 } from '../search/configuration';
 import { SearchControlCard, SearchProgressCard } from '../search/control';
 import { ResultsControlCard, ResultsHeaderCard, ResultsTableCard, ResultDetailsDialog, type SortField } from '../search/results';
-import { useIsMobile } from '../../hooks/use-mobile';
+import { useIsStackLayout } from '../../hooks/use-mobile';
 import type { InitialSeedResult, SearchResult } from '../../types/pokemon';
 
 export function SearchPanel() {
   const { searchConditions, setSearchConditions, searchResults } = useAppStore();
-  const isMobile = useIsMobile();
+  const isStackLayout = useIsStackLayout();
 
   // Results state management (moved from ResultsPanel)
   const [filterSeed, setFilterSeed] = useState('');
@@ -100,17 +100,15 @@ export function SearchPanel() {
     setIsDetailsOpen(true);
   };
 
-  if (isMobile) {
-    // スマートフォン: 縦スタック配置
+  if (isStackLayout) {
+    // スマートフォン・縦長画面: 縦スタック配置
     return (
       <div className="space-y-3 h-full overflow-y-auto flex flex-col">
         <ROMConfigurationCard />
         <Timer0VCountCard />
         <DateRangeCard />
         <MACAddressCard />
-        <div className="flex-1 min-h-0">
-          <TargetSeedsCard />
-        </div>
+        <TargetSeedsCard />
         <SearchControlCard />
         <SearchProgressCard />
         <ResultsControlCard
@@ -123,7 +121,7 @@ export function SearchPanel() {
         />
         <ResultsHeaderCard
           filteredResultsCount={filteredAndSortedResults.length}
-        />
+      />
         <ResultsTableCard
           filteredAndSortedResults={filteredAndSortedResults}
           searchResultsLength={searchResults.length}
@@ -138,37 +136,53 @@ export function SearchPanel() {
 
   // PC: 3カラム配置（設定 | 検索制御・進捗 | 結果）
   return (
-    <div className="flex gap-2 max-w-full h-full min-h-0">
+    <div className="flex gap-2 max-w-full h-full min-h-0 min-w-fit">
       {/* 左カラム: 設定エリア */}
-      <div className="flex-1 flex flex-col space-y-3 min-w-0 overflow-hidden">
-        <ROMConfigurationCard />
-        <Timer0VCountCard />
-        <DateRangeCard />
-        <MACAddressCard />
+      <div className="flex-1 flex flex-col gap-3 min-w-0 min-w-64" style={{ minHeight: 0 }}>
+        <div className="flex-none">
+          <ROMConfigurationCard />
+        </div>
+        <div className="flex-none">
+          <Timer0VCountCard />
+        </div>
+        <div className="flex-none">
+          <DateRangeCard />
+        </div>
+        <div className="flex-none">
+          <MACAddressCard />
+        </div>
         <div className="flex-1 min-h-0">
           <TargetSeedsCard />
         </div>
       </div>
       
       {/* 中央カラム: 検索制御・進捗エリア */}
-      <div className="flex-1 space-y-3 min-w-0 flex flex-col overflow-y-auto">
-        <SearchControlCard />
-        <SearchProgressCard />
+      <div className="flex-1 flex flex-col gap-3 min-w-0 min-w-64" style={{ minHeight: 0 }}>
+        <div className="flex-none">
+          <SearchControlCard />
+        </div>
+        <div className="flex-1 min-h-0">
+          <SearchProgressCard />
+        </div>
       </div>
       
       {/* 右カラム: 結果エリア */}
-      <div className="flex-1 space-y-3 min-w-0 flex flex-col">
-        <ResultsControlCard
-          filteredResultsCount={filteredAndSortedResults.length}
-          convertedResults={convertToSearchResults}
-          filterSeed={filterSeed}
-          setFilterSeed={setFilterSeed}
-          sortField={sortField}
-          setSortField={setSortField}
-        />
-        <ResultsHeaderCard
-          filteredResultsCount={filteredAndSortedResults.length}
-        />
+      <div className="flex-1 flex flex-col gap-3 min-w-0 min-w-64" style={{ minHeight: 0 }}>
+        <div className="flex-none">
+          <ResultsControlCard
+            filteredResultsCount={filteredAndSortedResults.length}
+            convertedResults={convertToSearchResults}
+            filterSeed={filterSeed}
+            setFilterSeed={setFilterSeed}
+            sortField={sortField}
+            setSortField={setSortField}
+          />
+        </div>
+        <div className="flex-none">
+          <ResultsHeaderCard
+            filteredResultsCount={filteredAndSortedResults.length}
+          />
+        </div>
         <div className="flex-1 min-h-0">
           <ResultsTableCard
             filteredAndSortedResults={filteredAndSortedResults}

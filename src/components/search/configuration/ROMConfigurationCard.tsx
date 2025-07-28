@@ -33,15 +33,15 @@ export function ROMConfigurationCard() {
   const { searchConditions, setSearchConditions } = useAppStore();
 
   return (
-    <Card className="py-3">
-      <CardHeader className="pb-3">
+    <Card className="py-2 flex flex-col h-full gap-2">
+      <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center gap-2 text-base">
           <MagnifyingGlass size={18} />
           ROM Configuration
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-2">
+      <CardContent className="space-y-2 flex-1 min-h-0 flex flex-col">
+        <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
           <div className="flex-1">
             <Label htmlFor="rom-version" className="text-xs sm:text-sm">ROM Version</Label>
             <Select

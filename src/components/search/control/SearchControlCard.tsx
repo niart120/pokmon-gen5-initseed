@@ -191,14 +191,14 @@ export function SearchControlCard() {
   // PCレイアウト: コンパクトな検索制御
   if (!isMobile) {
     return (
-      <Card className="flex-shrink-0">
-        <CardHeader className="pb-2">
+      <Card className="flex flex-col h-full gap-2">
+        <CardHeader className="pb-0 flex-shrink-0">
           <CardTitle className="text-base flex items-center">
             <Gear size={16} className="mr-2" />
             Search Control
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 flex-1 min-h-0 flex flex-col">
           <div className="space-y-2">
             {/* 検索制御ボタン - PC版では最上位に配置 */}
             <div className="flex gap-2">
@@ -279,10 +279,10 @@ export function SearchControlCard() {
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="space-y-4">
+        <div className="space-y-2">
           {/* 並列検索設定 - 検索ボタンの上に配置 */}
           {isParallelAvailable && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="parallel-search"

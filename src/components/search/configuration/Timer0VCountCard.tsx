@@ -204,11 +204,11 @@ export function Timer0VCountCard() {
   );
 
   return (
-    <Card className="py-3">
-      <CardHeader className="pb-3">
+    <Card className="py-2 flex flex-col h-full gap-2">
+      <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="text-base">Timer0 & VCount Configuration</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2 flex-1 min-h-0 flex flex-col">
         {/* 統合自動設定チェックボックス */}
         <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg">
           <Checkbox

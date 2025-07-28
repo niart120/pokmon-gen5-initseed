@@ -36,8 +36,8 @@ export function SearchProgressCard() {
   const workerLayout = getWorkerLayout(totalWorkerCount);
 
   return (
-    <Card className="flex flex-col h-full">
-      <CardHeader className="pb-3 flex-shrink-0">
+    <Card className="flex flex-col h-full gap-2">
+      <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
           Search Progress
           {isParallelMode && parallelProgress && totalWorkerCount > 0 && (
@@ -47,7 +47,7 @@ export function SearchProgressCard() {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 flex-1 flex flex-col min-h-0">
+      <CardContent className="space-y-2 flex-1 flex flex-col min-h-0">
         {/* 基本進捗表示 - 実行中・完了後も表示 */}
         {(isRunning || (isParallelMode && parallelProgress)) && (
           <>
@@ -93,7 +93,7 @@ export function SearchProgressCard() {
 
         {/* 並列検索ワーカー情報 - 常時表示 (検索完了後も表示維持) */}
         {isParallelMode && parallelProgress && totalWorkerCount > 0 && (
-          <div className="space-y-3 flex-1 flex flex-col">
+          <div className="space-y-2 flex-1 flex flex-col">
             {/* ワーカー統計情報 */}
             <div className="text-xs text-muted-foreground flex justify-between">
               <span>Workers: {parallelProgress.activeWorkers} active, {parallelProgress.completedWorkers} completed</span>
