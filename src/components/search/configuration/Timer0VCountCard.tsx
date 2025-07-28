@@ -204,9 +204,9 @@ export function Timer0VCountCard() {
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Timer0 & VCount Configuration</CardTitle>
+    <Card className="py-3">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Timer0 & VCount Configuration</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* 統合自動設定チェックボックス */}

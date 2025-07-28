@@ -37,8 +37,8 @@ export function ResultsTableCard({
   };
 
   return (
-    <Card>
-      <CardContent className="p-0">
+    <Card className="flex flex-col h-full">
+      <CardContent className="p-0 flex flex-col h-full">
         {filteredAndSortedResults.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             {searchResultsLength === 0 
@@ -47,7 +47,7 @@ export function ResultsTableCard({
             }
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-auto flex-1">
             <Table>
               <TableHeader>
                 <TableRow>

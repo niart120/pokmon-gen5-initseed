@@ -81,9 +81,9 @@ export function TargetSeedsCard() {
   ];
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between text-lg">
+    <Card className="py-3 flex flex-col h-full">
+      <CardHeader className="pb-3 flex-shrink-0">
+        <CardTitle className="flex items-center justify-between text-base">
           <span>Target Seeds</span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => document.getElementById('target-file-input')?.click()}>
@@ -111,16 +111,19 @@ export function TargetSeedsCard() {
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="space-y-2">
+      <CardContent className="space-y-3 flex-1 min-h-0 flex flex-col">
+        <div className="space-y-2 flex-1 min-h-0 flex flex-col">
           <Label htmlFor="seed-input">Enter target seed values (one per line)</Label>
-          <Textarea
-            id="seed-input"
-            placeholder={`Enter seed values in hexadecimal format:\n${exampleSeeds.join('\n')}`}
-            value={targetSeedInput}
-            onChange={(e) => setTargetSeedInput(e.target.value)}
-            className="min-h-32 font-mono text-sm"
-          />
+          <div className="flex-1 min-h-0 relative">
+            <Textarea
+              id="seed-input"
+              placeholder={`Enter seed values in hexadecimal format:\n${exampleSeeds.join('\n')}`}
+              value={targetSeedInput}
+              onChange={(e) => setTargetSeedInput(e.target.value)}
+              className="absolute inset-0 w-full h-full font-mono text-sm resize-none"
+              style={{ overflow: 'auto' }}
+            />
+          </div>
           <p className="text-xs text-muted-foreground">
             Supports hex format with or without 0x prefix. One seed per line.
           </p>

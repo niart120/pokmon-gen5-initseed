@@ -60,15 +60,14 @@ export function MACAddressCard() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>MAC Address</CardTitle>
+    <Card className="py-3">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">MAC Address</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-6 gap-2">
           {searchConditions.macAddress.map((byte, index) => (
             <div key={index}>
-              <Label htmlFor={`mac-${index}`}>Byte {index + 1}</Label>
               <Input
                 id={`mac-${index}`}
                 type="text"

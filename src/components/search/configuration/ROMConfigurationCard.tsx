@@ -33,10 +33,10 @@ export function ROMConfigurationCard() {
   const { searchConditions, setSearchConditions } = useAppStore();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MagnifyingGlass size={20} />
+    <Card className="py-3">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <MagnifyingGlass size={18} />
           ROM Configuration
         </CardTitle>
       </CardHeader>

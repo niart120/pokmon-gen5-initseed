@@ -8,16 +8,16 @@ export function DateRangeCard() {
   const { searchConditions, setSearchConditions } = useAppStore();
 
   return (
-    <Card>
+    <Card className="py-3">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Date & Time Range</CardTitle>
+        <CardTitle className="text-base">Date & Time Range</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <div className="space-y-3">
             <h4 className="text-sm font-medium">Start Date/Time</h4>
-            <div className="grid grid-cols-6 gap-2">
-              <div className="col-span-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <div className="col-span-1 sm:col-span-2">
                 <Label htmlFor="start-year" className="text-xs sm:text-sm">Year</Label>
                 <Input
                   id="start-year"
@@ -33,7 +33,7 @@ export function DateRangeCard() {
                   }
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <Label htmlFor="start-month" className="text-xs sm:text-sm">Month</Label>
                 <Input
                   id="start-month"
@@ -49,7 +49,7 @@ export function DateRangeCard() {
                   }
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <Label htmlFor="start-day" className="text-xs sm:text-sm">Day</Label>
                 <Input
                   id="start-day"
@@ -76,8 +76,8 @@ export function DateRangeCard() {
 
           <div className="space-y-3">
             <h4 className="text-sm font-medium">End Date/Time</h4>
-            <div className="grid grid-cols-6 gap-2">
-              <div className="col-span-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <div className="col-span-1 sm:col-span-2">
                 <Label htmlFor="end-year" className="text-xs sm:text-sm">Year</Label>
                 <Input
                   id="end-year"
@@ -93,7 +93,7 @@ export function DateRangeCard() {
                   }
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <Label htmlFor="end-month" className="text-xs sm:text-sm">Month</Label>
                 <Input
                   id="end-month"
@@ -109,7 +109,7 @@ export function DateRangeCard() {
                   }
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <Label htmlFor="end-day" className="text-xs sm:text-sm">Day</Label>
                 <Input
                   id="end-day"

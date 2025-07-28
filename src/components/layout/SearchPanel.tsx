@@ -103,12 +103,14 @@ export function SearchPanel() {
   if (isMobile) {
     // スマートフォン: 縦スタック配置
     return (
-      <div className="space-y-3">
+      <div className="space-y-3 h-full overflow-y-auto flex flex-col">
         <ROMConfigurationCard />
         <Timer0VCountCard />
         <DateRangeCard />
         <MACAddressCard />
-        <TargetSeedsCard />
+        <div className="flex-1 min-h-0">
+          <TargetSeedsCard />
+        </div>
         <SearchControlCard />
         <SearchProgressCard />
         <ResultsControlCard
@@ -136,24 +138,26 @@ export function SearchPanel() {
 
   // PC: 3カラム配置（設定 | 検索制御・進捗 | 結果）
   return (
-    <div className="grid grid-cols-3 gap-3 max-w-full">
+    <div className="flex gap-2 max-w-full h-full min-h-0">
       {/* 左カラム: 設定エリア */}
-      <div className="space-y-3 min-w-0">
+      <div className="flex-1 flex flex-col space-y-3 min-w-0 overflow-hidden">
         <ROMConfigurationCard />
         <Timer0VCountCard />
         <DateRangeCard />
         <MACAddressCard />
-        <TargetSeedsCard />
+        <div className="flex-1 min-h-0">
+          <TargetSeedsCard />
+        </div>
       </div>
       
       {/* 中央カラム: 検索制御・進捗エリア */}
-      <div className="space-y-3 min-w-0 flex flex-col">
+      <div className="flex-1 space-y-3 min-w-0 flex flex-col overflow-y-auto">
         <SearchControlCard />
         <SearchProgressCard />
       </div>
       
       {/* 右カラム: 結果エリア */}
-      <div className="space-y-3 min-w-0">
+      <div className="flex-1 space-y-3 min-w-0 flex flex-col">
         <ResultsControlCard
           filteredResultsCount={filteredAndSortedResults.length}
           convertedResults={convertToSearchResults}
@@ -165,14 +169,16 @@ export function SearchPanel() {
         <ResultsHeaderCard
           filteredResultsCount={filteredAndSortedResults.length}
         />
-        <ResultsTableCard
-          filteredAndSortedResults={filteredAndSortedResults}
-          searchResultsLength={searchResults.length}
-          sortField={sortField}
-          sortOrder={sortOrder}
-          onSort={handleSort}
-          onShowDetails={handleShowDetails}
-        />
+        <div className="flex-1 min-h-0">
+          <ResultsTableCard
+            filteredAndSortedResults={filteredAndSortedResults}
+            searchResultsLength={searchResults.length}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            onShowDetails={handleShowDetails}
+          />
+        </div>
       </div>
 
       {/* Results Details Dialog */}
