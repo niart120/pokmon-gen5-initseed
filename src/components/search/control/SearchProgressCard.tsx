@@ -5,6 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CaretDown, CaretUp } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
+import { 
+  formatElapsedTime, 
+  formatRemainingTime, 
+  formatProcessingRate,
+  calculateOverallProcessingRate,
+  calculateWorkerProcessingRate
+} from '../../../lib/utils/format-helpers';
 
 export function SearchProgressCard() {
   const { searchProgress, parallelProgress, parallelSearchSettings } = useAppStore();
@@ -70,11 +77,31 @@ export function SearchProgressCard() {
         {/* 並列検索ワーカー情報 - 常時表示 (検索完了後も表示維持) */}
         {isParallelMode && parallelProgress && totalWorkerCount > 0 && (
           <div className="space-y-3 flex-1 flex flex-col">
+            {/* 集約進捗情報の拡張表示 */}
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div>
+                <div className="text-muted-foreground">Elapsed</div>
+                <div className="font-mono text-sm">
+                  {formatElapsedTime(parallelProgress.totalElapsedTime)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Remaining</div>
+                <div className="font-mono text-sm">
+                  {formatRemainingTime(parallelProgress.totalEstimatedTimeRemaining)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Speed</div>
+                <div className="font-mono text-sm">
+                  {formatProcessingRate(parallelProgress.totalCurrentStep, parallelProgress.totalElapsedTime)}
+                </div>
+              </div>
+            </div>
+            
             <div className="text-xs text-muted-foreground flex justify-between">
               <span>Workers: {parallelProgress.activeWorkers} active, {parallelProgress.completedWorkers} completed</span>
-              {parallelProgress.totalElapsedTime > 0 && (
-                <span>Rate: {Math.round(parallelProgress.totalCurrentStep / (parallelProgress.totalElapsedTime / 1000)).toLocaleString()}/s</span>
-              )}
+              <span>Total: {totalWorkerCount}</span>
             </div>
             
             {/* ワーカー詳細表示 - 折りたたみ可能 */}
@@ -112,7 +139,14 @@ export function SearchProgressCard() {
                               className="p-2 rounded border bg-muted/20 space-y-1.5 min-h-[4rem]"
                             >
                               <div className="flex justify-between items-center text-xs">
-                                <span className="font-mono font-medium">W{workerId}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-mono font-medium">W{workerId}</span>
+                                  {progress.matchesFound > 0 && (
+                                    <span className="px-1 py-0.5 bg-green-100 text-green-800 rounded text-[9px] font-medium">
+                                      [{progress.matchesFound}]
+                                    </span>
+                                  )}
+                                </div>
                                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
                                   progress.status === 'completed' 
                                     ? 'bg-green-100 text-green-800' 
@@ -136,9 +170,9 @@ export function SearchProgressCard() {
                                   {progress.status === 'completed' ? '100%' : 
                                    `${Math.round((progress.currentStep / progress.totalSteps) * 100)}%`}
                                 </span>
-                                {progress.matchesFound > 0 && (
-                                  <span className="text-green-600 font-medium">{progress.matchesFound}m</span>
-                                )}
+                                <span className="font-mono">
+                                  {formatProcessingRate(progress.currentStep, progress.elapsedTime)}
+                                </span>
                               </div>
                             </div>
                           ))}
