@@ -29,10 +29,10 @@ interface AppStore {
   pauseSearch: () => void;
   resumeSearch: () => void;
   stopSearch: () => void;
-  
-  // Pause timing management
-  pauseStartTime: number | null;
-  totalPausedTime: number;
+
+  // Last search duration
+  lastSearchDuration: number | null;
+  setLastSearchDuration: (duration: number) => void;
 
   // Parallel search settings
   parallelSearchSettings: ParallelSearchSettings;
@@ -161,26 +161,9 @@ export const useAppStore = create<AppStore>()(
       // Search progress
       searchProgress: defaultSearchProgress,
       setSearchProgress: (progress) =>
-        set((state) => {
-          // 一時停止時間を考慮した経過時間を計算
-          let adjustedElapsedTime = progress.elapsedTime || state.searchProgress.elapsedTime;
-          
-          // 現在の一時停止中の時間を計算
-          const currentPauseDuration = state.pauseStartTime ? Date.now() - state.pauseStartTime : 0;
-          
-          // 総一時停止時間を差し引いて実際の実行時間を計算
-          if (progress.elapsedTime !== undefined) {
-            adjustedElapsedTime = Math.max(0, progress.elapsedTime - state.totalPausedTime - currentPauseDuration);
-          }
-          
-          return {
-            searchProgress: { 
-              ...state.searchProgress, 
-              ...progress,
-              elapsedTime: adjustedElapsedTime
-            },
-          };
-        }),
+        set((state) => ({
+          searchProgress: { ...state.searchProgress, ...progress },
+        })),
       startSearch: () =>
         set((state) => ({
           searchProgress: {
@@ -191,36 +174,26 @@ export const useAppStore = create<AppStore>()(
             elapsedTime: 0,
             matchesFound: 0,
           },
-          pauseStartTime: null,
-          totalPausedTime: 0,
         })),
       pauseSearch: () =>
         set((state) => ({
           searchProgress: { ...state.searchProgress, isPaused: true, canPause: true },
-          pauseStartTime: Date.now(),
         })),
       resumeSearch: () =>
-        set((state) => {
-          const pauseDuration = state.pauseStartTime ? Date.now() - state.pauseStartTime : 0;
-          return {
-            searchProgress: { ...state.searchProgress, isPaused: false },
-            pauseStartTime: null,
-            totalPausedTime: state.totalPausedTime + pauseDuration,
-          };
-        }),
+        set((state) => ({
+          searchProgress: { ...state.searchProgress, isPaused: false },
+        })),
       stopSearch: () =>
         set((state) => ({
           searchProgress: {
             ...defaultSearchProgress,
             matchesFound: state.searchProgress.matchesFound,
           },
-          pauseStartTime: null,
-          totalPausedTime: 0,
         })),
 
-      // Pause timing management
-      pauseStartTime: null,
-      totalPausedTime: 0,
+      // Last search duration
+      lastSearchDuration: null,
+      setLastSearchDuration: (duration) => set({ lastSearchDuration: duration }),
 
       // Parallel search settings
       parallelSearchSettings: defaultParallelSearchSettings,
@@ -239,21 +212,7 @@ export const useAppStore = create<AppStore>()(
 
       // Parallel search progress
       parallelProgress: null,
-      setParallelProgress: (progress) => 
-        set((state) => {
-          if (!progress) return { parallelProgress: null };
-          
-          // 一時停止時間を考慮した総経過時間を計算
-          const currentPauseDuration = state.pauseStartTime ? Date.now() - state.pauseStartTime : 0;
-          const adjustedTotalElapsedTime = Math.max(0, progress.totalElapsedTime - state.totalPausedTime - currentPauseDuration);
-          
-          return {
-            parallelProgress: {
-              ...progress,
-              totalElapsedTime: adjustedTotalElapsedTime
-            }
-          };
-        }),
+      setParallelProgress: (progress) => set({ parallelProgress: progress }),
 
       // UI state
       activeTab: 'search',

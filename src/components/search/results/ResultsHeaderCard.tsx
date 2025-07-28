@@ -1,6 +1,8 @@
 import { Hash } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
+import { useAppStore } from '../../../store/app-store';
+import { formatElapsedTime } from '../../../lib/utils/format-helpers';
 
 interface ResultsHeaderCardProps {
   filteredResultsCount: number;
@@ -9,6 +11,8 @@ interface ResultsHeaderCardProps {
 export function ResultsHeaderCard({
   filteredResultsCount,
 }: ResultsHeaderCardProps) {
+  const { lastSearchDuration } = useAppStore();
+
   return (
     <Card>
       <CardHeader>
@@ -18,6 +22,11 @@ export function ResultsHeaderCard({
           <Badge variant="secondary">
             {filteredResultsCount} result{filteredResultsCount !== 1 ? 's' : ''}
           </Badge>
+          {lastSearchDuration !== null && (
+            <Badge variant="outline">
+              Search completed in {(lastSearchDuration / 1000).toFixed(1)}s
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
     </Card>

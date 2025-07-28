@@ -100,6 +100,12 @@ export function SearchControlCard() {
           onComplete: (message: string) => {
             console.log('✅ Search completed:', message);
             
+            // 検索時間を保存
+            const currentProgress = useAppStore.getState().searchProgress;
+            const currentParallelProgress = useAppStore.getState().parallelProgress;
+            const finalElapsedTime = currentParallelProgress?.totalElapsedTime || currentProgress.elapsedTime;
+            useAppStore.getState().setLastSearchDuration(finalElapsedTime);
+            
             // 先に検索状態を停止
             stopSearch();
             
