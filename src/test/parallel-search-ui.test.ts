@@ -23,16 +23,16 @@ describe('Phase 4: 並列検索UI統合テスト', () => {
     it('並列検索の有効/無効を切り替えできる', () => {
       const store = useAppStore.getState();
       
-      // 初期状態は無効
-      expect(store.parallelSearchSettings.enabled).toBe(false);
-      
-      // 有効化
-      store.setParallelSearchEnabled(true);
-      expect(useAppStore.getState().parallelSearchSettings.enabled).toBe(true);
+      // 初期状態は有効
+      expect(store.parallelSearchSettings.enabled).toBe(true);
       
       // 無効化
       store.setParallelSearchEnabled(false);
       expect(useAppStore.getState().parallelSearchSettings.enabled).toBe(false);
+
+      // 再度有効化
+      store.setParallelSearchEnabled(true);
+      expect(useAppStore.getState().parallelSearchSettings.enabled).toBe(true);
     });
 
     it('Worker数を適切に設定できる', () => {
