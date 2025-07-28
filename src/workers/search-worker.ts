@@ -91,38 +91,79 @@ async function processBatchIntegrated(
       const startDate = new Date(startTimestamp);
       const rangeSeconds = Math.floor((endTimestamp - startTimestamp) / 1000);
 
-      const results = searcher.search_seeds_integrated(
-        startDate.getFullYear(),
-        startDate.getMonth() + 1,
-        startDate.getDate(),
-        startDate.getHours(),
-        startDate.getMinutes(),
-        startDate.getSeconds(),
-        rangeSeconds,
-        timer0Min,
-        timer0Max,
-        vcountMin,
-        vcountMax,
-        new Uint32Array(Array.from(targetSeedSet))
-      );
+      // サブチャンク分割処理（15日単位、最大1296000秒）
+      const subChunkSeconds = Math.min(1296000, rangeSeconds);
+      
+      for (let offset = 0; offset < rangeSeconds; offset += subChunkSeconds) {
+        // 停止チェック
+        if (searchState.shouldStop) break;
+        
+        // 一時停止チェック
+        if (searchState.isPaused) {
+          while (searchState.isPaused && !searchState.shouldStop) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
+        
+        if (searchState.shouldStop) break;
+        
+        const subChunkStart = new Date(startTimestamp + offset * 1000);
+        const subChunkEnd = new Date(Math.min(
+          startTimestamp + (offset + subChunkSeconds) * 1000,
+          endTimestamp + 1000
+        ));
+        const subChunkRange = Math.floor((subChunkEnd.getTime() - subChunkStart.getTime()) / 1000);
+        
+        if (subChunkRange <= 0) break;
 
-      // Process results
-      for (const result of results) {
-        const resultDate = new Date(result.year, result.month - 1, result.date, result.hour, result.minute, result.second);
-        const message = calculator.generateMessage(conditions, result.timer0, result.vcount, resultDate);
-        const { hash } = calculator.calculateSeed(message);
+        // WebAssembly呼び出し前に非同期yield
+        await new Promise(resolve => setTimeout(resolve, 0));
+        
+        // WebAssembly呼び出し前の一時停止チェック
+        if (searchState.isPaused) {
+          while (searchState.isPaused && !searchState.shouldStop) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          if (searchState.shouldStop) break;
+        }
 
-        const searchResult: InitialSeedResult = {
-          seed: result.seed,
-          datetime: resultDate,
-          timer0: result.timer0,
-          vcount: result.vcount,
-          conditions,
-          message,
-          sha1Hash: hash,
-          isMatch: true,
-        };
-        onResult(searchResult);
+        // サブチャンクの統合検索実行
+        const results = searcher.search_seeds_integrated(
+          subChunkStart.getFullYear(),
+          subChunkStart.getMonth() + 1,
+          subChunkStart.getDate(),
+          subChunkStart.getHours(),
+          subChunkStart.getMinutes(),
+          subChunkStart.getSeconds(),
+          subChunkRange,
+          timer0Min,
+          timer0Max,
+          vcountMin,
+          vcountMax,
+          new Uint32Array(Array.from(targetSeedSet))
+        );
+        
+        // WebAssembly呼び出し後に非同期yield
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        // サブチャンクの結果を処理
+        for (const result of results) {
+          const resultDate = new Date(result.year, result.month - 1, result.date, result.hour, result.minute, result.second);
+          const message = calculator.generateMessage(conditions, result.timer0, result.vcount, resultDate);
+          const { hash } = calculator.calculateSeed(message);
+
+          const searchResult: InitialSeedResult = {
+            seed: result.seed,
+            datetime: resultDate,
+            timer0: result.timer0,
+            vcount: result.vcount,
+            conditions,
+            message,
+            sha1Hash: hash,
+            isMatch: true,
+          };
+          onResult(searchResult);
+        }
       }
 
       searcher.free();
@@ -158,7 +199,23 @@ async function processBatchIndividual(
 ): Promise<void> {
   const [startTimestamp, endTimestamp] = timestampRange;
   
+  let processedCount = 0;
+  
   for (let timestamp = startTimestamp; timestamp <= endTimestamp; timestamp += 1000) {
+    // 停止チェック
+    if (searchState.shouldStop) break;
+    
+    // 一時停止処理（1000操作ごと）
+    if (processedCount % 1000 === 0) {
+      while (searchState.isPaused && !searchState.shouldStop) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      // Event Loop yield
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    
+    if (searchState.shouldStop) break;
+    
     const currentDateTime = new Date(timestamp);
     
     try {
@@ -183,6 +240,8 @@ async function processBatchIndividual(
     } catch (error) {
       console.error('Error calculating seed:', error);
     }
+    
+    processedCount++;
   }
 }
 
@@ -255,7 +314,7 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
       for (let timeStart = 0; timeStart < dateRange; timeStart += timeRangeSize) {
         if (searchState.shouldStop) break;
         
-        // Handle pause
+        // Handle pause with more frequent checking
         while (searchState.isPaused && !searchState.shouldStop) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
@@ -267,6 +326,9 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
         const rangeEndTime = startDate.getTime() + (timeEnd - 1) * 1000;
         
         try {
+          // 非同期yield追加
+          await new Promise(resolve => setTimeout(resolve, 0));
+          
           await processBatchIntegrated(
             conditions,
             rangeStartTime,

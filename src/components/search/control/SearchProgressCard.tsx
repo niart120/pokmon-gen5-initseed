@@ -10,11 +10,12 @@ import {
   formatRemainingTime, 
   formatProcessingRate,
   calculateOverallProcessingRate,
-  calculateWorkerProcessingRate
+  calculateWorkerProcessingRate,
+  calculateAdjustedElapsedTime
 } from '../../../lib/utils/format-helpers';
 
 export function SearchProgressCard() {
-  const { searchProgress, parallelProgress, parallelSearchSettings } = useAppStore();
+  const { searchProgress, parallelProgress, parallelSearchSettings, pauseStartTime, totalPausedTime } = useAppStore();
   const [isWorkerDetailsExpanded, setIsWorkerDetailsExpanded] = useState(true);
 
   const isParallelMode = parallelSearchSettings.enabled;
@@ -50,7 +51,7 @@ export function SearchProgressCard() {
         {isRunning ? (
           <>
             <Progress value={(searchProgress.currentStep / searchProgress.totalSteps) * 100} />
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-3 gap-3 text-xs">
               <div>
                 <div className="text-muted-foreground">Progress</div>
                 <div className="font-mono text-sm">
@@ -58,6 +59,16 @@ export function SearchProgressCard() {
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {((searchProgress.currentStep / searchProgress.totalSteps) * 100).toFixed(1)}%
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Elapsed</div>
+                <div className="font-mono text-sm">
+                  {formatElapsedTime(calculateAdjustedElapsedTime(
+                    searchProgress.elapsedTime,
+                    totalPausedTime,
+                    pauseStartTime
+                  ))}
                 </div>
               </div>
               <div>
@@ -82,7 +93,11 @@ export function SearchProgressCard() {
               <div>
                 <div className="text-muted-foreground">Elapsed</div>
                 <div className="font-mono text-sm">
-                  {formatElapsedTime(parallelProgress.totalElapsedTime)}
+                  {formatElapsedTime(calculateAdjustedElapsedTime(
+                    parallelProgress.totalElapsedTime,
+                    totalPausedTime,
+                    pauseStartTime
+                  ))}
                 </div>
               </div>
               <div>
@@ -94,7 +109,11 @@ export function SearchProgressCard() {
               <div>
                 <div className="text-muted-foreground">Speed</div>
                 <div className="font-mono text-sm">
-                  {formatProcessingRate(parallelProgress.totalCurrentStep, parallelProgress.totalElapsedTime)}
+                  {formatProcessingRate(parallelProgress.totalCurrentStep, calculateAdjustedElapsedTime(
+                    parallelProgress.totalElapsedTime,
+                    totalPausedTime,
+                    pauseStartTime
+                  ))}
                 </div>
               </div>
             </div>
@@ -171,7 +190,11 @@ export function SearchProgressCard() {
                                    `${Math.round((progress.currentStep / progress.totalSteps) * 100)}%`}
                                 </span>
                                 <span className="font-mono">
-                                  {formatProcessingRate(progress.currentStep, progress.elapsedTime)}
+                                  {formatProcessingRate(progress.currentStep, calculateAdjustedElapsedTime(
+                                    progress.elapsedTime,
+                                    totalPausedTime,
+                                    pauseStartTime
+                                  ))}
                                 </span>
                               </div>
                             </div>

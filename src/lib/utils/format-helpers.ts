@@ -3,6 +3,18 @@
  */
 
 /**
+ * 一時停止時間を考慮したリアルタイム経過時間を計算
+ */
+export function calculateAdjustedElapsedTime(
+  rawElapsedTime: number,
+  totalPausedTime: number,
+  pauseStartTime: number | null
+): number {
+  const currentPauseDuration = pauseStartTime ? Date.now() - pauseStartTime : 0;
+  return Math.max(0, rawElapsedTime - totalPausedTime - currentPauseDuration);
+}
+
+/**
  * ミリ秒を時間/分/秒形式にフォーマット (1h 2m 3s形式)
  * 上位の単位が0の場合は省略 (例: 2m 3s, 3s)
  */

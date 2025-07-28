@@ -128,12 +128,42 @@ async function processChunkWithWasm(
     // 初期進捗報告
     reportProgress(0, totalOperations, 0);
 
-    // サブチャンク分割 (30日 = 2,592,000秒)
-    const subChunkSeconds = Math.min(30 * 24 * 60 * 60, rangeSeconds);
+    // サブチャンク分割 (5日)
+    const subChunkSeconds = Math.min(5 * 24 * 60 * 60, rangeSeconds);
     const allResults: InitialSeedResult[] = [];
     let processedOperations = 0;
 
     for (let offset = 0; offset < rangeSeconds; offset += subChunkSeconds) {
+      // 停止チェック
+      if (searchState.shouldStop) {
+        break;
+      }
+      
+      // 一時停止チェック
+      if (searchState.isPaused) {
+        // 一時停止状態をUIに通知
+        postMessage({
+          type: 'PAUSED',
+          workerId: searchState.workerId
+        } as ParallelWorkerResponse);
+        
+        while (searchState.isPaused && !searchState.shouldStop) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // 再開時にUIに通知
+        if (!searchState.shouldStop) {
+          postMessage({
+            type: 'RESUMED',
+            workerId: searchState.workerId
+          } as ParallelWorkerResponse);
+        }
+      }
+      
+      if (searchState.shouldStop) {
+        break;
+      }
+      
       const subChunkStart = new Date(startDate.getTime() + offset * 1000);
       const subChunkEnd = new Date(Math.min(
         startDate.getTime() + (offset + subChunkSeconds) * 1000,
@@ -142,6 +172,17 @@ async function processChunkWithWasm(
       const subChunkRange = Math.floor((subChunkEnd.getTime() - subChunkStart.getTime()) / 1000);
       
       if (subChunkRange <= 0) break;
+
+      // WebAssembly呼び出し前に非同期yield
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      // WebAssembly呼び出し前の一時停止チェック
+      if (searchState.isPaused) {
+        while (searchState.isPaused && !searchState.shouldStop) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        if (searchState.shouldStop) break;
+      }
 
       // サブチャンクの統合検索実行
       const subResults = searcher.search_seeds_integrated(
@@ -158,6 +199,9 @@ async function processChunkWithWasm(
         conditions.timer0VCountConfig.vcountRange.max,
         new Uint32Array(targetSeeds)
       );
+      
+      // WebAssembly呼び出し後に非同期yield
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       // サブチャンクの結果を統合
       for (const result of subResults) {
@@ -276,9 +320,19 @@ async function processChunkWithTypeScript(
         
         processedCount++;
         
-        // 進捗報告 (1000操作ごと)
+        // 進捗報告と一時停止チェック (1000操作ごと)
         if (processedCount % 1000 === 0) {
           reportProgress(processedCount, totalOperations, matchesFound);
+          
+          // 追加の一時停止チェック
+          if (searchState.isPaused) {
+            while (searchState.isPaused && !searchState.shouldStop) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          }
+          
+          // Event Loop yield
+          await new Promise(resolve => setTimeout(resolve, 0));
         }
         
       } catch (error) {
@@ -389,7 +443,7 @@ self.onmessage = async (event: MessageEvent<ParallelWorkerRequest>) => {
       break;
 
     default:
-      console.warn(`Worker ${searchState.workerId}: Unknown message type:`, type);
+      // Unknown message type - ignore silently
   }
 };
 
