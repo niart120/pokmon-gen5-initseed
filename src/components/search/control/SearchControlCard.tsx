@@ -8,7 +8,6 @@ import { Separator } from '@/components/ui/separator';
 import { Play, Pause, Square, Gear } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
 import { getSearchWorkerManager, resetSearchWorkerManager } from '../../../lib/search/search-worker-manager';
-import { useIsMobile } from '../../../hooks/use-mobile';
 import type { InitialSeedResult } from '../../../types/pokemon';
 
 export function SearchControlCard() {
@@ -27,8 +26,6 @@ export function SearchControlCard() {
     setMaxWorkers,
     setParallelProgress,
   } = useAppStore();
-
-  const isMobile = useIsMobile();
 
   // ワーカー数設定を初期化時に同期
   useEffect(() => {
@@ -100,30 +97,35 @@ export function SearchControlCard() {
           onComplete: (message: string) => {
             console.log('✅ Search completed:', message);
             
-            // 先に検索状態を停止
+            // 検索時間を保存
+            const currentProgress = useAppStore.getState().searchProgress;
+            const currentParallelProgress = useAppStore.getState().parallelProgress;
+            const finalElapsedTime = currentParallelProgress?.totalElapsedTime || currentProgress.elapsedTime;
+            useAppStore.getState().setLastSearchDuration(finalElapsedTime);
+            
+            // 検索状態を停止
             stopSearch();
             
-            // ワーカーマネージャーをリセット（メモリリーク防止）
-            resetSearchWorkerManager();
+            // 📊 ワーカーマネージャーは次回検索開始時にリセット（統計情報を保持）
+            // resetSearchWorkerManager(); ← 削除：統計表示を維持するため
             
             // その後でアラートを表示
             const matchesFound = useAppStore.getState().searchProgress.matchesFound;
             const totalSteps = useAppStore.getState().searchProgress.totalSteps;
             
-            // 少し遅延してからアラートを表示（状態更新の確実な完了を待つ）
+            // 結果が0件の場合のみアラートを表示（状態更新の確実な完了を待つ）
             setTimeout(() => {
               if (matchesFound === 0) {
                 alert(`Search completed. No matches found in ${totalSteps.toLocaleString()} combinations.\n\nTry:\n- Expanding the date range\n- Checking Timer0/VCount ranges\n- Verifying target seed format\n\nCheck browser console for detailed debug information.`);
-              } else {
-                alert(`🎉 Search completed successfully!\n\nFound ${matchesFound} matching seed${matchesFound === 1 ? '' : 's'} out of ${totalSteps.toLocaleString()} combinations.\n\nCheck the Results tab for details.`);
               }
+              // 結果が見つかった場合はダイアログを表示しない（ユーザーは結果タブで確認可能）
             }, 100);
           },
           onError: (error: string) => {
             console.error('Search error:', error);
             alert(`Search failed: ${error}`);
             stopSearch();
-            // エラー時もワーカーマネージャーをリセット（メモリリーク防止）
+            // エラー時は即座にリセット（不正な状態を避けるため）
             resetSearchWorkerManager();
           },
           onPaused: () => {
@@ -134,10 +136,10 @@ export function SearchControlCard() {
           },
           onStopped: () => {
             console.log('⏹️ Search stopped by worker');
-            setParallelProgress(null); // 並列進捗をクリア
             stopSearch();
-            // 停止時もワーカーマネージャーをリセット（メモリリーク防止）
-            resetSearchWorkerManager();
+            // 📊 停止時も統計情報保持（並列進捗も維持、次回検索開始時にリセット）
+            // setParallelProgress(null); ← 削除：統計表示を維持
+            // resetSearchWorkerManager(); ← 削除
           }
         }
       );
@@ -146,7 +148,7 @@ export function SearchControlCard() {
       alert(`Failed to start search: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setParallelProgress(null);
       stopSearch();
-      // 例外時もワーカーマネージャーをリセット（メモリリーク防止）
+      // 例外時は即座にリセット（不正な状態を避けるため）
       resetSearchWorkerManager();
     }
   };
@@ -183,166 +185,108 @@ export function SearchControlCard() {
   const maxCpuCores = navigator.hardwareConcurrency || 4;
   const isParallelAvailable = getSearchWorkerManager().isParallelSearchAvailable();
 
-  // PCレイアウト: コンパクトな検索制御
-  if (!isMobile) {
-    return (
-      <Card className="flex-shrink-0">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center">
-            <Gear size={16} className="mr-2" />
-            Search Control
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-2">
-            {/* 検索制御ボタン - PC版では最上位に配置 */}
-            <div className="flex gap-2">
-              {!searchProgress.isRunning ? (
-                <Button 
-                  onClick={handleStartSearch} 
-                  disabled={targetSeeds.seeds.length === 0}
-                  className="flex-1"
-                  size="sm"
-                >
-                  <Play size={16} className="mr-2" />
-                  Start Search
-                </Button>
-              ) : (
-                <>
-                  {searchProgress.isPaused ? (
-                    <Button onClick={handleResumeSearch} className="flex-1" size="sm">
-                      <Play size={14} className="mr-2" />
-                      Resume
-                    </Button>
-                  ) : (
-                    <Button onClick={handlePauseSearch} className="flex-1" size="sm">
-                      <Pause size={14} className="mr-2" />
-                      Pause
-                    </Button>
-                  )}
-                  <Button variant="destructive" onClick={handleStopSearch} size="sm">
-                    <Square size={14} className="mr-2" />
-                    Stop
-                  </Button>
-                </>
-              )}
-            </div>
-
-            {/* 並列検索設定 - 折りたたみ式 */}
-            {isParallelAvailable && (
-              <>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="parallel-search"
-                      checked={parallelSearchSettings.enabled}
-                      onCheckedChange={handleParallelModeChange}
-                      disabled={searchProgress.isRunning}
-                    />
-                    <Label htmlFor="parallel-search" className="text-sm font-medium">
-                      Parallel Search {parallelSearchSettings.enabled ? '(Active)' : ''}
-                    </Label>
-                  </div>
-
-                  {/* ワーカー数設定: 並列検索有効時のみ表示 */}
-                  {parallelSearchSettings.enabled && (
-                    <div className="space-y-1">
-                      <Label className="text-xs">
-                        Workers: {parallelSearchSettings.maxWorkers} / {maxCpuCores}
-                      </Label>
-                      <Slider
-                        value={[parallelSearchSettings.maxWorkers]}
-                        onValueChange={handleMaxWorkersChange}
-                        max={maxCpuCores}
-                        min={1}
-                        step={1}
-                        disabled={searchProgress.isRunning}
-                        className="w-full"
-                      />
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // モバイルレイアウト: 従来通りの詳細表示
+  // 統一レイアウト: シンプルな検索制御
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          {/* 並列検索設定 - 検索ボタンの上に配置 */}
-          {isParallelAvailable && (
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="parallel-search"
-                  checked={parallelSearchSettings.enabled}
-                  onCheckedChange={handleParallelModeChange}
-                  disabled={searchProgress.isRunning}
-                />
-                <Label htmlFor="parallel-search" className="text-sm font-medium">
-                  Enable Parallel Search {parallelSearchSettings.enabled ? '(Active)' : '(Experimental)'}
-                </Label>
-              </div>
-
-              {/* ワーカー数設定: 並列検索有効時のみ表示 */}
-              {parallelSearchSettings.enabled && (
-                <div className="space-y-2 pl-6 border-l-2 border-muted">
-                  <Label className="text-sm">
-                    Worker Count: {parallelSearchSettings.maxWorkers} / {maxCpuCores}
-                  </Label>
-                  <Slider
-                    value={[parallelSearchSettings.maxWorkers]}
-                    onValueChange={handleMaxWorkersChange}
-                    max={maxCpuCores}
-                    min={1}
-                    step={1}
-                    disabled={searchProgress.isRunning}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    More workers = faster search but higher memory usage
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 区切り線（並列検索設定がある場合のみ表示） */}
-          {isParallelAvailable && <Separator />}
-
-          {/* 検索制御ボタン - 並列検索設定の下に配置 */}
+    <Card className="flex flex-col h-full gap-2">
+      <CardHeader className="pb-0 flex-shrink-0">
+        <CardTitle className="text-base flex items-center">
+          <Gear size={16} className="mr-2" />
+          Search Control
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0 flex-1 min-h-0 flex flex-col">
+        <div className="space-y-2">
+          {/* 検索制御ボタン */}
           <div className="flex gap-2">
             {!searchProgress.isRunning ? (
-              <Button onClick={handleStartSearch} disabled={targetSeeds.seeds.length === 0}>
+              <Button 
+                onClick={handleStartSearch} 
+                disabled={targetSeeds.seeds.length === 0}
+                className="flex-1"
+                size="sm"
+              >
                 <Play size={16} className="mr-2" />
                 Start Search
               </Button>
             ) : (
               <>
-                {searchProgress.isPaused ? (
-                  <Button onClick={handleResumeSearch}>
-                    <Play size={16} className="mr-2" />
-                    Resume
-                  </Button>
-                ) : (
-                  <Button onClick={handlePauseSearch}>
+                {!searchProgress.isPaused ? (
+                  <Button 
+                    onClick={handlePauseSearch}
+                    variant="secondary"
+                    className="flex-1"
+                    size="sm"
+                  >
                     <Pause size={16} className="mr-2" />
                     Pause
                   </Button>
+                ) : (
+                  <Button 
+                    onClick={handleResumeSearch}
+                    className="flex-1"
+                    size="sm"
+                  >
+                    <Play size={16} className="mr-2" />
+                    Resume
+                  </Button>
                 )}
-                <Button variant="destructive" onClick={handleStopSearch}>
+                <Button 
+                  onClick={handleStopSearch}
+                  variant="destructive"
+                  size="sm"
+                >
                   <Square size={16} className="mr-2" />
                   Stop
                 </Button>
               </>
             )}
           </div>
+
+          {/* 並列検索設定 */}
+          {isParallelAvailable && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="parallel-search"
+                    checked={parallelSearchSettings.enabled}
+                    onCheckedChange={handleParallelModeChange}
+                    disabled={searchProgress.isRunning}
+                  />
+                  <Label htmlFor="parallel-search" className="text-sm font-medium">
+                    Parallel Search {parallelSearchSettings.enabled ? '(Active)' : '(Experimental)'}
+                  </Label>
+                </div>
+
+                {/* ワーカー数設定 */}
+                {parallelSearchSettings.enabled && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Worker Threads</Label>
+                      <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                        {parallelSearchSettings.maxWorkers}
+                      </span>
+                    </div>
+                    <Slider
+                      value={[parallelSearchSettings.maxWorkers]}
+                      onValueChange={([value]) => handleMaxWorkersChange([value])}
+                      min={1}
+                      max={Math.max(maxCpuCores, 8)}
+                      step={1}
+                      disabled={searchProgress.isRunning}
+                      className="flex-1"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>1 worker</span>
+                      <span>CPU cores: {maxCpuCores}</span>
+                      <span>{Math.max(maxCpuCores, 8)} max</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

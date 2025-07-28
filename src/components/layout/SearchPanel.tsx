@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/app-store';
-import { getFullTimer0Range, getValidVCounts } from '../../lib/utils/rom-parameter-helpers';
 import { 
   ROMConfigurationCard, 
   Timer0VCountCard, 
@@ -9,13 +8,13 @@ import {
   TargetSeedsCard 
 } from '../search/configuration';
 import { SearchControlCard, SearchProgressCard } from '../search/control';
-import { ResultsControlCard, ResultsHeaderCard, ResultsTableCard, ResultDetailsDialog, type SortField } from '../search/results';
-import { useIsMobile } from '../../hooks/use-mobile';
+import { ResultsControlCard, ResultsCard, ResultDetailsDialog, type SortField } from '../search/results';
+import { useIsStackLayout } from '../../hooks/use-mobile';
 import type { InitialSeedResult, SearchResult } from '../../types/pokemon';
 
 export function SearchPanel() {
   const { searchConditions, setSearchConditions, searchResults } = useAppStore();
-  const isMobile = useIsMobile();
+  const isStackLayout = useIsStackLayout();
 
   // Results state management (moved from ResultsPanel)
   const [filterSeed, setFilterSeed] = useState('');
@@ -101,42 +100,10 @@ export function SearchPanel() {
     setIsDetailsOpen(true);
   };
 
-  // Update auto-parameters when ROM version/region changes
-  React.useEffect(() => {
-    if (searchConditions.timer0Range.useAutoRange) {
-      const timer0Range = getFullTimer0Range(searchConditions.romVersion, searchConditions.romRegion);
-      if (timer0Range) {
-        setSearchConditions({
-          timer0Range: {
-            ...searchConditions.timer0Range,
-            min: timer0Range.min,
-            max: timer0Range.max,
-          },
-        });
-      }
-    }
-    
-    if (searchConditions.vcountRange.useAutoRange) {
-      const validVCounts = getValidVCounts(searchConditions.romVersion, searchConditions.romRegion);
-      if (validVCounts.length > 0) {
-        // 通常版は最初のVCOUNT値、VCOUNTずれ版は全範囲を使用
-        const minVCount = Math.min(...validVCounts);
-        const maxVCount = Math.max(...validVCounts);
-        setSearchConditions({
-          vcountRange: {
-            ...searchConditions.vcountRange,
-            min: minVCount,
-            max: maxVCount,
-          },
-        });
-      }
-    }
-  }, [searchConditions.romVersion, searchConditions.romRegion]);
-
-  if (isMobile) {
-    // スマートフォン: 縦スタック配置
+  if (isStackLayout) {
+    // スマートフォン・縦長画面: 縦スタック配置
     return (
-      <div className="space-y-3">
+      <div className="space-y-3 h-full overflow-y-auto flex flex-col">
         <ROMConfigurationCard />
         <Timer0VCountCard />
         <DateRangeCard />
@@ -152,10 +119,7 @@ export function SearchPanel() {
           sortField={sortField}
           setSortField={setSortField}
         />
-        <ResultsHeaderCard
-          filteredResultsCount={filteredAndSortedResults.length}
-        />
-        <ResultsTableCard
+        <ResultsCard
           filteredAndSortedResults={filteredAndSortedResults}
           searchResultsLength={searchResults.length}
           sortField={sortField}
@@ -169,43 +133,58 @@ export function SearchPanel() {
 
   // PC: 3カラム配置（設定 | 検索制御・進捗 | 結果）
   return (
-    <div className="grid grid-cols-3 gap-3 max-w-full">
+    <div className="flex gap-2 max-w-full h-full min-h-0 min-w-fit">
       {/* 左カラム: 設定エリア */}
-      <div className="space-y-3 min-w-0">
-        <ROMConfigurationCard />
-        <Timer0VCountCard />
-        <DateRangeCard />
-        <MACAddressCard />
-        <TargetSeedsCard />
+      <div className="flex-1 flex flex-col gap-3 min-w-0 sm:min-w-64" style={{ minHeight: 0 }}>
+        <div className="flex-none">
+          <ROMConfigurationCard />
+        </div>
+        <div className="flex-none">
+          <Timer0VCountCard />
+        </div>
+        <div className="flex-none">
+          <DateRangeCard />
+        </div>
+        <div className="flex-none">
+          <MACAddressCard />
+        </div>
+        <div className="flex-1 min-h-0">
+          <TargetSeedsCard />
+        </div>
       </div>
       
       {/* 中央カラム: 検索制御・進捗エリア */}
-      <div className="space-y-3 min-w-0 flex flex-col">
-        <SearchControlCard />
-        <SearchProgressCard />
+      <div className="flex-1 flex flex-col gap-3 min-w-0 sm:min-w-64" style={{ minHeight: 0 }}>
+        <div className="flex-none">
+          <SearchControlCard />
+        </div>
+        <div className="flex-1 min-h-0">
+          <SearchProgressCard />
+        </div>
       </div>
       
       {/* 右カラム: 結果エリア */}
-      <div className="space-y-3 min-w-0">
-        <ResultsControlCard
-          filteredResultsCount={filteredAndSortedResults.length}
-          convertedResults={convertToSearchResults}
-          filterSeed={filterSeed}
-          setFilterSeed={setFilterSeed}
-          sortField={sortField}
-          setSortField={setSortField}
-        />
-        <ResultsHeaderCard
-          filteredResultsCount={filteredAndSortedResults.length}
-        />
-        <ResultsTableCard
-          filteredAndSortedResults={filteredAndSortedResults}
-          searchResultsLength={searchResults.length}
-          sortField={sortField}
-          sortOrder={sortOrder}
-          onSort={handleSort}
-          onShowDetails={handleShowDetails}
-        />
+      <div className="flex-1 flex flex-col gap-3 min-w-0 sm:min-w-64" style={{ minHeight: 0 }}>
+        <div className="flex-none">
+          <ResultsControlCard
+            filteredResultsCount={filteredAndSortedResults.length}
+            convertedResults={convertToSearchResults}
+            filterSeed={filterSeed}
+            setFilterSeed={setFilterSeed}
+            sortField={sortField}
+            setSortField={setSortField}
+          />
+        </div>
+        <div className="flex-1 min-h-0">
+          <ResultsCard
+            filteredAndSortedResults={filteredAndSortedResults}
+            searchResultsLength={searchResults.length}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            onShowDetails={handleShowDetails}
+          />
+        </div>
       </div>
 
       {/* Results Details Dialog */}

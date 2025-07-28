@@ -15,8 +15,11 @@ export const CONSISTENCY_TEST_CONDITIONS: Omit<SearchConditions, 'dateRange'> = 
   hardware: 'DS',
   macAddress: [0x00, 0x11, 0x22, 0x88, 0x22, 0x77],
   keyInput: 0x2FFF,
-  timer0Range: { min: 3193, max: 3194, useAutoRange: false },
-  vcountRange: { min: 96, max: 96, useAutoRange: false }
+  timer0VCountConfig: {
+    useAutoConfiguration: false,
+    timer0Range: { min: 3193, max: 3194 },
+    vcountRange: { min: 96, max: 96 }
+  }
 } as const;
 
 /**

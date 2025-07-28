@@ -125,3 +125,24 @@ export function hasVCountOffset(version: string, region: string): boolean {
   
   return params.vcountTimerRanges.length > 1;
 }
+
+/**
+ * Timer0とVCountの組み合わせが有効かチェック
+ * @param version ROM version
+ * @param region ROM region
+ * @param timer0 Timer0 value
+ * @param vcount VCount value
+ * @returns true if the combination is valid for the ROM
+ */
+export function isValidTimer0VCountPair(version: string, region: string, timer0: number, vcount: number): boolean {
+  const params = getROMParameters(version, region);
+  if (!params) return false;
+  
+  for (const [validVCount, timer0Min, timer0Max] of params.vcountTimerRanges) {
+    if (vcount === validVCount && timer0 >= timer0Min && timer0 <= timer0Max) {
+      return true;
+    }
+  }
+  
+  return false;
+}

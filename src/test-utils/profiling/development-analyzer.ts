@@ -65,8 +65,11 @@ export class DevelopmentPerformanceAnalyzer {
       romVersion: 'B',
       romRegion: 'JPN',
       hardware: 'DS',
-      timer0Range: { min: 4320, max: 4320, useAutoRange: false },
-      vcountRange: { min: 128, max: 128, useAutoRange: false },
+      timer0VCountConfig: {
+    useAutoConfiguration: false,
+    timer0Range: { min: 4320, max: 4320 },
+    vcountRange: { min: 128, max: 128 }
+  },
       dateRange: {
         startYear: 2023, startMonth: 12, startDay: 31,
         startHour: 23, startMinute: 59, startSecond: 59,
@@ -177,8 +180,11 @@ export class DevelopmentPerformanceAnalyzer {
       romVersion: 'B',
       romRegion: 'JPN',
       hardware: 'DS',
-      timer0Range: { min: 4320, max: 4320, useAutoRange: false },
-      vcountRange: { min: 128, max: 128, useAutoRange: false },
+      timer0VCountConfig: {
+    useAutoConfiguration: false,
+    timer0Range: { min: 4320, max: 4320 },
+    vcountRange: { min: 128, max: 128 }
+  },
       dateRange: {
         startYear: 2023, startMonth: 12, startDay: 31,
         startHour: 23, startMinute: 59, startSecond: 59,

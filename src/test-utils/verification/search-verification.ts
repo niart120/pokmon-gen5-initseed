@@ -68,8 +68,11 @@ export function verifySearchImplementation(): boolean {
     romVersion: 'B',
     romRegion: 'JPN',
     hardware: 'DS',
-    timer0Range: { min: 3193, max: 3193, useAutoRange: true },
-    vcountRange: { min: 95, max: 95, useAutoRange: true },
+    timer0VCountConfig: {
+    useAutoConfiguration: true,
+    timer0Range: { min: 3193, max: 3193 },
+    vcountRange: { min: 95, max: 95 }
+  },
     dateRange: {
       startYear: 2023, endYear: 2023,
       startMonth: 1, endMonth: 1,

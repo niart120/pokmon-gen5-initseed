@@ -96,8 +96,8 @@ describe('出力結果整合性確認 - 単体テスト', () => {
         let foundResults: Array<{ datetime: Date; timer0: number; seed: number }> = [];
 
         // 局所検索実行
-        for (let timer0 = CONSISTENCY_TEST_CONDITIONS.timer0Range.min; timer0 <= CONSISTENCY_TEST_CONDITIONS.timer0Range.max; timer0++) {
-          for (let vcount = CONSISTENCY_TEST_CONDITIONS.vcountRange.min; vcount <= CONSISTENCY_TEST_CONDITIONS.vcountRange.max; vcount++) {
+        for (let timer0 = CONSISTENCY_TEST_CONDITIONS.timer0VCountConfig.timer0Range.min; timer0 <= CONSISTENCY_TEST_CONDITIONS.timer0VCountConfig.timer0Range.max; timer0++) {
+          for (let vcount = CONSISTENCY_TEST_CONDITIONS.timer0VCountConfig.vcountRange.min; vcount <= CONSISTENCY_TEST_CONDITIONS.timer0VCountConfig.vcountRange.max; vcount++) {
             
             // 時刻範囲の検索
             const startDate = new Date(searchRange.startYear, searchRange.startMonth - 1, searchRange.startDay, 

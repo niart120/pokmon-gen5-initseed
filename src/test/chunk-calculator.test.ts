@@ -11,8 +11,11 @@ describe('ChunkCalculator', () => {
     romVersion: 'B2',
     romRegion: 'JPN',
     hardware: 'DS',
-    timer0Range: { min: 3193, max: 3194, useAutoRange: false },
-    vcountRange: { min: 160, max: 167, useAutoRange: false },
+    timer0VCountConfig: {
+    useAutoConfiguration: false,
+    timer0Range: { min: 3193, max: 3194 },
+    vcountRange: { min: 160, max: 167 }
+  },
     dateRange: {
       startYear: 2013,
       endYear: 2013,

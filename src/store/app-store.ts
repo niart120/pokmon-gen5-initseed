@@ -30,6 +30,10 @@ interface AppStore {
   resumeSearch: () => void;
   stopSearch: () => void;
 
+  // Last search duration
+  lastSearchDuration: number | null;
+  setLastSearchDuration: (duration: number) => void;
+
   // Parallel search settings
   parallelSearchSettings: ParallelSearchSettings;
   setParallelSearchEnabled: (enabled: boolean) => void;
@@ -61,29 +65,29 @@ const defaultSearchConditions: SearchConditions = {
   romRegion: 'JPN' as ROMRegion,
   hardware: 'DS' as Hardware,
   
-  timer0Range: {
-    min: 3193,
-    max: 3194,
-    useAutoRange: true,
-  },
-  
-  vcountRange: {
-    min: 95,
-    max: 95,
-    useAutoRange: true,
+  timer0VCountConfig: {
+    useAutoConfiguration: true,
+    timer0Range: {
+      min: 3193,
+      max: 3194,
+    },
+    vcountRange: {
+      min: 95,
+      max: 95,
+    },
   },
   
   dateRange: {
-    startYear: 2023,
-    endYear: 2023,
-    startMonth: 6,
-    endMonth: 6,
-    startDay: 15,
-    endDay: 15,
-    startHour: 12,
-    endHour: 12,
+    startYear: 2000,
+    endYear: 2099,
+    startMonth: 1,
+    endMonth: 12,
+    startDay: 1,
+    endDay: 31,
+    startHour: 0,
+    endHour: 23,
     startMinute: 0,
-    endMinute: 5,
+    endMinute: 59,
     startSecond: 0,
     endSecond: 59,
   },
@@ -105,7 +109,7 @@ const defaultSearchProgress: SearchProgress = {
 };
 
 const defaultParallelSearchSettings: ParallelSearchSettings = {
-  enabled: false,
+  enabled: true,
   maxWorkers: navigator.hardwareConcurrency || 4,
   chunkStrategy: 'time-based',
 };
@@ -187,6 +191,10 @@ export const useAppStore = create<AppStore>()(
           },
         })),
 
+      // Last search duration
+      lastSearchDuration: null,
+      setLastSearchDuration: (duration) => set({ lastSearchDuration: duration }),
+
       // Parallel search settings
       parallelSearchSettings: defaultParallelSearchSettings,
       setParallelSearchEnabled: (enabled) =>
@@ -248,6 +256,57 @@ export const useAppStore = create<AppStore>()(
         presets: state.presets,
         parallelSearchSettings: state.parallelSearchSettings,
       }),
+      migrate: (persistedState: any, version: number) => {
+        // データ移行: 旧timer0Range/vcountRange構造から新timer0VCountConfig構造へ
+        if (persistedState?.searchConditions) {
+          const conditions = persistedState.searchConditions;
+          
+          // 旧構造を新構造に移行
+          if (conditions.timer0Range && conditions.vcountRange) {
+            conditions.timer0VCountConfig = {
+              useAutoConfiguration: conditions.timer0Range.useAutoRange || conditions.vcountRange.useAutoRange,
+              timer0Range: {
+                min: conditions.timer0Range.min,
+                max: conditions.timer0Range.max,
+              },
+              vcountRange: {
+                min: conditions.vcountRange.min,
+                max: conditions.vcountRange.max,
+              },
+            };
+            
+            // 旧フィールドを削除
+            delete conditions.timer0Range;
+            delete conditions.vcountRange;
+          }
+          
+          // プリセットも同様に移行
+          if (persistedState.presets) {
+            persistedState.presets = persistedState.presets.map((preset: any) => {
+              if (preset.conditions?.timer0Range && preset.conditions?.vcountRange) {
+                const newConditions = { ...preset.conditions };
+                newConditions.timer0VCountConfig = {
+                  useAutoConfiguration: newConditions.timer0Range.useAutoRange || newConditions.vcountRange.useAutoRange,
+                  timer0Range: {
+                    min: newConditions.timer0Range.min,
+                    max: newConditions.timer0Range.max,
+                  },
+                  vcountRange: {
+                    min: newConditions.vcountRange.min,
+                    max: newConditions.vcountRange.max,
+                  },
+                };
+                delete newConditions.timer0Range;
+                delete newConditions.vcountRange;
+                return { ...preset, conditions: newConditions };
+              }
+              return preset;
+            });
+          }
+        }
+        
+        return persistedState;
+      },
     }
   )
 );

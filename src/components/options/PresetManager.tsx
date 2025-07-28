@@ -197,8 +197,8 @@ export function PresetManager() {
                 <h4 className="font-medium text-sm mb-2">保存される条件:</h4>
                 <div className="text-xs space-y-1 text-gray-600">
                   <div>ROM: {searchConditions.romVersion}-{searchConditions.romRegion} ({searchConditions.hardware})</div>
-                  <div>Timer0: {searchConditions.timer0Range.min}-{searchConditions.timer0Range.max}</div>
-                  <div>VCount: {searchConditions.vcountRange.min}-{searchConditions.vcountRange.max}</div>
+                  <div>Timer0: {searchConditions.timer0VCountConfig.timer0Range.min}-{searchConditions.timer0VCountConfig.timer0Range.max}</div>
+                  <div>VCount: {searchConditions.timer0VCountConfig.vcountRange.min}-{searchConditions.timer0VCountConfig.vcountRange.max}</div>
                   <div>
                     日時: {searchConditions.dateRange.startYear}/{searchConditions.dateRange.startMonth}/{searchConditions.dateRange.startDay} 
                     ～ {searchConditions.dateRange.endYear}/{searchConditions.dateRange.endMonth}/{searchConditions.dateRange.endDay}

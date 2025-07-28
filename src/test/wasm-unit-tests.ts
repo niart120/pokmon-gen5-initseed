@@ -347,8 +347,11 @@ export async function testLevel5_Integration(): Promise<boolean> {
       hardware: 'DS' as const,
       macAddress: [0x00, 0x16, 0x56, 0xAE, 0xBB, 0xCC],
       keyInput: 0x02000000,
-      timer0Range: { min: 1000, max: 1000, useAutoRange: false },
-      vcountRange: { min: 100, max: 100, useAutoRange: false },
+      timer0VCountConfig: {
+    useAutoConfiguration: false,
+    timer0Range: { min: 1000, max: 1000 },
+    vcountRange: { min: 100, max: 100 }
+  },
       dateRange: {
         startYear: 2023, startMonth: 12, startDay: 31,
         startHour: 23, startMinute: 59, startSecond: 59,

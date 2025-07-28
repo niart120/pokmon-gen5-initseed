@@ -25,7 +25,7 @@ function App() {
   }, [targetSeeds.seeds]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <AppHeader />
       <MainContent />
       <AppFooter />
