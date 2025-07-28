@@ -10,12 +10,12 @@ import {
   formatRemainingTime, 
   formatProcessingRate,
   calculateOverallProcessingRate,
-  calculateWorkerProcessingRate,
-  calculateAdjustedElapsedTime
+  calculateWorkerProcessingRate
 } from '../../../lib/utils/format-helpers';
+import { TimeDisplay } from './TimeDisplay';
 
 export function SearchProgressCard() {
-  const { searchProgress, parallelProgress, parallelSearchSettings, pauseStartTime, totalPausedTime } = useAppStore();
+  const { searchProgress, parallelProgress, parallelSearchSettings } = useAppStore();
   const [isWorkerDetailsExpanded, setIsWorkerDetailsExpanded] = useState(true);
 
   const isParallelMode = parallelSearchSettings.enabled;
@@ -51,33 +51,35 @@ export function SearchProgressCard() {
         {isRunning ? (
           <>
             <Progress value={(searchProgress.currentStep / searchProgress.totalSteps) * 100} />
-            <div className="grid grid-cols-3 gap-3 text-xs">
-              <div>
-                <div className="text-muted-foreground">Progress</div>
-                <div className="font-mono text-sm">
-                  {searchProgress.currentStep.toLocaleString()} / {searchProgress.totalSteps.toLocaleString()}
+            
+            {/* 時間表示 - 直列・並列共通 */}
+            <TimeDisplay
+              elapsedTime={isParallelMode ? parallelProgress?.totalElapsedTime || 0 : searchProgress.elapsedTime}
+              estimatedTimeRemaining={isParallelMode ? parallelProgress?.totalEstimatedTimeRemaining || 0 : searchProgress.estimatedTimeRemaining}
+              currentStep={isParallelMode ? parallelProgress?.totalCurrentStep || 0 : searchProgress.currentStep}
+              totalSteps={isParallelMode ? parallelProgress?.totalSteps : searchProgress.totalSteps}
+            />
+            
+            {/* 進捗・マッチ情報 - 直列時のみ表示 */}
+            {!isParallelMode && (
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <div className="text-muted-foreground">Progress</div>
+                  <div className="font-mono text-sm">
+                    {searchProgress.currentStep.toLocaleString()} / {searchProgress.totalSteps.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {((searchProgress.currentStep / searchProgress.totalSteps) * 100).toFixed(1)}%
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {((searchProgress.currentStep / searchProgress.totalSteps) * 100).toFixed(1)}%
+                <div>
+                  <div className="text-muted-foreground">Matches</div>
+                  <Badge variant={searchProgress.matchesFound > 0 ? "default" : "secondary"} className="text-sm">
+                    {searchProgress.matchesFound}
+                  </Badge>
                 </div>
               </div>
-              <div>
-                <div className="text-muted-foreground">Elapsed</div>
-                <div className="font-mono text-sm">
-                  {formatElapsedTime(calculateAdjustedElapsedTime(
-                    searchProgress.elapsedTime,
-                    totalPausedTime,
-                    pauseStartTime
-                  ))}
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Matches</div>
-                <Badge variant={searchProgress.matchesFound > 0 ? "default" : "secondary"} className="text-sm">
-                  {searchProgress.matchesFound}
-                </Badge>
-              </div>
-            </div>
+            )}
           </>
         ) : (
           <div className="text-center py-4 text-muted-foreground text-sm">
@@ -88,36 +90,7 @@ export function SearchProgressCard() {
         {/* 並列検索ワーカー情報 - 常時表示 (検索完了後も表示維持) */}
         {isParallelMode && parallelProgress && totalWorkerCount > 0 && (
           <div className="space-y-3 flex-1 flex flex-col">
-            {/* 集約進捗情報の拡張表示 */}
-            <div className="grid grid-cols-3 gap-3 text-xs">
-              <div>
-                <div className="text-muted-foreground">Elapsed</div>
-                <div className="font-mono text-sm">
-                  {formatElapsedTime(calculateAdjustedElapsedTime(
-                    parallelProgress.totalElapsedTime,
-                    totalPausedTime,
-                    pauseStartTime
-                  ))}
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Remaining</div>
-                <div className="font-mono text-sm">
-                  {formatRemainingTime(parallelProgress.totalEstimatedTimeRemaining)}
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Speed</div>
-                <div className="font-mono text-sm">
-                  {formatProcessingRate(parallelProgress.totalCurrentStep, calculateAdjustedElapsedTime(
-                    parallelProgress.totalElapsedTime,
-                    totalPausedTime,
-                    pauseStartTime
-                  ))}
-                </div>
-              </div>
-            </div>
-            
+            {/* ワーカー統計情報 */}
             <div className="text-xs text-muted-foreground flex justify-between">
               <span>Workers: {parallelProgress.activeWorkers} active, {parallelProgress.completedWorkers} completed</span>
               <span>Total: {totalWorkerCount}</span>
@@ -190,11 +163,7 @@ export function SearchProgressCard() {
                                    `${Math.round((progress.currentStep / progress.totalSteps) * 100)}%`}
                                 </span>
                                 <span className="font-mono">
-                                  {formatProcessingRate(progress.currentStep, calculateAdjustedElapsedTime(
-                                    progress.elapsedTime,
-                                    totalPausedTime,
-                                    pauseStartTime
-                                  ))}
+                                  {formatProcessingRate(progress.currentStep, progress.elapsedTime)}
                                 </span>
                               </div>
                             </div>
