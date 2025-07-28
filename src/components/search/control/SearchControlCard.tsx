@@ -106,11 +106,11 @@ export function SearchControlCard() {
             const finalElapsedTime = currentParallelProgress?.totalElapsedTime || currentProgress.elapsedTime;
             useAppStore.getState().setLastSearchDuration(finalElapsedTime);
             
-            // 先に検索状態を停止
+            // 検索状態を停止
             stopSearch();
             
-            // ワーカーマネージャーをリセット（メモリリーク防止）
-            resetSearchWorkerManager();
+            // 📊 ワーカーマネージャーは次回検索開始時にリセット（統計情報を保持）
+            // resetSearchWorkerManager(); ← 削除：統計表示を維持するため
             
             // その後でアラートを表示
             const matchesFound = useAppStore.getState().searchProgress.matchesFound;
@@ -128,7 +128,7 @@ export function SearchControlCard() {
             console.error('Search error:', error);
             alert(`Search failed: ${error}`);
             stopSearch();
-            // エラー時もワーカーマネージャーをリセット（メモリリーク防止）
+            // エラー時は即座にリセット（不正な状態を避けるため）
             resetSearchWorkerManager();
           },
           onPaused: () => {
@@ -141,8 +141,8 @@ export function SearchControlCard() {
             console.log('⏹️ Search stopped by worker');
             setParallelProgress(null); // 並列進捗をクリア
             stopSearch();
-            // 停止時もワーカーマネージャーをリセット（メモリリーク防止）
-            resetSearchWorkerManager();
+            // 📊 停止時も統計情報保持（次回検索開始時にリセット）
+            // resetSearchWorkerManager(); ← 削除
           }
         }
       );
@@ -151,7 +151,7 @@ export function SearchControlCard() {
       alert(`Failed to start search: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setParallelProgress(null);
       stopSearch();
-      // 例外時もワーカーマネージャーをリセット（メモリリーク防止）
+      // 例外時は即座にリセット（不正な状態を避けるため）
       resetSearchWorkerManager();
     }
   };

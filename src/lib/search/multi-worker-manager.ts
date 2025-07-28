@@ -13,6 +13,7 @@ import type {
   ParallelWorkerRequest,
   ParallelWorkerResponse
 } from '../../types/pokemon';
+import { log } from 'console';
 
 export interface SearchCallbacks {
   onProgress: (progress: AggregatedProgress) => void;
@@ -70,10 +71,13 @@ export class MultiWorkerSearchManager {
       throw new Error('Search is already running');
     }
 
+    // 🧹 開始前に前回のリソースを安全にクリーンアップ
+    this.safeCleanup();
+
     this.callbacks = callbacks;
     this.searchRunning = true;
     this.startTime = Date.now();
-    this.resetState();
+    // resetState()は不要（safeCleanupで実行済み）
 
     try {
       // チャンク分割計算
@@ -436,6 +440,7 @@ export class MultiWorkerSearchManager {
    * 一時停止
    */
   public pauseAll(): void {
+    console.info('Pausing all workers...');
     for (const worker of this.workers.values()) {
       const request: ParallelWorkerRequest = {
         type: 'PAUSE_SEARCH',
@@ -482,36 +487,43 @@ export class MultiWorkerSearchManager {
   }
 
   /**
-   * クリーンアップ
+   * 安全なクリーンアップ（統計情報保持）
+   * 次回検索開始時に呼び出して、メモリリークを防止しつつ統計表示を維持
    */
-  private cleanup(): void {
+  public safeCleanup(): void {
     // 進捗監視停止
     if (this.progressUpdateTimer) {
       clearInterval(this.progressUpdateTimer);
       this.progressUpdateTimer = null;
     }
 
-    // 全Worker終了
+    // Worker終了＋参照クリア（メモリリーク防止の核心）
     for (const worker of this.workers.values()) {
       worker.terminate();
     }
-
-    // Worker参照のクリア（メモリリーク防止）
     this.workers.clear();
-    this.workerProgresses.clear();
+
+    // コールバック切断
+    this.callbacks = null;
+    this.searchRunning = false;
+
+    // 📊 統計表示用データは保持（検索完了直後の確認を可能にする）
+    // this.workerProgresses.clear(); ← 保持して統計表示継続
+    
+    // 🗑️ 不要データのクリア
     this.activeChunks.clear();
     this.lastProgressCheck.clear();
-
-    this.searchRunning = false;
-    this.callbacks = null;
+    this.results = [];
+    this.completedWorkers = 0;
   }
 
   /**
-   * 状態リセット
+   * 完全クリーンアップ
    */
-  private resetState(): void {
-    // cleanup()で既にクリアされるため、結果のみクリア
-    this.results = [];
-    this.completedWorkers = 0;
+  private cleanup(): void {
+    this.safeCleanup();
+    
+    // 統計情報も完全クリア
+    this.workerProgresses.clear();
   }
 }

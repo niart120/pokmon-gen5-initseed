@@ -158,6 +158,9 @@ export class SearchWorkerManager {
       const currentMaxWorkers = this.getMaxWorkers();
       this.multiWorkerManager.setMaxWorkers(currentMaxWorkers);
 
+      // 📝 Note: MultiWorkerSearchManager.startParallelSearch()内で
+      // safeCleanup()が自動実行されるため、ここでの明示的な呼び出しは不要
+
       // 並列検索用のコールバック変換
       const parallelCallbacks = {
         onProgress: (aggregatedProgress: AggregatedProgress) => {
