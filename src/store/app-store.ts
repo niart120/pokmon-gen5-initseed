@@ -105,7 +105,7 @@ const defaultSearchProgress: SearchProgress = {
 };
 
 const defaultParallelSearchSettings: ParallelSearchSettings = {
-  enabled: false,
+  enabled: true,
   maxWorkers: navigator.hardwareConcurrency || 4,
   chunkStrategy: 'time-based',
 };
