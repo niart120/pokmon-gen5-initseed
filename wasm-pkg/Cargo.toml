@@ -37,14 +37,3 @@ codegen-units = 1
 panic = "abort"
 # Strip debug symbols from release build
 strip = true
-
-# Additional optimization profile for size-critical scenarios
-[profile.release-size]
-inherits = "release"
-# Optimize for size instead of speed
-opt-level = "s"
-# More aggressive size optimization
-lto = true
-codegen-units = 1
-panic = "abort"
-strip = true

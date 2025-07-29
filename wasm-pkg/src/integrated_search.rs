@@ -251,4 +251,109 @@ mod tests {
         assert_eq!(result.year(), 2012);
         assert_eq!(result.month(), 6);
     }
+
+    #[test]
+    fn test_performance_sha1_calculation() {
+        use std::time::Instant;
+        use crate::sha1::{calculate_pokemon_sha1, calculate_pokemon_seed_from_hash};
+        
+        println!("=== SHA-1計算パフォーマンステスト開始 ===");
+        
+        // テスト用メッセージ（実際のポケモンメッセージ形式）
+        let test_message: [u32; 16] = [
+            0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000, // nazo部分
+            0x12345678, 0x9ABCDEF0, 0x34561234, // MAC部分（サンプル）
+            0x0C0F0F04, 0x00120000, // 日時部分（サンプル）
+            0x00000000, 0x00000000, 0x00000005, // 固定値
+            0x80000000, 0x00000000, 0x000001A0, // SHA-1パディング
+        ];
+        
+        // 大量のSHA-1計算パフォーマンステスト
+        let iterations = 100_000;
+        println!("{}回のSHA-1計算を実行します...", iterations);
+        
+        let start = Instant::now();
+        let mut total_seeds = 0u64;
+        
+        for i in 0u32..iterations {
+            // 各イテレーションでメッセージを少し変更（Timer0/VCountをシミュレート）
+            let mut message = test_message;
+            message[8] = message[8].wrapping_add(i % 0x10000u32); // Timer0相当
+            message[9] = message[9].wrapping_add(i % 263u32);     // VCount相当
+            
+            // SHA-1計算
+            let (h0, h1, _h2, _h3, _h4) = calculate_pokemon_sha1(&message);
+            let seed = calculate_pokemon_seed_from_hash(h0, h1);
+            total_seeds = total_seeds.wrapping_add(seed as u64);
+        }
+        
+        let duration = start.elapsed();
+        
+        // 結果出力
+        println!("=== SHA-1計算パフォーマンス結果 ===");
+        println!("計算回数: {}", iterations);
+        println!("実行時間: {:?}", duration);
+        println!("1秒あたりの計算数: {:.2} calculations/sec", iterations as f64 / duration.as_secs_f64());
+        println!("1回あたりの平均時間: {:.2} ns", duration.as_nanos() as f64 / iterations as f64);
+        println!("チェックサム: 0x{:016X}", total_seeds); // 計算が正しく実行されたことの確認
+        
+        // パフォーマンス基準チェック
+        let calc_per_sec = iterations as f64 / duration.as_secs_f64();
+        assert!(calc_per_sec > 50_000.0, "SHA-1計算性能が基準を下回りました: {:.2} calc/sec", calc_per_sec);
+        
+        println!("=== SHA-1計算パフォーマンステスト完了 ===");
+    }
+
+    #[test]
+    fn test_performance_datetime_lookup_comparison() {
+        use std::time::Instant;
+        use crate::datetime_codes::{TimeCodeGenerator, DateCodeGenerator};
+        
+        println!("=== 日時ルックアップ比較テスト開始 ===");
+        
+        let iterations = 100_000;
+        
+        // 1. 境界チェック付きルックアップ
+        let start = Instant::now();
+        let mut total_codes = 0u64;
+        
+        for i in 0u32..iterations {
+            let time_index = i % 86400;
+            let date_index = i % 36525;
+            
+            let date_code = DateCodeGenerator::get_date_code(date_index);
+            let time_code = TimeCodeGenerator::get_time_code(time_index);
+            
+            total_codes = total_codes.wrapping_add(date_code as u64 + time_code as u64);
+        }
+        
+        let safe_duration = start.elapsed();
+        
+        // 2. 境界チェックなしルックアップ
+        let start = Instant::now();
+        let mut total_codes_unsafe = 0u64;
+        
+        for i in 0u32..iterations {
+            let time_index = (i % 86400) as usize;
+            let date_index = (i % 36525) as usize;
+            
+            let date_code = unsafe { *DateCodeGenerator::DATE_CODES.get_unchecked(date_index) };
+            let time_code = unsafe { *TimeCodeGenerator::TIME_CODES.get_unchecked(time_index) };
+            
+            total_codes_unsafe = total_codes_unsafe.wrapping_add(date_code as u64 + time_code as u64);
+        }
+        
+        let unsafe_duration = start.elapsed();
+        
+        // 結果比較
+        println!("=== 日時ルックアップ比較結果 ===");
+        println!("境界チェック付き: {:?} ({:.2} ns/回)", safe_duration, safe_duration.as_nanos() as f64 / iterations as f64);
+        println!("境界チェックなし: {:?} ({:.2} ns/回)", unsafe_duration, unsafe_duration.as_nanos() as f64 / iterations as f64);
+        println!("性能向上: {:.1}倍", safe_duration.as_nanos() as f64 / unsafe_duration.as_nanos() as f64);
+        
+        // チェックサムが同じことを確認
+        assert_eq!(total_codes, total_codes_unsafe, "境界チェック有無で結果が異なる");
+        
+        println!("=== 日時ルックアップ比較テスト完了 ===");
+    }
 }
