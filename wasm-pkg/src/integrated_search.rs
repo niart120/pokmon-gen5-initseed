@@ -356,4 +356,130 @@ mod tests {
         
         println!("=== 日時ルックアップ比較テスト完了 ===");
     }
+
+    #[test]
+    fn test_performance_integrated_search() {
+        use std::time::Instant;
+        
+        println!("=== 統合シード探索パフォーマンステスト開始 ===");
+        
+        // テスト用パラメータ
+        let mac = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC];
+        let nazo = [0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000];
+        let target_seeds = vec![0x12345678, 0x87654321, 0xABCDEF01, 0x11111111];
+        let hardware = "DS";
+        
+        // 基本メッセージテンプレートを事前構築（統合探索器と同じロジック）
+        let mut base_message = [0u32; 16];
+        
+        // data[0-4]: Nazo values
+        for i in 0..5 {
+            base_message[i] = swap_bytes_32(nazo[i]);
+        }
+        
+        // MAC address setup
+        let mac_lower = ((mac[4] as u32) << 8) | (mac[5] as u32);
+        base_message[6] = mac_lower;
+        let mac_upper = (mac[0] as u32) | ((mac[1] as u32) << 8) | ((mac[2] as u32) << 16) | ((mac[3] as u32) << 24);
+        let gx_stat = 0x06000000u32;
+        let frame = 8u32;
+        let data7 = mac_upper ^ gx_stat ^ frame;
+        base_message[7] = swap_bytes_32(data7);
+        
+        base_message[10] = 0x00000000;
+        base_message[11] = 0x00000000;
+        base_message[12] = swap_bytes_32(5); // key_input
+        base_message[13] = 0x80000000;
+        base_message[14] = 0x00000000;
+        base_message[15] = 0x000001A0;
+        
+        // 探索範囲設定（実用的な範囲）
+        let range_seconds = 5 * 24 * 3600; // 5日間
+        let timer0_range = 6;   // 実用的なTimer0範囲
+        let vcount_range = 2;   // 実用的なVCount範囲
+        
+        let total_calculations = range_seconds as u64 * timer0_range * vcount_range * target_seeds.len() as u64;
+        println!("探索範囲: {}秒 × Timer0({}) × VCount({}) × ターゲット({}) = {} 計算", 
+                range_seconds, timer0_range, vcount_range, target_seeds.len(), total_calculations);
+        
+        // 開始日時設定（2012-06-15 12:00:00 UTC）
+        let base_timestamp = 1339718400i64; // 2012-06-15 12:00:00 UTC
+        let base_seconds_since_2000 = base_timestamp - EPOCH_2000_UNIX;
+        
+        let start = Instant::now();
+        let mut matches_found = 0;
+        let mut calculations_done = 0u64;
+        
+        // 統合探索のメインループ（WebAssembly部分を除く）
+        for second_offset in 0..range_seconds {
+            let current_seconds_since_2000 = base_seconds_since_2000 + second_offset as i64;
+            
+            if current_seconds_since_2000 < 0 {
+                continue;
+            }
+            
+            // 日時インデックス計算
+            let time_index = (current_seconds_since_2000 % 86400) as u32;
+            let date_index = (current_seconds_since_2000 / 86400) as u32;
+            
+            // 日時コード取得
+            let time_code = TimeCodeGenerator::get_time_code_for_hardware(time_index, hardware);
+            let date_code = DateCodeGenerator::get_date_code(date_index);
+            
+            // Timer0とVCount範囲探索
+            for timer0 in 0..timer0_range {
+                for vcount in 0..vcount_range {
+                    // メッセージ構築
+                    let mut message = base_message;
+                    message[5] = swap_bytes_32(((vcount as u32) << 16) | (timer0 as u32));
+                    message[8] = date_code;
+                    message[9] = time_code;
+                    
+                    // SHA-1計算とシード生成
+                    let (h0, h1, _h2, _h3, _h4) = calculate_pokemon_sha1(&message);
+                    let seed = crate::sha1::calculate_pokemon_seed_from_hash(h0, h1);
+                    
+                    // ターゲットシードとマッチング
+                    for &target in &target_seeds {
+                        if seed == target {
+                            matches_found += 1;
+                        }
+                    }
+                    
+                    calculations_done += 1;
+                }
+            }
+        }
+        
+        let duration = start.elapsed();
+        
+        // 結果出力
+        println!("=== 統合シード探索パフォーマンス結果 ===");
+        println!("総計算回数: {}", calculations_done);
+        println!("実行時間: {:?}", duration);
+        println!("発見されたマッチ: {}", matches_found);
+        println!("1秒あたりの計算数: {:.2} calculations/sec", calculations_done as f64 / duration.as_secs_f64());
+        
+        if calculations_done > 0 {
+            println!("1回あたりの平均時間: {:.2} ns", duration.as_nanos() as f64 / calculations_done as f64);
+        }
+        
+        // 5日分の計算量推定（実用範囲での実測値）
+        let practical_timer0_range = 6; // 実用的なTimer0範囲
+        let practical_vcount_range = 2; // 実用的なVCount範囲
+        let practical_calculations = range_seconds as u64 * practical_timer0_range * practical_vcount_range * target_seeds.len() as u64;
+        
+        if duration.as_secs_f64() > 0.0 {
+            let calc_per_sec = calculations_done as f64 / duration.as_secs_f64();
+            let estimated_practical_time = practical_calculations as f64 / calc_per_sec;
+            println!("実用範囲での5日分計算推定時間: {:.2} 秒 ({:.2} 分, {:.2} 時間)", 
+                    estimated_practical_time, estimated_practical_time / 60.0, estimated_practical_time / 3600.0);
+        }
+        
+        // パフォーマンス基準チェック
+        let calc_per_sec = calculations_done as f64 / duration.as_secs_f64();
+        assert!(calc_per_sec > 1000.0, "統合探索性能が基準を下回りました: {:.2} calc/sec", calc_per_sec);
+        
+        println!("=== 統合シード探索パフォーマンステスト完了 ===");
+    }
 }
