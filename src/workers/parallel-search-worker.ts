@@ -191,8 +191,8 @@ async function processChunkWithWasm(
         if (searchState.shouldStop) break;
       }
 
-      // サブチャンクの統合検索実行
-      const subResults = searcher.search_seeds_integrated(
+      // サブチャンクの統合検索実行（SIMD版）
+      const subResults = searcher.search_seeds_integrated_simd(
         subChunkStart.getFullYear(),
         subChunkStart.getMonth() + 1,
         subChunkStart.getDate(),
