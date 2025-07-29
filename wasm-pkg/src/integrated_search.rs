@@ -74,9 +74,6 @@ impl IntegratedSeedSearcher {
     /// コンストラクタ: 固定パラメータの事前計算
     #[wasm_bindgen(constructor)]
     pub fn new(mac: &[u8], nazo: &[u32], hardware: &str, key_input: u32, frame: u32) -> Result<IntegratedSeedSearcher, JsValue> {
-        if mac.len() != 6 {
-            return Err(JsValue::from_str("MAC address must be 6 bytes"));
-        }
         // バリデーション
         if mac.len() != 6 {
             return Err(JsValue::from_str("MAC address must be 6 bytes"));
@@ -239,12 +236,11 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg(target_arch = "wasm32")]  // WebAssembly環境でのみテスト実行
     fn test_integrated_searcher_creation() {
         let mac = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC];
         let nazo = [0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000];
         
-        let searcher = IntegratedSeedSearcher::new(&mac, &nazo, 5, 8);
+        let searcher = IntegratedSeedSearcher::new(&mac, &nazo, "DS", 5, 8);
         assert!(searcher.is_ok());
     }
     

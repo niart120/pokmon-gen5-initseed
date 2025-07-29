@@ -8,7 +8,7 @@ const projectRoot = process.env.PROJECT_ROOT || import.meta.dirname
 
 // GitHub Pages用のベースパス設定（本番ビルド時のみ適用）
 const isProduction = process.env.NODE_ENV === 'production'
-const base = isProduction ? '/pokmon-gen5-initseed/' : '/'
+const base = isProduction ? '/pokemon-gen5-initseed/' : '/'
 
 // https://vite.dev/config/
 export default defineConfig({
