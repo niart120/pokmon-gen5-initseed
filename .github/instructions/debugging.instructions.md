@@ -63,8 +63,9 @@ npm run build
 ### 計算結果の不整合
 1. `verifySearchImplementation()`実行
 2. 参照実装との差分確認
-3. `cargo test`でRust側確認
-4. `IntegratedSeedSearcher.search_seeds_integrated_simd`動作確認
+3. `npm run test:rust`でRust側確認
+4. `npm run test:rust:browser`でブラウザ環境確認
+5. `IntegratedSeedSearcher.search_seeds_integrated_simd`動作確認
 
 ### パフォーマンス劣化
 - `test-development.html`でパフォーマンステスト

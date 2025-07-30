@@ -30,13 +30,15 @@ applyTo: "**/*.test.{ts,js}"
 - Node.js環境での実行
 
 ## 必須テストカテゴリ
-1. **Rust側Unit Test**: `cargo test`
-2. **TypeScript側Unit Test**: `npm run test:run`
-3. **WebAssembly統合テスト**: `wasm-node.test.ts`
-4. **開発環境テスト**: `http://localhost:5173/test-development.html`
-5. **統合テスト**: `http://localhost:5173/test-integration.html`
-6. **SIMDテスト**: `http://localhost:5173/test-simd.html`
-7. **E2Eテスト**: mcp-playwright使用可能
+1. **Rust側Unit Test**: `npm run test:rust` (または `cargo test`)
+2. **Rust側Browser Test**: `npm run test:rust:browser` (または `wasm-pack test --chrome --headless`)
+3. **TypeScript側Unit Test**: `npm run test`
+4. **WebAssembly統合テスト**: `wasm-node.test.ts`
+5. **開発環境テスト**: `http://localhost:5173/test-development.html`
+6. **統合テスト**: `http://localhost:5173/test-integration.html`
+7. **SIMDテスト**: `http://localhost:5173/test-simd.html`
+8. **E2Eテスト**: mcp-playwright使用可能
+9. **全テスト実行**: `npm run test:all`
 
 ## パフォーマンス監視システム
 

@@ -7,6 +7,7 @@ applyTo: "wasm-pkg/**/*.rs"
 ## 開発環境
 - wasm-pack使用
 - `cargo test`での単体テスト必須
+- `wasm-pack test --chrome --headless`でのブラウザテスト実行
 
 ## コード品質
 ```bash

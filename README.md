@@ -40,8 +40,20 @@ npm run build:wasm
 # プロダクションビルド
 npm run build
 
+# GitHub Pagesデプロイ
+npm run deploy
+
 # テスト実行
-npm run test:run
+npm run test
+
+# Rustテスト実行
+npm run test:rust
+
+# Rustブラウザテスト実行
+npm run test:rust:browser
+
+# 全テスト実行
+npm run test:all
 ```
 
 ## テスト環境

@@ -72,3 +72,33 @@
 - **Zustand**: アプリケーション状態管理
 - **Radix UI**: アクセシブルなUIコンポーネント
 - **Vitest**: TypeScript/WebAssembly統合テスト
+
+## 主要スクリプト
+### 開発
+- `npm run dev`: 開発サーバー起動
+- `npm run dev:full`: WASM再ビルド込み開発サーバー起動
+
+### ビルド
+- `npm run build`: 本番ビルド
+- `npm run build:wasm`: WASM最適化ビルド
+- `npm run build:wasm:debug`: WASM デバッグビルド
+- `npm run build:wasm:size`: WASM サイズ最適化
+
+### デプロイ
+- `npm run deploy`: GitHub Pages向けデプロイ（本番ビルド + docs配置）
+- `npm run deploy:build`: 本番環境ビルド
+- `npm run deploy:copy`: distからdocsへのファイルコピー
+
+### テスト
+- `npm run test`: TypeScript テスト実行
+- `npm run test:watch`: TypeScript テスト監視
+- `npm run test:rust`: Rust テスト
+- `npm run test:rust:browser`: Rust ブラウザテスト
+- `npm run test:all`: 全テスト実行
+- `npm run test:e2e`: E2Eテスト
+
+### ユーティリティ
+- `npm run copy:wasm`: WASMファイルコピー
+- `npm run clean`: 全クリーンアップ
+- `npm run lint`: ESLint実行
+- `npm run preview`: プロダクションプレビュー
