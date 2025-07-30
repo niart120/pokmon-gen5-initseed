@@ -28,6 +28,13 @@ npm run dev
 # → Run All Integration Tests で包括テスト
 ```
 
+### SIMD機能テスト (`test-simd.html`)
+```bash
+# SIMD最適化テスト実行
+# http://localhost:5173/test-simd.html
+# → SIMD vs 通常実装のパフォーマンス比較
+```
+
 ## パフォーマンス分析
 
 ### 本番パフォーマンス監視
@@ -57,9 +64,11 @@ npm run build
 1. `verifySearchImplementation()`実行
 2. 参照実装との差分確認
 3. `cargo test`でRust側確認
+4. `IntegratedSeedSearcher.search_seeds_integrated_simd`動作確認
 
 ### パフォーマンス劣化
 - `test-development.html`でパフォーマンステスト
+- `test-simd.html`でSIMD最適化効果確認
 - DevelopmentPerformanceAnalyzerでボトルネック分析
 - メモリリーク検査（Memory tab）
 
@@ -82,4 +91,5 @@ npm run clean && npm run build
 - **本番監視**: リアルタイム性能測定
 - **開発分析**: 詳細プロファイリング・推奨事項
 - **統合テスト**: システム全体の動作確認
+- **SIMD機能テスト**: SIMD最適化の性能検証
 - **ブラウザ自動化**: UI regression テスト

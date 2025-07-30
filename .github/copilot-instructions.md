@@ -12,23 +12,25 @@
 
 ## フォルダ構造
 - `/src`: TypeScript source code and React components
-- `/wasm-pkg`: Rust WebAssembly implementation
+- `/wasm-pkg`: Rust WebAssembly implementation with SIMD optimization
 - `/public`: Static assets and test pages
   - `/public/wasm`: WebAssembly modules for distribution
   - `/public/test-development.html`: 開発・パフォーマンステスト
   - `/public/test-integration.html`: 統合テスト
+  - `/public/test-simd.html`: SIMD機能テスト
 - `/scripts`: Build automation scripts
 
 ## アーキテクチャ原則
 - **本番・開発コードの分離**: 本番環境に不要なコードを含めない
 - **適切な責任分離**: パフォーマンス監視とデバッグ分析の分離
+- **統合検索中心の設計**: IntegratedSeedSearcher.search_seeds_integrated_simd による一元化
 - **テスト環境の整備**: 開発効率を高める包括的テストシステム
 - **依存関係の整理**: 循環依存や不適切な依存を避ける
 
 ## コーディング規約
 - TypeScript strict mode 使用
 - React function-based components 使用
-- 既存のWebAssembly実装を活用（計算処理の再実装禁止）
+- IntegratedSeedSearcher による統合検索API使用 (個別WASM関数は廃止)
 - ESLint/Prettier設定に準拠
 - 技術文書は事実ベース・簡潔に記述
 
@@ -54,6 +56,10 @@
 - システム全体の統合テスト
 - エンドツーエンドワークフローテスト
 - ストレステスト
+
+### SIMD機能テスト (`public/test-simd.html`)
+- SIMD最適化の動作確認
+- パフォーマンス比較測定
 
 ## 重要なライブラリ・フレームワーク
 - **WebAssembly**: 高性能なSHA-1ハッシュ計算とバッチ処理

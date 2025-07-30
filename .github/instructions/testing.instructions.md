@@ -32,10 +32,11 @@ applyTo: "**/*.test.{ts,js}"
 ## 必須テストカテゴリ
 1. **Rust側Unit Test**: `cargo test`
 2. **TypeScript側Unit Test**: `npm run test:run`
-3. **WebAssembly統合テスト**: `wasm-integration.test.ts`
+3. **WebAssembly統合テスト**: `wasm-node.test.ts`
 4. **開発環境テスト**: `http://localhost:5173/test-development.html`
 5. **統合テスト**: `http://localhost:5173/test-integration.html`
-6. **E2Eテスト**: mcp-playwright使用可能
+6. **SIMDテスト**: `http://localhost:5173/test-simd.html`
+7. **E2Eテスト**: mcp-playwright使用可能
 
 ## パフォーマンス監視システム
 
