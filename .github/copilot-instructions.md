@@ -20,6 +20,12 @@
   - `/public/test-simd.html`: SIMD機能テスト
 - `/scripts`: Build automation scripts
 
+## t_wada Principle
+- Code      → How
+- Tests     → What
+- Commits   → Why
+- Comments  → Why not
+
 ## アーキテクチャ原則
 - **本番・開発コードの分離**: 本番環境に不要なコードを含めない
 - **適切な責任分離**: パフォーマンス監視とデバッグ分析の分離
