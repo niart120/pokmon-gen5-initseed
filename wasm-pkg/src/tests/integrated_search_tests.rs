@@ -120,8 +120,8 @@ mod tests {
         let output = format!("チェックサム: 0x{:016X}", total_seeds);
         web_sys::console::log_1(&output.into());
         
-        // パフォーマンス基準チェック
-        assert!(calc_per_sec > 10_000.0, "SHA-1計算性能が基準を下回りました: {:.2} calc/sec", calc_per_sec);
+        // パフォーマンス基準チェック（実性能の50%程度を基準とする）
+        assert!(calc_per_sec > 350_000.0, "SHA-1計算性能が基準を下回りました: {:.2} calc/sec", calc_per_sec);
         
         web_sys::console::log_1(&"=== SHA-1計算パフォーマンステスト完了 ===".into());
     }
@@ -302,8 +302,8 @@ mod tests {
             web_sys::console::log_1(&output.into());
         }
         
-        // パフォーマンス基準チェック（2日間相当の計算量）
-        assert!(calc_per_sec > 1000.0, "統合探索性能が基準を下回りました: {:.2} calc/sec", calc_per_sec);
+        // パフォーマンス基準チェック（実性能の50%程度を基準とする）
+        assert!(calc_per_sec > 250_000.0, "統合探索性能が基準を下回りました: {:.2} calc/sec", calc_per_sec);
         
         web_sys::console::log_1(&"=== 統合シード探索パフォーマンステスト完了 ===".into());
     }
