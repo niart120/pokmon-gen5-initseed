@@ -1,6 +1,5 @@
 /// ポケモンBW/BW2特化SHA-1実装
 /// 高速なシード計算のためにカスタム最適化されたSHA-1関数
-use wasm_bindgen::prelude::*;
 
 /// ポケモンBW/BW2のSHA-1実装
 /// 16個の32bit値を受け取り、h0～h4の5つのハッシュ値を返す
@@ -88,39 +87,6 @@ pub fn calculate_pokemon_seed_from_hash(h0: u32, h1: u32) -> u32 {
     ((seed >> 32) & 0xFFFFFFFF) as u32
 }
 
-/// ハッシュ値を16進数文字列に変換（TypeScript版互換）
-pub fn hash_to_hex_string(h0: u32, h1: u32, h2: u32, h3: u32, h4: u32) -> String {
-    format!("{:08x}{:08x}{:08x}{:08x}{:08x}", h0, h1, h2, h3, h4)
-}
-
-/// バッチ処理用SHA-1計算（TypeScript版と整合性を取った完全版）
-/// 複数のメッセージを一度に処理してWebAssembly通信オーバーヘッドを削減
-pub fn calculate_pokemon_sha1_batch(messages: &[u32], batch_size: u32) -> Vec<u32> {
-    let batch_size = batch_size as usize;
-    let mut results = Vec::with_capacity(batch_size * 6);
-    
-    for i in 0..batch_size {
-        let start_idx = i * 16;
-        if start_idx + 16 <= messages.len() {
-            let mut message = [0u32; 16];
-            message.copy_from_slice(&messages[start_idx..start_idx + 16]);
-            
-            let (h0, h1, h2, h3, h4) = calculate_pokemon_sha1(&message);
-            let seed = calculate_pokemon_seed_from_hash(h0, h1);
-            
-            // 個別処理と同じ形式: [seed, h0, h1, h2, h3, h4]
-            results.push(seed);
-            results.push(h0);
-            results.push(h1);
-            results.push(h2);
-            results.push(h3);
-            results.push(h4);
-        }
-    }
-    
-    results
-}
-
 /// SHA-1補助関数: Choice function
 #[inline]
 fn choice(x: u32, y: u32, z: u32) -> u32 {
@@ -154,47 +120,6 @@ pub fn swap_bytes_32(value: u32) -> u32 {
     ((value >> 24) & 0xFF)
 }
 
-/// バイトスワップ関数（16bit）
-/// TypeScript版と同じバイトスワップ処理を実行
-pub fn swap_bytes_16(value: u16) -> u16 {
-    ((value & 0xFF) << 8) | ((value >> 8) & 0xFF)
-}
-
-/// WebAssembly公開用SHA-1関数（TypeScript版と完全互換）
-#[wasm_bindgen]
-pub fn calculate_sha1_hash(message: &[u32]) -> Vec<u32> {
-    if message.len() != 16 {
-        return vec![0];
-    }
-    
-    let mut msg_array = [0u32; 16];
-    msg_array.copy_from_slice(message);
-    
-    let (h0, h1, h2, h3, h4) = calculate_pokemon_sha1(&msg_array);
-    let seed = calculate_pokemon_seed_from_hash(h0, h1);
-    
-    // TypeScript版と同じ形式：[seed, h0, h1, h2, h3, h4] の形式で返す
-    vec![seed, h0, h1, h2, h3, h4]
-}
-
-/// WebAssembly公開用バッチSHA-1関数
-#[wasm_bindgen]
-pub fn calculate_sha1_batch(messages: &[u32], batch_size: u32) -> Vec<u32> {
-    calculate_pokemon_sha1_batch(messages, batch_size)
-}
-
-/// WebAssembly公開用バイトスワップ関数（32bit）
-#[wasm_bindgen]
-pub fn swap_bytes_32_wasm(value: u32) -> u32 {
-    swap_bytes_32(value)
-}
-
-/// WebAssembly公開用バイトスワップ関数（16bit）
-#[wasm_bindgen]
-pub fn swap_bytes_16_wasm(value: u16) -> u16 {
-    swap_bytes_16(value)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -221,10 +146,6 @@ mod tests {
         // LCG計算のテスト
         let seed = calculate_pokemon_seed_from_hash(h0, h1);
         assert_ne!(seed, 0);
-        
-        // ハッシュ文字列生成のテスト
-        let hash_string = hash_to_hex_string(h0, h1, h2, h3, h4);
-        assert_eq!(hash_string.len(), 40); // 5 * 8文字
     }
     
     #[test]
@@ -267,24 +188,8 @@ mod tests {
     }
     
     #[test]
-    fn test_hash_string_generation() {
-        let h0 = 0x12345678;
-        let h1 = 0x9ABCDEF0;
-        let h2 = 0x11111111;
-        let h3 = 0x22222222;
-        let h4 = 0x33333333;
-        
-        let hash_string = hash_to_hex_string(h0, h1, h2, h3, h4);
-        
-        // 期待される文字列長とフォーマット
-        assert_eq!(hash_string.len(), 40);
-        assert_eq!(hash_string, "123456789abcdef0111111112222222233333333");
-    }
-    
-    #[test]
     fn test_byte_swap() {
-        // バイトスワップ結果をテスト
+        // 32bitバイトスワップ結果をテスト
         assert_eq!(swap_bytes_32(0x12345678), 0x78563412);
-        assert_eq!(swap_bytes_16(0x1234), 0x3412);
     }
 }

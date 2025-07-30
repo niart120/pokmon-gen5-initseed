@@ -257,7 +257,11 @@ pub fn calculate_sha1_batch_simd(messages: &[u32], batch_size: u32) -> Vec<u32> 
         for i in 0..remainder {
             let msg_start = start_idx + i * 16;
             if msg_start + 16 <= messages.len() {
-                let single_result = crate::sha1::calculate_sha1_hash(&messages[msg_start..msg_start + 16]);
+                let mut message = [0u32; 16];
+                message.copy_from_slice(&messages[msg_start..msg_start + 16]);
+                let (h0, h1, h2, h3, h4) = crate::sha1::calculate_pokemon_sha1(&message);
+                let seed = crate::sha1::calculate_pokemon_seed_from_hash(h0, h1);
+                let single_result = vec![seed, h0, h1, h2, h3, h4];
                 results.extend_from_slice(&single_result);
             }
         }
