@@ -1,5 +1,5 @@
 /// 統合シード探索のテストコード
-use crate::search_result::SearchResult;
+use crate::integrated_search::{SearchResult, IntegratedSeedSearcher};
 use crate::sha1::{calculate_pokemon_sha1, calculate_pokemon_seed_from_hash, swap_bytes_32};
 
 #[cfg(test)]

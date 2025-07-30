@@ -1,5 +1,5 @@
 import { SHA1 } from './sha1';
-import { initWasm, getWasm, isWasmReady, createWasmCalculator, type WasmSeedCalculator } from './wasm-interface';
+import { initWasm, getWasm, isWasmReady } from './wasm-interface';
 import type { SearchConditions, ROMParameters, Hardware } from '../../types/pokemon';
 import romParameters from '../../data/rom-parameters';
 import { getTimer0Range, getVCountFromTimer0 } from '../utils/rom-parameter-helpers';
@@ -17,7 +17,6 @@ const HARDWARE_FRAME_VALUES: Record<Hardware, number> = {
 
 export class SeedCalculator {
   private sha1: SHA1;
-  private wasmCalculator: WasmSeedCalculator | null = null;
   private useWasm: boolean = false;
 
   constructor() {
@@ -30,8 +29,7 @@ export class SeedCalculator {
    */
   public async initializeWasm(): Promise<boolean> {
     try {
-      const wasm = await initWasm();
-      this.wasmCalculator = createWasmCalculator(wasm);
+      await initWasm();
       this.useWasm = true;
       return true;
     } catch (error) {
@@ -45,15 +43,7 @@ export class SeedCalculator {
    * Check if WebAssembly is being used
    */
   public isUsingWasm(): boolean {
-    return this.useWasm && this.wasmCalculator !== null;
-  }
-
-  /**
-   * Get WebAssembly calculator for direct access to batch processing
-   * This method is used internally by the worker for performance optimization
-   */
-  public getWasmCalculator(): WasmSeedCalculator | null {
-    return this.wasmCalculator;
+    return this.useWasm && isWasmReady();
   }
 
   /**
@@ -67,7 +57,7 @@ export class SeedCalculator {
    * Force enable/disable WebAssembly usage
    */
   public setUseWasm(use: boolean): void {
-    if (use && !this.wasmCalculator) {
+    if (use && !isWasmReady()) {
       console.warn('Cannot enable WebAssembly: module not initialized');
       return;
     }
@@ -100,18 +90,8 @@ export class SeedCalculator {
 
   /**
    * Convert little-endian 32-bit integer
-   * Uses WebAssembly if available for better performance
    */
   private toLittleEndian32(value: number): number {
-    if (this.useWasm && this.wasmCalculator) {
-      try {
-        return this.wasmCalculator.toLittleEndian32(value);
-      } catch (error) {
-        console.warn('WebAssembly endian conversion failed, using TypeScript:', error);
-      }
-    }
-
-    // TypeScript implementation (fallback)
     return (((value & 0xFF) << 24) | 
            (((value >>> 8) & 0xFF) << 16) | 
            (((value >>> 16) & 0xFF) << 8) | 
@@ -120,18 +100,8 @@ export class SeedCalculator {
 
   /**
    * Convert little-endian 16-bit integer
-   * Uses WebAssembly if available for better performance
    */
   private toLittleEndian16(value: number): number {
-    if (this.useWasm && this.wasmCalculator) {
-      try {
-        return this.wasmCalculator.toLittleEndian16(value);
-      } catch (error) {
-        console.warn('WebAssembly endian conversion failed, using TypeScript:', error);
-      }
-    }
-
-    // TypeScript implementation (fallback)
     return ((value & 0xFF) << 8) | ((value >>> 8) & 0xFF);
   }
 
@@ -220,20 +190,10 @@ export class SeedCalculator {
 
   /**
    * Calculate initial seed from message
-   * Uses WebAssembly if available, otherwise falls back to TypeScript
+   * Uses TypeScript SHA-1 implementation
    */
   public calculateSeed(message: number[]): { seed: number; hash: string } {
-    // Use WebAssembly implementation if available
-    if (this.useWasm && this.wasmCalculator) {
-      try {
-        return this.wasmCalculator.calculateSeed(message);
-      } catch (error) {
-        console.warn('WebAssembly calculation failed, falling back to TypeScript:', error);
-        // Fall through to TypeScript implementation
-      }
-    }
-
-    // TypeScript implementation (fallback)
+    // TypeScript implementation
     const result = this.sha1.calculateHash(message);
 
     // Convert hash result to seed

@@ -6,7 +6,7 @@ use crate::sha1::calculate_pokemon_seed_from_hash;
 #[cfg(target_arch = "wasm32")]
 use core::arch::wasm32::*;
 
-/// 非SIMD環境用のフォールバック実装
+/// 非WASM環境用のフォールバック実装
 #[cfg(not(target_arch = "wasm32"))]
 pub fn calculate_pokemon_sha1_simd(messages: &[u32; 64]) -> [u32; 20] {
     let mut results = [0u32; 20];
@@ -194,78 +194,4 @@ fn simd_swap_bytes_32(value: v128) -> v128 {
     // バイトシャッフルマスク: 3,2,1,0, 7,6,5,4, 11,10,9,8, 15,14,13,12
     let shuffle_mask = i8x16(3,2,1,0, 7,6,5,4, 11,10,9,8, 15,14,13,12);
     i8x16_swizzle(value, shuffle_mask)
-}
-
-/// WebAssembly公開用SIMD SHA-1関数
-#[wasm_bindgen]
-pub fn calculate_sha1_simd(messages: &[u32]) -> Vec<u32> {
-    if messages.len() != 64 {
-        return vec![0];
-    }
-    
-    let mut msg_array = [0u32; 64];
-    msg_array.copy_from_slice(messages);
-    
-    let hash_results = calculate_pokemon_sha1_simd(&msg_array);
-    
-    // 各組のseedも計算して含める
-    let mut results = Vec::with_capacity(24); // 4組 × (seed + 5 hash values)
-    
-    for i in 0..4 {
-        let base_idx = i * 5;
-        let h0 = hash_results[base_idx];
-        let h1 = hash_results[base_idx + 1];
-        let h2 = hash_results[base_idx + 2];
-        let h3 = hash_results[base_idx + 3];
-        let h4 = hash_results[base_idx + 4];
-        
-        // 通常のLCG計算を使用
-        let seed = calculate_pokemon_seed_from_hash(h0, h1);
-        
-        results.push(seed);
-        results.push(h0);
-        results.push(h1);
-        results.push(h2);
-        results.push(h3);
-        results.push(h4);
-    }
-    
-    results
-}
-
-/// バッチ処理用関数（SIMD版を内部で使用）
-#[wasm_bindgen]
-pub fn calculate_sha1_batch_simd(messages: &[u32], batch_size: u32) -> Vec<u32> {
-    let batch_size = batch_size as usize;
-    let mut results = Vec::with_capacity(batch_size * 6);
-    
-    // 4組ずつSIMDで処理
-    let simd_batches = batch_size / 4;
-    let remainder = batch_size % 4;
-    
-    for batch in 0..simd_batches {
-        let start_idx = batch * 64;
-        if start_idx + 64 <= messages.len() {
-            let simd_results = calculate_sha1_simd(&messages[start_idx..start_idx + 64]);
-            results.extend_from_slice(&simd_results);
-        }
-    }
-    
-    // 残りは通常の処理
-    if remainder > 0 {
-        let start_idx = simd_batches * 64;
-        for i in 0..remainder {
-            let msg_start = start_idx + i * 16;
-            if msg_start + 16 <= messages.len() {
-                let mut message = [0u32; 16];
-                message.copy_from_slice(&messages[msg_start..msg_start + 16]);
-                let (h0, h1, h2, h3, h4) = crate::sha1::calculate_pokemon_sha1(&message);
-                let seed = crate::sha1::calculate_pokemon_seed_from_hash(h0, h1);
-                let single_result = vec![seed, h0, h1, h2, h3, h4];
-                results.extend_from_slice(&single_result);
-            }
-        }
-    }
-    
-    results
 }

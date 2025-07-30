@@ -3,14 +3,9 @@
  * This module provides high-performance calculation functions using Rust + WebAssembly
  */
 
-// WebAssembly module interface
+// WebAssembly module interface - 統合検索のみ
 interface WasmModule {
-  swap_bytes_32_wasm(value: number): number;
-  swap_bytes_16_wasm(value: number): number;
-  calculate_sha1_hash(message: Uint32Array): Uint32Array;
-  calculate_sha1_batch(messages: Uint32Array, batch_size: number): Uint32Array;
-  
-  // Phase 2B: Integrated seed searcher class
+  // 統合検索機能（実際に使用される）
   IntegratedSeedSearcher: new (
     mac: Uint8Array,
     nazo: Uint32Array,
@@ -18,7 +13,7 @@ interface WasmModule {
     key_input: number,
     frame: number
   ) => {
-    search_seeds_integrated(
+    search_seeds_integrated_simd(
       year_start: number,
       month_start: number,
       date_start: number,
@@ -58,10 +53,6 @@ export async function initWasm(): Promise<WasmModule> {
       await module.default();
       
       wasmModule = {
-        swap_bytes_32_wasm: module.swap_bytes_32_wasm,
-        swap_bytes_16_wasm: module.swap_bytes_16_wasm,
-        calculate_sha1_hash: module.calculate_sha1_hash,
-        calculate_sha1_batch: module.calculate_sha1_batch,
         IntegratedSeedSearcher: module.IntegratedSeedSearcher,
       };
       
@@ -92,122 +83,4 @@ export function getWasm(): WasmModule {
  */
 export function isWasmReady(): boolean {
   return wasmModule !== null;
-}
-
-/**
- * High-level wrapper functions for Pokemon BW/BW2 calculations
- */
-export class WasmSeedCalculator {
-  private wasm: WasmModule;
-
-  constructor(wasm: WasmModule) {
-    this.wasm = wasm;
-  }
-
-  /**
-   * Convert 32-bit value to byte-swapped format
-   */
-  toLittleEndian32(value: number): number {
-    return this.wasm.swap_bytes_32_wasm(value);
-  }
-
-  /**
-   * Convert 16-bit value to byte-swapped format
-   */
-  toLittleEndian16(value: number): number {
-    return this.wasm.swap_bytes_16_wasm(value);
-  }
-
-  /**
-   * Calculate SHA-1 hash for Pokemon BW/BW2 seed generation
-   * @param message Array of 16 32-bit words
-   * @returns Object containing seed (h0) and hash (hex string)
-   */
-  calculateSeed(message: number[]): { seed: number; hash: string } {
-    if (message.length !== 16) {
-      throw new Error('Message must be exactly 16 32-bit words');
-    }
-
-    // Convert to Uint32Array for WebAssembly
-    const messageArray = new Uint32Array(message);
-    const result = this.wasm.calculate_sha1_hash(messageArray);
-    
-    if (result.length !== 6) {
-      throw new Error('WebAssembly returned invalid result');
-    }
-
-    const seed = result[0];
-    const h0 = result[1];
-    const h1 = result[2];
-    const h2 = result[3];
-    const h3 = result[4];
-    const h4 = result[5];
-    
-    // Convert to hex string (40-character hash like TypeScript version)
-    const hash = h0.toString(16).padStart(8, '0') + 
-                 h1.toString(16).padStart(8, '0') + 
-                 h2.toString(16).padStart(8, '0') + 
-                 h3.toString(16).padStart(8, '0') + 
-                 h4.toString(16).padStart(8, '0');
-    
-    return { seed, hash };
-  }
-
-  /**
-   * Batch calculate SHA-1 hashes for improved performance
-   * @param messages Array of messages (each 16 32-bit words)
-   * @returns Array of seed/hash objects
-   */
-  calculateSeedBatch(messages: number[][]): Array<{ seed: number; hash: string }> {
-    if (messages.length === 0) {
-      return [];
-    }
-
-    // Validate all messages are 16 words
-    for (let i = 0; i < messages.length; i++) {
-      if (messages[i].length !== 16) {
-        throw new Error(`Message ${i} must be exactly 16 32-bit words`);
-      }
-    }
-
-    // Flatten messages into single array
-    const flatMessages = new Uint32Array(messages.length * 16);
-    for (let i = 0; i < messages.length; i++) {
-      flatMessages.set(messages[i], i * 16);
-    }
-
-    // Call WebAssembly batch function
-    const results = this.wasm.calculate_sha1_batch(flatMessages, messages.length);
-    
-    if (results.length !== messages.length * 6) {
-      throw new Error('WebAssembly batch calculation failed');
-    }
-
-    // Convert results to seed/hash objects
-    const output: Array<{ seed: number; hash: string }> = [];
-    for (let i = 0; i < messages.length; i++) {
-      const seed = results[i * 6];
-      const h0 = results[i * 6 + 1];
-      const h1 = results[i * 6 + 2];
-      const h2 = results[i * 6 + 3];
-      const h3 = results[i * 6 + 4];
-      const h4 = results[i * 6 + 5];
-      const hash = h0.toString(16).padStart(8, '0') + 
-                   h1.toString(16).padStart(8, '0') + 
-                   h2.toString(16).padStart(8, '0') + 
-                   h3.toString(16).padStart(8, '0') + 
-                   h4.toString(16).padStart(8, '0');
-      output.push({ seed, hash });
-    }
-
-    return output;
-  }
-}
-
-/**
- * Create a new WasmSeedCalculator instance
- * @param wasm WebAssembly module (from getWasm())
- */
-export function createWasmCalculator(wasm: WasmModule): WasmSeedCalculator {
-  return new WasmSeedCalculator(wasm);
 }

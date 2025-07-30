@@ -1,16 +1,11 @@
 mod datetime_codes;
 mod sha1;
 mod sha1_simd;
-mod search_result;
-mod searcher;
-mod search_algorithms;
+mod integrated_search;
 
 #[cfg(test)]
 mod tests;
 
-// Re-export main functionality
+// Re-export main functionality - 統合検索のみ（内部でsha1/sha1_simdは使用）
 pub use datetime_codes::{TimeCodeGenerator, DateCodeGenerator};
-pub use sha1::{calculate_pokemon_sha1, calculate_pokemon_seed_from_hash, swap_bytes_32};
-pub use sha1_simd::{calculate_pokemon_sha1_simd, calculate_sha1_simd, calculate_sha1_batch_simd};
-pub use search_result::SearchResult;
-pub use searcher::IntegratedSeedSearcher;
+pub use integrated_search::{SearchResult, IntegratedSeedSearcher};
