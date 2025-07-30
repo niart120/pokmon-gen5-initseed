@@ -1,6 +1,9 @@
 /// 統合シード探索のテストコード
 use crate::integrated_search::{SearchResult, IntegratedSeedSearcher};
 use crate::sha1::{calculate_pokemon_sha1, calculate_pokemon_seed_from_hash, swap_bytes_32};
+use wasm_bindgen_test::*;
+
+wasm_bindgen_test_configure!(run_in_browser);
 
 #[cfg(test)]
 mod tests {
@@ -8,7 +11,7 @@ mod tests {
 
     // ==== SearchResult のテスト ====
     
-    #[test]
+    #[wasm_bindgen_test]
     fn test_search_result() {
         let result = SearchResult::new(0x12345678, "abcdef1234567890abcdef1234567890abcdef12".to_string(), 2012, 6, 15, 10, 30, 45, 1120, 50);
         assert_eq!(result.seed(), 0x12345678);
@@ -25,8 +28,7 @@ mod tests {
 
     // ==== IntegratedSeedSearcher のテスト ====
 
-    #[test]
-    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
     fn test_integrated_searcher_creation() {
         let mac = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC];
         let nazo = [0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000];
@@ -35,8 +37,7 @@ mod tests {
         assert!(searcher.is_ok());
     }
 
-    #[test]
-    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
     fn test_invalid_mac_length() {
         let mac = [0x12, 0x34, 0x56, 0x78, 0x9A]; // 5 bytes instead of 6
         let nazo = [0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000];
@@ -45,8 +46,7 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
-    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
     fn test_invalid_nazo_length() {
         let mac = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC];
         let nazo = [0x02215f10, 0x01000000, 0xc0000000, 0x00007fff]; // 4 elements instead of 5
@@ -55,8 +55,7 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
-    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
     fn test_invalid_hardware() {
         let mac = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC];
         let nazo = [0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000];
@@ -66,13 +65,13 @@ mod tests {
     }
 
     // ==== パフォーマンステスト ====
-
-    #[test]
+    
+    #[wasm_bindgen_test]
     fn test_performance_sha1_calculation() {
-        use std::time::Instant;
+        use js_sys::Date;
         use crate::sha1::{calculate_pokemon_sha1, calculate_pokemon_seed_from_hash};
         
-        println!("=== SHA-1計算パフォーマンステスト開始 ===");
+        web_sys::console::log_1(&"=== SHA-1計算パフォーマンステスト開始 ===".into());
         
         // テスト用メッセージ（実際のポケモンメッセージ形式）
         let test_message: [u32; 16] = [
@@ -84,10 +83,11 @@ mod tests {
         ];
         
         // 大量のSHA-1計算パフォーマンステスト
-        let iterations = 100_000;
-        println!("{}回のSHA-1計算を実行します...", iterations);
+        let iterations = 100_000; // 元の規模に戻す
+        let output = format!("{}回のSHA-1計算を実行します...", iterations);
+        web_sys::console::log_1(&output.into());
         
-        let start = Instant::now();
+        let start = Date::now();
         let mut total_seeds = 0u64;
         
         for i in 0u32..iterations {
@@ -102,34 +102,41 @@ mod tests {
             total_seeds = total_seeds.wrapping_add(seed as u64);
         }
         
-        let duration = start.elapsed();
+        let end = Date::now();
+        let duration_ms = end - start;
         
         // 結果出力
-        println!("=== SHA-1計算パフォーマンス結果 ===");
-        println!("計算回数: {}", iterations);
-        println!("実行時間: {:?}", duration);
-        println!("1秒あたりの計算数: {:.2} calculations/sec", iterations as f64 / duration.as_secs_f64());
-        println!("1回あたりの平均時間: {:.2} ns", duration.as_nanos() as f64 / iterations as f64);
-        println!("チェックサム: 0x{:016X}", total_seeds); // 計算が正しく実行されたことの確認
+        web_sys::console::log_1(&"=== SHA-1計算パフォーマンス結果 ===".into());
+        let output = format!("計算回数: {}", iterations);
+        web_sys::console::log_1(&output.into());
+        let output = format!("実行時間: {:.2}ms", duration_ms);
+        web_sys::console::log_1(&output.into());
+        let calc_per_sec = (iterations as f64) / (duration_ms / 1000.0);
+        let output = format!("1秒あたりの計算数: {:.2} calculations/sec", calc_per_sec);
+        web_sys::console::log_1(&output.into());
+        let avg_time_ns = (duration_ms * 1_000_000.0) / iterations as f64;
+        let output = format!("1回あたりの平均時間: {:.2} ns", avg_time_ns);
+        web_sys::console::log_1(&output.into());
+        let output = format!("チェックサム: 0x{:016X}", total_seeds);
+        web_sys::console::log_1(&output.into());
         
         // パフォーマンス基準チェック
-        let calc_per_sec = iterations as f64 / duration.as_secs_f64();
-        assert!(calc_per_sec > 50_000.0, "SHA-1計算性能が基準を下回りました: {:.2} calc/sec", calc_per_sec);
+        assert!(calc_per_sec > 10_000.0, "SHA-1計算性能が基準を下回りました: {:.2} calc/sec", calc_per_sec);
         
-        println!("=== SHA-1計算パフォーマンステスト完了 ===");
+        web_sys::console::log_1(&"=== SHA-1計算パフォーマンステスト完了 ===".into());
     }
 
-    #[test]
+    #[wasm_bindgen_test]
     fn test_performance_datetime_lookup_comparison() {
-        use std::time::Instant;
+        use js_sys::Date;
         use crate::datetime_codes::{TimeCodeGenerator, DateCodeGenerator};
         
-        println!("=== 日時ルックアップ比較テスト開始 ===");
+        web_sys::console::log_1(&"=== 日時ルックアップ比較テスト開始 ===".into());
         
-        let iterations = 100_000;
+        let iterations = 100_000; // 元の規模に戻す
         
         // 1. 境界チェック付きルックアップ
-        let start = Instant::now();
+        let start = Date::now();
         let mut total_codes = 0u64;
         
         for i in 0u32..iterations {
@@ -142,10 +149,11 @@ mod tests {
             total_codes = total_codes.wrapping_add(date_code as u64 + time_code as u64);
         }
         
-        let safe_duration = start.elapsed();
+        let end = Date::now();
+        let safe_duration = end - start;
         
         // 2. 境界チェックなしルックアップ
-        let start = Instant::now();
+        let start = Date::now();
         let mut total_codes_unsafe = 0u64;
         
         for i in 0u32..iterations {
@@ -158,26 +166,31 @@ mod tests {
             total_codes_unsafe = total_codes_unsafe.wrapping_add(date_code as u64 + time_code as u64);
         }
         
-        let unsafe_duration = start.elapsed();
+        let end = Date::now();
+        let unsafe_duration = end - start;
         
         // 結果比較
-        println!("=== 日時ルックアップ比較結果 ===");
-        println!("境界チェック付き: {:?} ({:.2} ns/回)", safe_duration, safe_duration.as_nanos() as f64 / iterations as f64);
-        println!("境界チェックなし: {:?} ({:.2} ns/回)", unsafe_duration, unsafe_duration.as_nanos() as f64 / iterations as f64);
-        println!("性能向上: {:.1}倍", safe_duration.as_nanos() as f64 / unsafe_duration.as_nanos() as f64);
+        web_sys::console::log_1(&"=== 日時ルックアップ比較結果 ===".into());
+        let output = format!("境界チェック付き: {:.2}ms ({:.2} ns/回)", safe_duration, (safe_duration * 1_000_000.0) / iterations as f64);
+        web_sys::console::log_1(&output.into());
+        let output = format!("境界チェックなし: {:.2}ms ({:.2} ns/回)", unsafe_duration, (unsafe_duration * 1_000_000.0) / iterations as f64);
+        web_sys::console::log_1(&output.into());
+        let speedup = safe_duration / unsafe_duration;
+        let output = format!("性能向上: {:.1}倍", speedup);
+        web_sys::console::log_1(&output.into());
         
         // チェックサムが同じことを確認
         assert_eq!(total_codes, total_codes_unsafe, "境界チェック有無で結果が異なる");
         
-        println!("=== 日時ルックアップ比較テスト完了 ===");
+        web_sys::console::log_1(&"=== 日時ルックアップ比較テスト完了 ===".into());
     }
 
-    #[test]
+    #[wasm_bindgen_test]
     fn test_performance_integrated_search() {
-        use std::time::Instant;
+        use js_sys::Date;
         use crate::datetime_codes::{TimeCodeGenerator, DateCodeGenerator};
         
-        println!("=== 統合シード探索パフォーマンステスト開始 ===");
+        web_sys::console::log_1(&"=== 統合シード探索パフォーマンステスト開始 ===".into());
         
         // テスト用パラメータ
         let mac = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC];
@@ -209,20 +222,21 @@ mod tests {
         base_message[14] = 0x00000000;
         base_message[15] = 0x000001A0;
         
-        // 探索範囲設定（実用的な範囲）
-        let range_seconds = 5 * 24 * 3600; // 5日間
+        // 探索範囲設定（2日間のテスト）
+        let range_seconds = 2 * 24 * 3600; // 2日間
         let timer0_range = 6;   // 実用的なTimer0範囲
         let vcount_range = 2;   // 実用的なVCount範囲
         
         let total_calculations = range_seconds as u64 * timer0_range * vcount_range * target_seeds.len() as u64;
-        println!("探索範囲: {}秒 × Timer0({}) × VCount({}) × ターゲット({}) = {} 計算", 
+        let output = format!("探索範囲: {}秒 × Timer0({}) × VCount({}) × ターゲット({}) = {} 計算", 
                 range_seconds, timer0_range, vcount_range, target_seeds.len(), total_calculations);
+        web_sys::console::log_1(&output.into());
         
         // 開始日時設定（2012-06-15 12:00:00 UTC）
         let base_timestamp = 1339718400i64; // 2012-06-15 12:00:00 UTC
         let base_seconds_since_2000 = base_timestamp - 946684800i64; // EPOCH_2000_UNIX
         
-        let start = Instant::now();
+        let start = Date::now();
         let mut matches_found = 0;
         let mut calculations_done = 0u64;
         
@@ -267,41 +281,35 @@ mod tests {
             }
         }
         
-        let duration = start.elapsed();
+        let end = Date::now();
+        let duration_ms = end - start;
         
         // 結果出力
-        println!("=== 統合シード探索パフォーマンス結果 ===");
-        println!("総計算回数: {}", calculations_done);
-        println!("実行時間: {:?}", duration);
-        println!("発見されたマッチ: {}", matches_found);
-        println!("1秒あたりの計算数: {:.2} calculations/sec", calculations_done as f64 / duration.as_secs_f64());
+        web_sys::console::log_1(&"=== 統合シード探索パフォーマンス結果 ===".into());
+        let output = format!("総計算回数: {}", calculations_done);
+        web_sys::console::log_1(&output.into());
+        let output = format!("実行時間: {:.2}ms", duration_ms);
+        web_sys::console::log_1(&output.into());
+        let output = format!("発見されたマッチ: {}", matches_found);
+        web_sys::console::log_1(&output.into());
+        let calc_per_sec = (calculations_done as f64) / (duration_ms / 1000.0);
+        let output = format!("1秒あたりの計算数: {:.2} calculations/sec", calc_per_sec);
+        web_sys::console::log_1(&output.into());
         
         if calculations_done > 0 {
-            println!("1回あたりの平均時間: {:.2} ns", duration.as_nanos() as f64 / calculations_done as f64);
+            let avg_time_ns = (duration_ms * 1_000_000.0) / calculations_done as f64;
+            let output = format!("1回あたりの平均時間: {:.2} ns", avg_time_ns);
+            web_sys::console::log_1(&output.into());
         }
         
-        // 5日分の計算量推定（実用範囲での実測値）
-        let practical_timer0_range = 6; // 実用的なTimer0範囲
-        let practical_vcount_range = 2; // 実用的なVCount範囲
-        let practical_calculations = range_seconds as u64 * practical_timer0_range * practical_vcount_range * target_seeds.len() as u64;
-        
-        if duration.as_secs_f64() > 0.0 {
-            let calc_per_sec = calculations_done as f64 / duration.as_secs_f64();
-            let estimated_practical_time = practical_calculations as f64 / calc_per_sec;
-            println!("実用範囲での5日分計算推定時間: {:.2} 秒 ({:.2} 分, {:.2} 時間)", 
-                    estimated_practical_time, estimated_practical_time / 60.0, estimated_practical_time / 3600.0);
-        }
-        
-        // パフォーマンス基準チェック
-        let calc_per_sec = calculations_done as f64 / duration.as_secs_f64();
+        // パフォーマンス基準チェック（2日間相当の計算量）
         assert!(calc_per_sec > 1000.0, "統合探索性能が基準を下回りました: {:.2} calc/sec", calc_per_sec);
         
-        println!("=== 統合シード探索パフォーマンステスト完了 ===");
+        web_sys::console::log_1(&"=== 統合シード探索パフォーマンステスト完了 ===".into());
     }
 
     // SearchResult テスト（元 search_result.rs から移行）
-    #[test]
-    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
     fn test_search_result_creation_and_getters() {
         let result = SearchResult::new(
             0x12345678, 

@@ -1,11 +1,15 @@
 /// SHA-1実装のテストコード
 use crate::sha1::{calculate_pokemon_sha1, calculate_pokemon_seed_from_hash, swap_bytes_32, choice, parity, majority, left_rotate};
+use wasm_bindgen_test::*;
+
+// wasm-bindgen-testの設定
+wasm_bindgen_test_configure!(run_in_browser);
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
+    #[wasm_bindgen_test]
     fn test_pokemon_sha1() {
         // ポケモンBW/BW2でよく使用される値でのテスト
         let message = [
@@ -29,7 +33,7 @@ mod tests {
         assert_ne!(seed, 0);
     }
     
-    #[test]
+    #[wasm_bindgen_test]
     fn test_sha1_functions() {
         // choice(x, y, z) = (x & y) | (!x & z)
         // choice(0xFFFFFFFF, 0x12345678, 0x9ABCDEF0) = (0xFFFFFFFF & 0x12345678) | (!0xFFFFFFFF & 0x9ABCDEF0)
@@ -49,13 +53,13 @@ mod tests {
         assert_eq!(majority(0xFFFFFFFF, 0x12345678, 0x9ABCDEF0), majority_result);
     }
     
-    #[test]
+    #[wasm_bindgen_test]
     fn test_left_rotate() {
         assert_eq!(left_rotate(0x12345678, 1), 0x2468ACF0);
         assert_eq!(left_rotate(0x80000000, 1), 0x00000001);
     }
     
-    #[test]
+    #[wasm_bindgen_test]
     fn test_lcg_calculation() {
         // TypeScript実装と同じLCG計算結果になることを確認
         let h0 = 0x12345678;
@@ -65,16 +69,16 @@ mod tests {
         
         // 計算結果が0でないことを確認
         assert_ne!(seed, 0);
-        assert_ne!(seed, h0); // 元のh0と異なることを確認
+        assert_ne!(seed, h0); // 単純にh0と異なることを確認
     }
     
-    #[test]
+    #[wasm_bindgen_test]
     fn test_byte_swap() {
-        // 32bitバイトスワップ結果をテスト
+        // 32bitバイトスワップの結果をテスト
         assert_eq!(swap_bytes_32(0x12345678), 0x78563412);
     }
 
-    #[test]
+    #[wasm_bindgen_test]
     fn test_sha1_consistency() {
         // 複数の異なるメッセージで一貫性テスト
         let test_messages = [
@@ -114,7 +118,7 @@ mod tests {
         }
     }
 
-    #[test]
+    #[wasm_bindgen_test]
     fn test_sha1_deterministic() {
         // 同じメッセージは同じ結果を返すことを確認
         let message = [
