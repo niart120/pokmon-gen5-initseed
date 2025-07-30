@@ -1,7 +1,6 @@
 /// 統合シード探索システム
 /// メッセージ生成とSHA-1計算を一体化し、WebAssembly内で完結する高速探索を実現
 use wasm_bindgen::prelude::*;
-use std::collections::BTreeSet;
 use crate::datetime_codes::{TimeCodeGenerator, DateCodeGenerator};
 use crate::sha1::{calculate_pokemon_sha1, swap_bytes_32};
 use chrono::{NaiveDate, Datelike, Timelike};
@@ -17,12 +16,14 @@ extern "C" {
 const EPOCH_2000_UNIX: i64 = 946684800;
 
 /// 検索パラメータ構造体（内部用）
+#[derive(Clone, Copy)]
 struct SearchParams {
     timer0: u32,
     vcount: u32,
 }
 
 /// ハッシュ値構造体（内部用）
+#[derive(Clone, Copy)]
 struct HashValues {
     h0: u32,
     h1: u32,
@@ -150,6 +151,7 @@ impl IntegratedSeedSearcher {
     /// 日時範囲とTimer0/VCount範囲を指定して一括探索
     #[wasm_bindgen]
     #[allow(clippy::too_many_arguments)]  // Search function requires comprehensive parameters
+    #[inline(never)]  // 大きな関数はinlineしない
     pub fn search_seeds_integrated(
         &self,
         year_start: u32,
@@ -168,8 +170,8 @@ impl IntegratedSeedSearcher {
         
         let results = js_sys::Array::new();
 
-        // Target seedsをBTreeSetに変換して高速ルックアップを実現
-        let target_set: BTreeSet<u32> = target_seeds.iter().cloned().collect();
+        // target_seedsを直接使用し、線形探索でマッチ確認
+        // 小規模検索では線形探索の方が高速
 
         // 開始日時をUnix時間に変換（ループ外で1回のみ実行）
         let start_datetime = match NaiveDate::from_ymd_opt(year_start as i32, month_start, date_start)
@@ -208,7 +210,7 @@ impl IntegratedSeedSearcher {
                         timer0,
                         vcount,
                     };
-                    self.check_and_add_result(seed, &hash_values, current_seconds_since_2000, &params, &target_set, &results);
+                    self.check_and_add_result(seed, &hash_values, current_seconds_since_2000, &params, target_seeds, &results);
                 }
             }
         }
@@ -220,6 +222,7 @@ impl IntegratedSeedSearcher {
     /// range_secondsを最内ループに配置してSIMD SHA-1計算を活用
     #[wasm_bindgen]
     #[allow(clippy::too_many_arguments)]  // SIMD search function requires comprehensive parameters
+    #[inline(never)]  // 大きな関数はinlineしない
     pub fn search_seeds_integrated_simd(
         &self,
         year_start: u32,
@@ -238,8 +241,8 @@ impl IntegratedSeedSearcher {
         
         let results = js_sys::Array::new();
 
-        // Target seedsをBTreeSetに変換して高速ルックアップを実現
-        let target_set: BTreeSet<u32> = target_seeds.iter().cloned().collect();
+        // target_seedsを直接使用し、線形探索でマッチ確認
+        // 小規模検索では線形探索の方が高速
 
         // 開始日時をUnix時間に変換（ループ外で1回のみ実行）
         let start_datetime = match NaiveDate::from_ymd_opt(year_start as i32, month_start, date_start)
@@ -270,7 +273,7 @@ impl IntegratedSeedSearcher {
                             second_offset, 
                             base_seconds_since_2000, 
                             &params,
-                            &target_set, 
+                            target_seeds, 
                             &results
                         );
                     } else {
@@ -284,7 +287,7 @@ impl IntegratedSeedSearcher {
                             batch_size, 
                             base_seconds_since_2000, 
                             &params,
-                            &target_set, 
+                            target_seeds, 
                             &results
                         );
                     }
@@ -301,7 +304,7 @@ impl IntegratedSeedSearcher {
         second_offset: u32,
         base_seconds_since_2000: i64,
         params: &SearchParams,
-        target_seeds: &BTreeSet<u32>,
+        target_seeds: &[u32],
         results: &js_sys::Array,
     ) {
         let mut messages = [0u32; 64]; // 4組 × 16ワード
@@ -370,7 +373,7 @@ impl IntegratedSeedSearcher {
         batch_size: u32,
         base_seconds_since_2000: i64,
         params: &SearchParams,
-        target_seeds: &BTreeSet<u32>,
+        target_seeds: &[u32],
         results: &js_sys::Array,
     ) {
         for i in 0..batch_size {
@@ -394,6 +397,7 @@ impl IntegratedSeedSearcher {
     }
 
     /// 日時コード生成（結果表示用日時は遅延生成）
+    #[inline(always)]
     fn calculate_datetime_codes(&self, seconds_since_2000: i64) -> Option<(u32, u32)> {
         if seconds_since_2000 < 0 {
             return None;
@@ -424,6 +428,7 @@ impl IntegratedSeedSearcher {
     }
 
     /// メッセージ構築の共通処理
+    #[inline(always)]
     fn build_message(&self, timer0: u32, vcount: u32, date_code: u32, time_code: u32) -> [u32; 16] {
         let mut message = self.base_message;
         message[5] = crate::sha1::swap_bytes_32((vcount << 16) | timer0);
@@ -433,27 +438,34 @@ impl IntegratedSeedSearcher {
     }
 
     /// ハッシュ値を16進数文字列に変換
+    #[inline]
     fn hash_to_hex_string(&self, h0: u32, h1: u32, h2: u32, h3: u32, h4: u32) -> String {
         format!("{h0:08x}{h1:08x}{h2:08x}{h3:08x}{h4:08x}")
     }
 
     /// 結果チェックと追加（マッチ時のみ日時とハッシュを生成）
+    #[inline(always)]
     fn check_and_add_result(
         &self,
         seed: u32,
         hash_values: &HashValues,
         seconds_since_2000: i64,
         params: &SearchParams,
-        target_seeds: &BTreeSet<u32>,
+        target_seeds: &[u32],
         results: &js_sys::Array,
     ) {
-        if target_seeds.contains(&seed) {
-            // マッチした場合のみ日時とハッシュを生成
-            if let Some(datetime) = self.generate_display_datetime(seconds_since_2000) {
-                let (year, month, date, hour, minute, second) = datetime;
-                let hash = self.hash_to_hex_string(hash_values.h0, hash_values.h1, hash_values.h2, hash_values.h3, hash_values.h4);
-                let result = SearchResult::new(seed, hash, year, month, date, hour, minute, second, params.timer0, params.vcount);
-                results.push(&JsValue::from(result));
+        // 線形探索でターゲットシードをチェック（小規模検索では高速）
+        // ループ展開とキャッシュ効率を考慮した最適化
+        for &target in target_seeds {
+            if target == seed {
+                // マッチした場合のみ日時とハッシュを生成
+                if let Some(datetime) = self.generate_display_datetime(seconds_since_2000) {
+                    let (year, month, date, hour, minute, second) = datetime;
+                    let hash = self.hash_to_hex_string(hash_values.h0, hash_values.h1, hash_values.h2, hash_values.h3, hash_values.h4);
+                    let result = SearchResult::new(seed, hash, year, month, date, hour, minute, second, params.timer0, params.vcount);
+                    results.push(&JsValue::from(result));
+                }
+                return; // 見つかったら早期終了
             }
         }
     }
