@@ -21,6 +21,7 @@ const EPOCH_2000_UNIX: i64 = 946684800;
 #[derive(Debug, Clone)]
 pub struct SearchResult {
     seed: u32,
+    hash: String,
     year: u32,
     month: u32,
     date: u32,
@@ -35,12 +36,14 @@ pub struct SearchResult {
 impl SearchResult {
     #[wasm_bindgen(constructor)]
     #[allow(clippy::too_many_arguments)]  // WebAssembly constructor requires all parameters
-    pub fn new(seed: u32, year: u32, month: u32, date: u32, hour: u32, minute: u32, second: u32, timer0: u32, vcount: u32) -> SearchResult {
-        SearchResult { seed, year, month, date, hour, minute, second, timer0, vcount }
+    pub fn new(seed: u32, hash: String, year: u32, month: u32, date: u32, hour: u32, minute: u32, second: u32, timer0: u32, vcount: u32) -> SearchResult {
+        SearchResult { seed, hash, year, month, date, hour, minute, second, timer0, vcount }
     }
     
     #[wasm_bindgen(getter)]
     pub fn seed(&self) -> u32 { self.seed }
+    #[wasm_bindgen(getter)]
+    pub fn hash(&self) -> String { self.hash.clone() }
     #[wasm_bindgen(getter)]
     pub fn year(&self) -> u32 { self.year }
     #[wasm_bindgen(getter)]
@@ -181,11 +184,11 @@ impl IntegratedSeedSearcher {
                     
                     // メッセージを構築してSHA-1計算
                     let message = self.build_message(timer0, vcount, date_code, time_code);
-                    let (h0, h1, _h2, _h3, _h4) = calculate_pokemon_sha1(&message);
+                    let (h0, h1, h2, h3, h4) = calculate_pokemon_sha1(&message);
                     let seed = crate::sha1::calculate_pokemon_seed_from_hash(h0, h1);
                     
-                    // ターゲットシードマッチ時のみ日時を生成
-                    self.check_and_add_result(seed, current_seconds_since_2000, timer0, vcount, &target_set, &results);
+                    // ターゲットシードマッチ時のみ日時とハッシュを生成
+                    self.check_and_add_result(seed, h0, h1, h2, h3, h4, current_seconds_since_2000, timer0, vcount, &target_set, &results);
                 }
             }
         }
@@ -318,11 +321,15 @@ impl IntegratedSeedSearcher {
                 continue;
             }
             
-            let (h0, h1) = (hash_results[i * 5], hash_results[i * 5 + 1]);
+            let h0 = hash_results[i * 5];
+            let h1 = hash_results[i * 5 + 1];
+            let h2 = hash_results[i * 5 + 2];
+            let h3 = hash_results[i * 5 + 3];
+            let h4 = hash_results[i * 5 + 4];
             let seed = crate::sha1::calculate_pokemon_seed_from_hash(h0, h1);
             
-            // マッチ時のみ日時を生成
-            self.check_and_add_result(seed, seconds_batch[i], timer0, vcount, target_seeds, results);
+            // マッチ時のみ日時とハッシュを生成
+            self.check_and_add_result(seed, h0, h1, h2, h3, h4, seconds_batch[i], timer0, vcount, target_seeds, results);
         }
     }
 
@@ -348,11 +355,11 @@ impl IntegratedSeedSearcher {
             
             // メッセージを構築してSHA-1計算
             let message = self.build_message(timer0, vcount, date_code, time_code);
-            let (h0, h1, _h2, _h3, _h4) = crate::sha1::calculate_pokemon_sha1(&message);
+            let (h0, h1, h2, h3, h4) = crate::sha1::calculate_pokemon_sha1(&message);
             let seed = crate::sha1::calculate_pokemon_seed_from_hash(h0, h1);
             
-            // マッチ時のみ日時を生成
-            self.check_and_add_result(seed, current_seconds_since_2000, timer0, vcount, target_seeds, results);
+            // マッチ時のみ日時とハッシュを生成
+            self.check_and_add_result(seed, h0, h1, h2, h3, h4, current_seconds_since_2000, timer0, vcount, target_seeds, results);
         }
     }
 
@@ -395,10 +402,20 @@ impl IntegratedSeedSearcher {
         message
     }
 
-    /// 結果チェックと追加（マッチ時のみ日時を生成）
+    /// ハッシュ値を16進数文字列に変換
+    fn hash_to_hex_string(&self, h0: u32, h1: u32, h2: u32, h3: u32, h4: u32) -> String {
+        format!("{:08x}{:08x}{:08x}{:08x}{:08x}", h0, h1, h2, h3, h4)
+    }
+
+    /// 結果チェックと追加（マッチ時のみ日時とハッシュを生成）
     fn check_and_add_result(
         &self,
         seed: u32,
+        h0: u32,
+        h1: u32,
+        h2: u32,
+        h3: u32,
+        h4: u32,
         seconds_since_2000: i64,
         timer0: u32,
         vcount: u32,
@@ -406,10 +423,11 @@ impl IntegratedSeedSearcher {
         results: &js_sys::Array,
     ) {
         if target_seeds.contains(&seed) {
-            // マッチした場合のみ日時を生成
+            // マッチした場合のみ日時とハッシュを生成
             if let Some(datetime) = self.generate_display_datetime(seconds_since_2000) {
                 let (year, month, date, hour, minute, second) = datetime;
-                let result = SearchResult::new(seed, year, month, date, hour, minute, second, timer0, vcount);
+                let hash = self.hash_to_hex_string(h0, h1, h2, h3, h4);
+                let result = SearchResult::new(seed, hash, year, month, date, hour, minute, second, timer0, vcount);
                 results.push(&JsValue::from(result));
             }
         }
@@ -431,8 +449,9 @@ mod tests {
     
     #[test]
     fn test_search_result() {
-        let result = SearchResult::new(0x12345678, 2012, 6, 15, 10, 30, 45, 1120, 50);
+        let result = SearchResult::new(0x12345678, "abcdef1234567890abcdef1234567890abcdef12".to_string(), 2012, 6, 15, 10, 30, 45, 1120, 50);
         assert_eq!(result.seed(), 0x12345678);
+        assert_eq!(result.hash(), "abcdef1234567890abcdef1234567890abcdef12");
         assert_eq!(result.year(), 2012);
         assert_eq!(result.month(), 6);
     }
