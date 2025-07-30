@@ -1,12 +1,71 @@
 /// 統合シード探索のテストコード
-use crate::searcher::IntegratedSeedSearcher;
 use crate::search_result::SearchResult;
 use crate::sha1::{calculate_pokemon_sha1, calculate_pokemon_seed_from_hash, swap_bytes_32};
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Instant;
+
+    // ==== SearchResult のテスト ====
+    
+    #[test]
+    fn test_search_result() {
+        let result = SearchResult::new(0x12345678, "abcdef1234567890abcdef1234567890abcdef12".to_string(), 2012, 6, 15, 10, 30, 45, 1120, 50);
+        assert_eq!(result.seed(), 0x12345678);
+        assert_eq!(result.hash(), "abcdef1234567890abcdef1234567890abcdef12");
+        assert_eq!(result.year(), 2012);
+        assert_eq!(result.month(), 6);
+        assert_eq!(result.date(), 15);
+        assert_eq!(result.hour(), 10);
+        assert_eq!(result.minute(), 30);
+        assert_eq!(result.second(), 45);
+        assert_eq!(result.timer0(), 1120);
+        assert_eq!(result.vcount(), 50);
+    }
+
+    // ==== IntegratedSeedSearcher のテスト ====
+
+    #[test]
+    #[cfg(target_arch = "wasm32")]
+    fn test_integrated_searcher_creation() {
+        let mac = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC];
+        let nazo = [0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000];
+        
+        let searcher = IntegratedSeedSearcher::new(&mac, &nazo, "DS", 5, 8);
+        assert!(searcher.is_ok());
+    }
+
+    #[test]
+    #[cfg(target_arch = "wasm32")]
+    fn test_invalid_mac_length() {
+        let mac = [0x12, 0x34, 0x56, 0x78, 0x9A]; // 5 bytes instead of 6
+        let nazo = [0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000];
+        
+        let result = IntegratedSeedSearcher::new(&mac, &nazo, "DS", 5, 8);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    #[cfg(target_arch = "wasm32")]
+    fn test_invalid_nazo_length() {
+        let mac = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC];
+        let nazo = [0x02215f10, 0x01000000, 0xc0000000, 0x00007fff]; // 4 elements instead of 5
+        
+        let result = IntegratedSeedSearcher::new(&mac, &nazo, "DS", 5, 8);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    #[cfg(target_arch = "wasm32")]
+    fn test_invalid_hardware() {
+        let mac = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC];
+        let nazo = [0x02215f10, 0x01000000, 0xc0000000, 0x00007fff, 0x00000000];
+        
+        let result = IntegratedSeedSearcher::new(&mac, &nazo, "INVALID", 5, 8);
+        assert!(result.is_err());
+    }
+
+    // ==== パフォーマンステスト ====
 
     #[test]
     fn test_performance_sha1_calculation() {
@@ -238,5 +297,27 @@ mod tests {
         assert!(calc_per_sec > 1000.0, "統合探索性能が基準を下回りました: {:.2} calc/sec", calc_per_sec);
         
         println!("=== 統合シード探索パフォーマンステスト完了 ===");
+    }
+
+    // SearchResult テスト（元 search_result.rs から移行）
+    #[test]
+    #[cfg(target_arch = "wasm32")]
+    fn test_search_result_creation_and_getters() {
+        let result = SearchResult::new(
+            0x12345678, 
+            "abcdef1234567890abcdef1234567890abcdef12".to_string(), 
+            2012, 6, 15, 10, 30, 45, 1120, 50
+        );
+        
+        assert_eq!(result.seed(), 0x12345678);
+        assert_eq!(result.hash(), "abcdef1234567890abcdef1234567890abcdef12");
+        assert_eq!(result.year(), 2012);
+        assert_eq!(result.month(), 6);
+        assert_eq!(result.date(), 15);
+        assert_eq!(result.hour(), 10);
+        assert_eq!(result.minute(), 30);
+        assert_eq!(result.second(), 45);
+        assert_eq!(result.timer0(), 1120);
+        assert_eq!(result.vcount(), 50);
     }
 }

@@ -46,17 +46,3 @@ impl SearchResult {
     #[wasm_bindgen(getter)]
     pub fn vcount(&self) -> u32 { self.vcount }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_search_result() {
-        let result = SearchResult::new(0x12345678, "abcdef1234567890abcdef1234567890abcdef12".to_string(), 2012, 6, 15, 10, 30, 45, 1120, 50);
-        assert_eq!(result.seed(), 0x12345678);
-        assert_eq!(result.hash(), "abcdef1234567890abcdef1234567890abcdef12");
-        assert_eq!(result.year(), 2012);
-        assert_eq!(result.month(), 6);
-    }
-}
