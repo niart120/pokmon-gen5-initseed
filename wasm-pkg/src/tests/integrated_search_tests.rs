@@ -1,12 +1,22 @@
 /// 統合シード探索のテストコード
-use crate::integrated_search::{SearchResult, IntegratedSeedSearcher};
+use crate::integrated_search::SearchResult;
+
+#[cfg(target_arch = "wasm32")]
+use crate::integrated_search::IntegratedSeedSearcher;
+
+// WASM環境でのテスト設定
+#[cfg(target_arch = "wasm32")]
 use crate::sha1::{calculate_pokemon_sha1, calculate_pokemon_seed_from_hash, swap_bytes_32};
+
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
+#[cfg(target_arch = "wasm32")]
 wasm_bindgen_test_configure!(run_in_browser);
 
-#[cfg(test)]
-mod tests {
+// WASM環境用テスト
+#[cfg(all(test, target_arch = "wasm32"))]
+mod wasm_tests {
     use super::*;
 
     // ==== SearchResult のテスト ====
@@ -328,4 +338,32 @@ mod tests {
         assert_eq!(result.timer0(), 1120);
         assert_eq!(result.vcount(), 50);
     }
+}
+
+// ネイティブ環境用テスト
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod native_tests {
+    use super::*;
+
+    // ==== SearchResult のテスト ====
+    // SearchResultはwasm_bindgenに依存していないのでネイティブ環境でもテスト可能
+    
+    #[test]
+    fn test_search_result() {
+        let result = SearchResult::new(0x12345678, "abcdef1234567890abcdef1234567890abcdef12".to_string(), 2012, 6, 15, 10, 30, 45, 1120, 50);
+        assert_eq!(result.seed(), 0x12345678);
+        assert_eq!(result.hash(), "abcdef1234567890abcdef1234567890abcdef12");
+        assert_eq!(result.year(), 2012);
+        assert_eq!(result.month(), 6);
+        assert_eq!(result.date(), 15);
+        assert_eq!(result.hour(), 10);
+        assert_eq!(result.minute(), 30);
+        assert_eq!(result.second(), 45);
+        assert_eq!(result.timer0(), 1120);
+        assert_eq!(result.vcount(), 50);
+    }
+
+    // 注意: IntegratedSeedSearcherはwasm_bindgen依存のため、
+    // ネイティブ環境ではテストできません。
+    // WASMテストでのみ実行されます。
 }
