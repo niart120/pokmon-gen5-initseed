@@ -1,6 +1,7 @@
 /// 統合シード探索システム
 /// メッセージ生成とSHA-1計算を一体化し、WebAssembly内で完結する高速探索を実現
 use wasm_bindgen::prelude::*;
+use std::collections::BTreeSet;
 use crate::datetime_codes::{TimeCodeGenerator, DateCodeGenerator};
 use crate::sha1::{calculate_pokemon_sha1, swap_bytes_32};
 use chrono::{NaiveDate, Datelike, Timelike};
@@ -149,6 +150,9 @@ impl IntegratedSeedSearcher {
         
         let results = js_sys::Array::new();
 
+        // Target seedsをBTreeSetに変換して高速ルックアップを実現
+        let target_set: BTreeSet<u32> = target_seeds.iter().cloned().collect();
+
         // 開始日時をUnix時間に変換（ループ外で1回のみ実行）
         let start_datetime = match NaiveDate::from_ymd_opt(year_start as i32, month_start, date_start)
             .and_then(|date| date.and_hms_opt(hour_start, minute_start, second_start)) 
@@ -181,7 +185,7 @@ impl IntegratedSeedSearcher {
                     let seed = crate::sha1::calculate_pokemon_seed_from_hash(h0, h1);
                     
                     // ターゲットシードマッチ時のみ日時を生成
-                    self.check_and_add_result(seed, current_seconds_since_2000, timer0, vcount, target_seeds, &results);
+                    self.check_and_add_result(seed, current_seconds_since_2000, timer0, vcount, &target_set, &results);
                 }
             }
         }
@@ -211,6 +215,9 @@ impl IntegratedSeedSearcher {
         
         let results = js_sys::Array::new();
 
+        // Target seedsをBTreeSetに変換して高速ルックアップを実現
+        let target_set: BTreeSet<u32> = target_seeds.iter().cloned().collect();
+
         // 開始日時をUnix時間に変換（ループ外で1回のみ実行）
         let start_datetime = match NaiveDate::from_ymd_opt(year_start as i32, month_start, date_start)
             .and_then(|date| date.and_hms_opt(hour_start, minute_start, second_start)) 
@@ -237,7 +244,7 @@ impl IntegratedSeedSearcher {
                             base_seconds_since_2000, 
                             timer0, 
                             vcount, 
-                            target_seeds, 
+                            &target_set, 
                             &results
                         );
                     } else {
@@ -248,7 +255,7 @@ impl IntegratedSeedSearcher {
                             base_seconds_since_2000, 
                             timer0, 
                             vcount, 
-                            target_seeds, 
+                            &target_set, 
                             &results
                         );
                     }
@@ -266,7 +273,7 @@ impl IntegratedSeedSearcher {
         base_seconds_since_2000: i64,
         timer0: u32,
         vcount: u32,
-        target_seeds: &[u32],
+        target_seeds: &BTreeSet<u32>,
         results: &js_sys::Array,
     ) {
         let mut messages = [0u32; 64]; // 4組 × 16ワード
@@ -327,7 +334,7 @@ impl IntegratedSeedSearcher {
         base_seconds_since_2000: i64,
         timer0: u32,
         vcount: u32,
-        target_seeds: &[u32],
+        target_seeds: &BTreeSet<u32>,
         results: &js_sys::Array,
     ) {
         for i in 0..batch_size {
@@ -395,17 +402,15 @@ impl IntegratedSeedSearcher {
         seconds_since_2000: i64,
         timer0: u32,
         vcount: u32,
-        target_seeds: &[u32],
+        target_seeds: &BTreeSet<u32>,
         results: &js_sys::Array,
     ) {
-        for &target in target_seeds {
-            if seed == target {
-                // マッチした場合のみ日時を生成
-                if let Some(datetime) = self.generate_display_datetime(seconds_since_2000) {
-                    let (year, month, date, hour, minute, second) = datetime;
-                    let result = SearchResult::new(seed, year, month, date, hour, minute, second, timer0, vcount);
-                    results.push(&JsValue::from(result));
-                }
+        if target_seeds.contains(&seed) {
+            // マッチした場合のみ日時を生成
+            if let Some(datetime) = self.generate_display_datetime(seconds_since_2000) {
+                let (year, month, date, hour, minute, second) = datetime;
+                let result = SearchResult::new(seed, year, month, date, hour, minute, second, timer0, vcount);
+                results.push(&JsValue::from(result));
             }
         }
     }
