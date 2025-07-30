@@ -1,7 +1,5 @@
 /// ポケモンBW/BW2特化SHA-1のSIMD実装
 /// WebAssembly SIMD命令を使用して4つのメッセージを並列処理
-use wasm_bindgen::prelude::*;
-use crate::sha1::calculate_pokemon_seed_from_hash;
 
 #[cfg(target_arch = "wasm32")]
 use core::arch::wasm32::*;
@@ -185,13 +183,4 @@ fn simd_left_rotate(value: v128, amount: u32) -> v128 {
     let left = u32x4_shl(value, amount);
     let right = u32x4_shr(value, 32 - amount);
     v128_or(left, right)
-}
-
-/// SIMD版バイトスワップ（32bit × 4）
-#[cfg(target_arch = "wasm32")]
-#[inline]
-fn simd_swap_bytes_32(value: v128) -> v128 {
-    // バイトシャッフルマスク: 3,2,1,0, 7,6,5,4, 11,10,9,8, 15,14,13,12
-    let shuffle_mask = i8x16(3,2,1,0, 7,6,5,4, 11,10,9,8, 15,14,13,12);
-    i8x16_swizzle(value, shuffle_mask)
 }

@@ -110,8 +110,8 @@ impl DateCodeGenerator {
         // 2000年1月1日からの経過日数を計算
         let years_since_2000 = year - 2000;
         
-        // 完全な年の日数
-        let leap_years = (years_since_2000 + 3) / 4 - years_since_2000 / 100 + years_since_2000 / 400;
+        // 完全な年の日数  
+        let leap_years = years_since_2000.div_ceil(4) - years_since_2000 / 100 + years_since_2000 / 400;
         let days_from_years = years_since_2000 * 365 + leap_years;
         
         // 月の日数
