@@ -50,7 +50,7 @@ export function SearchProgressCard() {
   const workerLayout = getWorkerLayout(totalWorkerCount);
 
   return (
-    <Card className={`py-2 flex flex-col ${isMobile ? 'max-h-96' : 'h-full'} overflow-hidden`}>
+    <Card className={`py-2 flex flex-col ${isMobile ? 'max-h-96' : 'h-full min-h-80'}`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center gap-2">
@@ -64,7 +64,7 @@ export function SearchProgressCard() {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+      <CardContent className="pt-0 flex-1 flex flex-col min-h-0 overflow-y-auto">
         {/* 基本進捗表示 - 実行中・完了後も表示 */}
         {(isRunning || (isParallelMode && parallelProgress)) && (
           <div className="space-y-2 flex-shrink-0">
@@ -110,7 +110,7 @@ export function SearchProgressCard() {
 
         {/* 並列検索ワーカー情報 - 残りの領域を全て使用 */}
         {isParallelMode && parallelProgress && totalWorkerCount > 0 && (
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0">
             {/* ワーカー統計情報 */}
             <div className="text-xs text-muted-foreground flex justify-between flex-shrink-0">
               <span>Workers: {parallelProgress.activeWorkers} active, {parallelProgress.completedWorkers} completed</span>
@@ -118,7 +118,7 @@ export function SearchProgressCard() {
             </div>
             
             {/* ワーカー詳細表示 - 残りのスペースを全て使用 */}
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden mt-2">
+            <div className="flex-1 flex flex-col min-h-0 mt-2">
               <div className="flex items-center justify-between flex-shrink-0">
                 <div className="text-xs text-muted-foreground">Individual Worker Progress</div>
                 <Button
@@ -136,10 +136,10 @@ export function SearchProgressCard() {
               </div>
               
               {isWorkerDetailsExpanded && (
-                <div className="flex-1 flex flex-col min-h-0 overflow-hidden mt-2">
+                <div className="flex-1 flex flex-col min-h-0 mt-2">
                   {workerLayout.showProgress ? (
                     // プログレスバー表示：2-4列可変、残りの高さ全体を使用
-                    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    <div className="flex-1 flex flex-col min-h-0">
                       <div className="flex-1 overflow-y-auto pr-1 min-h-0">
                         <div className={`grid gap-2 ${
                           isMobile 

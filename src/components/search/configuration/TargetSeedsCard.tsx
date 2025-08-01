@@ -79,11 +79,10 @@ export function TargetSeedsCard() {
     '0x12345678',
     'ABCDEF00', 
     '0xDEADBEEF',
-    '1A2B3C4D',
   ];
 
   return (
-    <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full'} overflow-hidden`}>
+    <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full min-h-64'}`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center gap-2">
@@ -116,19 +115,17 @@ export function TargetSeedsCard() {
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 flex-1 flex flex-col min-h-0">
-        <div className="space-y-2 flex-1 min-h-0 flex flex-col">
-          <p className="text-xs text-muted-foreground">
-            Supports hex format with or without 0x prefix. One seed per line.
-          </p>
-          <Textarea
-            id="seed-input"
-            placeholder={`Enter seed values in hexadecimal format:\n${exampleSeeds.join('\n')}`}
-            value={targetSeedInput}
-            onChange={(e) => setTargetSeedInput(e.target.value)}
-            className="flex-1 min-h-0 font-mono text-sm resize-none overflow-auto"
-          />
-        </div>
+      <CardContent className="flex-1 flex flex-col min-h-0 space-y-2 overflow-y-auto">
+        <p className="text-xs text-muted-foreground flex-shrink-0">
+          Supports hex format with or without 0x prefix. One seed per line.
+        </p>
+        <Textarea
+          id="seed-input"
+          placeholder={`Enter seed values in hexadecimal format:\n${exampleSeeds.join('\n')}`}
+          value={targetSeedInput}
+          onChange={(e) => setTargetSeedInput(e.target.value)}
+          className="flex-1 min-h-20 max-h-48 font-mono text-sm resize-none overflow-auto"
+        />
 
         {/* Hidden file input */}
         <input
@@ -140,7 +137,7 @@ export function TargetSeedsCard() {
         />
 
         {/* Status */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Valid Seeds:</span>
             <Badge variant={targetSeeds.seeds.length > 0 ? "default" : "secondary"}>
@@ -156,7 +153,7 @@ export function TargetSeedsCard() {
 
         {/* Parse Errors */}
         {parseErrors.length > 0 && (
-          <Alert>
+          <Alert className="flex-shrink-0">
             <Warning size={14} />
             <AlertDescription>
               <div className="space-y-1">

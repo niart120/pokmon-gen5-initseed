@@ -45,7 +45,7 @@ export function ResultsCard({
   const filteredResultsCount = filteredAndSortedResults.length;
 
   return (
-    <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full'} overflow-hidden`}>
+    <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full min-h-96'}`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center gap-2 flex-wrap">
           <Hash size={20} className="flex-shrink-0" />
@@ -60,7 +60,7 @@ export function ResultsCard({
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col flex-1 min-h-0 p-0 overflow-hidden">
+      <CardContent className="flex flex-col flex-1 min-h-0 p-0 overflow-y-auto">
         {filteredAndSortedResults.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             {searchResultsLength === 0 
