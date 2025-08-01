@@ -81,7 +81,7 @@ export function ROMConfigurationCard() {
           </div>
 
           <div className="flex-1">
-            <Label htmlFor="hardware" className="text-xs sm:text-sm">Hardware Version</Label>
+            <Label htmlFor="hardware" className="text-xs sm:text-sm">Hardware</Label>
             <Select
               value={searchConditions.hardware}
               onValueChange={(value) => setSearchConditions({ hardware: value as Hardware })}
