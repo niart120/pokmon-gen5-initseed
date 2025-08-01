@@ -6,6 +6,7 @@ import { Label } from '../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { ExportButton } from './ExportButton';
 import { useAppStore } from '../../../store/app-store';
+import { useResponsiveLayout } from '../../../hooks/use-mobile';
 import type { SearchResult } from '../../../types/pokemon';
 
 export type SortField = 'datetime' | 'seed' | 'timer0' | 'vcount';
@@ -27,10 +28,11 @@ export function ResultsControlCard({
   sortField,
   setSortField,
 }: ResultsControlCardProps) {
+  const { isStack } = useResponsiveLayout();
   const { searchResults, clearSearchResults } = useAppStore();
 
   return (
-    <Card className="py-2 flex flex-col gap-2">
+    <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full'} gap-2`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">

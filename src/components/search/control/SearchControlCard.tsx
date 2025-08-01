@@ -7,10 +7,12 @@ import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Play, Pause, Square, Gear } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
+import { useResponsiveLayout } from '../../../hooks/use-mobile';
 import { getSearchWorkerManager, resetSearchWorkerManager } from '../../../lib/search/search-worker-manager';
 import type { InitialSeedResult } from '../../../types/pokemon';
 
 export function SearchControlCard() {
+  const { isStack } = useResponsiveLayout();
   const {
     searchConditions,
     searchProgress,
@@ -180,7 +182,7 @@ export function SearchControlCard() {
 
   // 統一レイアウト: シンプルな検索制御
   return (
-    <Card className="py-2 flex flex-col gap-2">
+    <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full'} gap-2`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="text-base flex items-center">
           <Gear size={16} className="mr-2" />

@@ -126,7 +126,7 @@ export function TargetSeedsCard() {
             placeholder={`Enter seed values in hexadecimal format:\n${exampleSeeds.join('\n')}`}
             value={targetSeedInput}
             onChange={(e) => setTargetSeedInput(e.target.value)}
-            className="flex-1 min-h-24 font-mono text-sm resize-none overflow-auto"
+            className="flex-1 min-h-0 font-mono text-sm resize-none overflow-auto"
           />
         </div>
 

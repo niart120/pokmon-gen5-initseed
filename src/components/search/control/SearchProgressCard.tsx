@@ -50,7 +50,7 @@ export function SearchProgressCard() {
   const workerLayout = getWorkerLayout(totalWorkerCount);
 
   return (
-    <Card className="py-2 flex flex-col h-full gap-2">
+    <Card className={`py-2 flex flex-col ${isMobile ? 'max-h-96' : 'h-full'} overflow-hidden`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center gap-2">
@@ -64,10 +64,10 @@ export function SearchProgressCard() {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 flex-1 flex flex-col min-h-0">
+      <CardContent className="pt-0 flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* 基本進捗表示 - 実行中・完了後も表示 */}
         {(isRunning || (isParallelMode && parallelProgress)) && (
-          <>
+          <div className="space-y-2 flex-shrink-0">
             <Progress value={(searchProgress.currentStep / searchProgress.totalSteps) * 100} />
             
             {/* 時間表示 - 直列・並列共通 */}
@@ -98,28 +98,28 @@ export function SearchProgressCard() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* 検索未実行時のメッセージ */}
         {!isRunning && (!isParallelMode || !parallelProgress || totalWorkerCount === 0) && searchProgress.totalSteps === 0 && (
-          <div className="text-center py-4 text-muted-foreground text-sm">
+          <div className="text-center py-4 text-muted-foreground text-sm flex-shrink-0">
             Ready to search
           </div>
         )}
 
-        {/* 並列検索ワーカー情報 - 常時表示 (検索完了後も表示維持) */}
+        {/* 並列検索ワーカー情報 - 残りの領域を全て使用 */}
         {isParallelMode && parallelProgress && totalWorkerCount > 0 && (
-          <div className="space-y-2 flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* ワーカー統計情報 */}
-            <div className="text-xs text-muted-foreground flex justify-between">
+            <div className="text-xs text-muted-foreground flex justify-between flex-shrink-0">
               <span>Workers: {parallelProgress.activeWorkers} active, {parallelProgress.completedWorkers} completed</span>
               <span>Total: {totalWorkerCount}</span>
             </div>
             
-            {/* ワーカー詳細表示 - 折りたたみ可能 */}
-            <div className="space-y-2 flex-1 flex flex-col">
-              <div className="flex items-center justify-between">
+            {/* ワーカー詳細表示 - 残りのスペースを全て使用 */}
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden mt-2">
+              <div className="flex items-center justify-between flex-shrink-0">
                 <div className="text-xs text-muted-foreground">Individual Worker Progress</div>
                 <Button
                   variant="ghost"
@@ -136,10 +136,10 @@ export function SearchProgressCard() {
               </div>
               
               {isWorkerDetailsExpanded && (
-                <>
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden mt-2">
                   {workerLayout.showProgress ? (
-                    // プログレスバー表示：2-4列可変、カード内スクロール
-                    <div className="space-y-2 flex-1 flex flex-col">
+                    // プログレスバー表示：2-4列可変、残りの高さ全体を使用
+                    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                       <div className="flex-1 overflow-y-auto pr-1 min-h-0">
                         <div className={`grid gap-2 ${
                           isMobile 
@@ -193,7 +193,7 @@ export function SearchProgressCard() {
                           ))}
                         </div>
                       </div>
-                      <div className="text-[10px] text-muted-foreground pt-1 border-t">
+                      <div className="text-[10px] text-muted-foreground pt-1 border-t flex-shrink-0">
                         Running: {Array.from(parallelProgress.workerProgresses.values()).filter(p => p.status === 'running').length}, 
                         Completed: {Array.from(parallelProgress.workerProgresses.values()).filter(p => p.status === 'completed').length}, 
                         Total Matches: {Array.from(parallelProgress.workerProgresses.values()).reduce((sum, p) => sum + p.matchesFound, 0)}
@@ -201,7 +201,7 @@ export function SearchProgressCard() {
                     </div>
                   ) : (
                     // 簡略化表示：大量ワーカー向け
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex-shrink-0">
                       <div className="text-xs text-muted-foreground">Worker Overview ({totalWorkerCount} workers)</div>
                       <Progress 
                         value={(parallelProgress.completedWorkers / totalWorkerCount) * 100} 
@@ -213,7 +213,7 @@ export function SearchProgressCard() {
                       </div>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
           </div>
