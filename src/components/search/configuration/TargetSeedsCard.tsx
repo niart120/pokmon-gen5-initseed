@@ -81,7 +81,7 @@ export function TargetSeedsCard() {
   ];
 
   return (
-    <Card className="py-2 flex flex-col h-full gap-2">
+    <Card className="py-2 flex flex-col gap-2 max-h-96">
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
           <span>Target Seeds</span>
@@ -111,7 +111,7 @@ export function TargetSeedsCard() {
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 flex-1 min-h-0 flex flex-col">
+      <CardContent className="space-y-2 flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="space-y-2 flex-1 min-h-0 flex flex-col">
           <Label htmlFor="seed-input">Enter target seed values (one per line)</Label>
           <Textarea

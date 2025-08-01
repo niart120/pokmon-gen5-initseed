@@ -108,30 +108,48 @@ export function SearchPanel() {
   if (isStack) {
     // スマートフォン・縦長画面: 縦スタック配置
     return (
-      <div className={`${sizes.gap} h-full overflow-y-auto overflow-x-hidden flex flex-col`}>
-        <ROMConfigurationCard />
-        <Timer0VCountCard />
-        <DateRangeCard />
-        <MACAddressCard />
-        <TargetSeedsCard />
-        <SearchControlCard />
-        <SearchProgressCard />
-        <ResultsControlCard
-          filteredResultsCount={filteredAndSortedResults.length}
-          convertedResults={convertToSearchResults}
-          filterSeed={filterSeed}
-          setFilterSeed={setFilterSeed}
-          sortField={sortField}
-          setSortField={setSortField}
-        />
-        <ResultsCard
-          filteredAndSortedResults={filteredAndSortedResults}
-          searchResultsLength={searchResults.length}
-          sortField={sortField}
-          sortOrder={sortOrder}
-          onSort={handleSort}
-          onShowDetails={handleShowDetails}
-        />
+      <div className={`${sizes.gap} flex flex-col min-h-0`}>
+        <div className="flex-none">
+          <ROMConfigurationCard />
+        </div>
+        <div className="flex-none">
+          <Timer0VCountCard />
+        </div>
+        <div className="flex-none">
+          <DateRangeCard />
+        </div>
+        <div className="flex-none">
+          <MACAddressCard />
+        </div>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <TargetSeedsCard />
+        </div>
+        <div className="flex-none">
+          <SearchControlCard />
+        </div>
+        <div className="flex-none">
+          <SearchProgressCard />
+        </div>
+        <div className="flex-none">
+          <ResultsControlCard
+            filteredResultsCount={filteredAndSortedResults.length}
+            convertedResults={convertToSearchResults}
+            filterSeed={filterSeed}
+            setFilterSeed={setFilterSeed}
+            sortField={sortField}
+            setSortField={setSortField}
+          />
+        </div>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ResultsCard
+            filteredAndSortedResults={filteredAndSortedResults}
+            searchResultsLength={searchResults.length}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            onShowDetails={handleShowDetails}
+          />
+        </div>
       </div>
     );
   }

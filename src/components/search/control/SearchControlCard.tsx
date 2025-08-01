@@ -180,14 +180,14 @@ export function SearchControlCard() {
 
   // 統一レイアウト: シンプルな検索制御
   return (
-    <Card className="flex flex-col h-full gap-2">
+    <Card className="flex flex-col gap-2">
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="text-base flex items-center">
           <Gear size={16} className="mr-2" />
           Search Control
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 flex-1 min-h-0 flex flex-col">
+      <CardContent className="pt-0 flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="space-y-2">
           {/* 検索制御ボタン */}
           <div className="flex gap-2">

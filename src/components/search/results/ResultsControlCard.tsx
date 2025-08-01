@@ -30,7 +30,7 @@ export function ResultsControlCard({
   const { searchResults, clearSearchResults } = useAppStore();
 
   return (
-    <Card className="py-2 flex flex-col h-full gap-2">
+    <Card className="py-2 flex flex-col gap-2">
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -53,7 +53,7 @@ export function ResultsControlCard({
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 flex-1 min-h-0 flex flex-col">
+      <CardContent className="space-y-2 flex-1 min-h-0 flex flex-col overflow-hidden">
         {/* Filters */}
         <div className="flex gap-4 items-end flex-shrink-0">
           <div className="flex-1">
