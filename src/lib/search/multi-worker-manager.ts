@@ -354,8 +354,8 @@ export class MultiWorkerSearchManager {
     
     // 最終進捗状態（統計表示用にworkerProgressesを保持）
     const finalProgress: AggregatedProgress = {
-      totalCurrentStep: finalTotalCurrentStep, // 🔧 実際の処理済み数を保持
-      totalSteps: finalTotalSteps, // 🔧 実際の総ステップ数を保持
+      totalCurrentStep: finalTotalCurrentStep, // 実際の処理済み数を保持
+      totalSteps: finalTotalSteps, // 実際の総ステップ数を保持
       totalElapsedTime: totalElapsed,
       totalEstimatedTimeRemaining: 0,
       totalMatchesFound: totalResults,
@@ -372,7 +372,7 @@ export class MultiWorkerSearchManager {
       `Parallel search completed. Found ${totalResults} matches in ${Math.round(totalElapsed / 1000)}s`
     );
     
-    // 🔧 統計表示保持のため最小限クリーンアップのみ
+    // 統計表示保持のため最小限クリーンアップのみ
     this.minimalCleanup();
   }
 
@@ -543,7 +543,7 @@ export class MultiWorkerSearchManager {
     this.callbacks = null;
     this.searchRunning = false;
 
-    // 📊 統計表示用データは保持（検索完了直後の確認を可能にする）
+    // 統計表示用データは保持（検索完了直後の確認を可能にする）
     // this.workerProgresses.clear(); ← 保持して統計表示継続
     
     // 🗑️ 不要データのクリア

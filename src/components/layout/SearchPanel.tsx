@@ -16,7 +16,6 @@ import type { InitialSeedResult, SearchResult } from '../../types/pokemon';
 export function SearchPanel() {
   const { searchConditions, setSearchConditions, searchResults } = useAppStore();
   
-  // Phase 3 Revised: シンプルな環境変数ベース実装選択
   const { isStack, uiScale } = useResponsiveLayout();
   
   // スケールに応じたレスポンシブサイズ

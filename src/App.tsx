@@ -24,14 +24,8 @@ function App() {
   React.useEffect(() => {
     if (import.meta.env.DEV) {
       (window as any).featureFlags = featureFlags;
-      console.log('🚀 Phase 3a: Feature flags available globally as window.featureFlags');
     }
   }, []);
-
-  // Debug: Show target seeds when they change (separate effect)
-  React.useEffect(() => {
-    console.log('📋 Target seeds loaded:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
-  }, [targetSeeds.seeds]);
 
   return (
     <div className="h-screen bg-background flex flex-col">

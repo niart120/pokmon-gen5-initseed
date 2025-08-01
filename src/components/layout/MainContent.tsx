@@ -12,9 +12,6 @@ export function MainContent() {
   const { activeTab, setActiveTab, targetSeeds, searchResults } = useAppStore();
   const { isStack } = useResponsiveLayout();
 
-  // MainContentデバッグログ追加
-  console.log('🏠 MainContent Hook result:', { isStack });
-
   // レスポンシブに応じたoverflow設定とレイアウト
   const overflowClasses = isStack 
     ? "overflow-y-auto overflow-x-hidden" // 縦スタック時：垂直スクロール有り、水平スクロール無し

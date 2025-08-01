@@ -59,9 +59,6 @@ export function SearchControlCard() {
       return;
     }
 
-    console.log('🚀 Starting search with conditions:', searchConditions);
-    console.log('🎯 Target seeds:', targetSeeds.seeds.map(s => '0x' + s.toString(16).padStart(8, '0')));
-
     clearSearchResults();
     startSearch();
 
@@ -106,7 +103,7 @@ export function SearchControlCard() {
             // 検索状態を停止
             stopSearch();
             
-            // 📊 ワーカーマネージャーは次回検索開始時にリセット（統計情報を保持）
+            // ワーカーマネージャーは次回検索開始時にリセット（統計情報を保持）
             // resetSearchWorkerManager(); ← 削除：統計表示を維持するため
             
             // その後でアラートを表示
@@ -137,7 +134,7 @@ export function SearchControlCard() {
           onStopped: () => {
             console.log('⏹️ Search stopped by worker');
             stopSearch();
-            // 📊 停止時も統計情報保持（並列進捗も維持、次回検索開始時にリセット）
+            // 停止時も統計情報保持（並列進捗も維持、次回検索開始時にリセット）
             // setParallelProgress(null); ← 削除：統計表示を維持
             // resetSearchWorkerManager(); ← 削除
           }
@@ -164,8 +161,6 @@ export function SearchControlCard() {
     // SearchWorkerManagerにも反映
     const workerManager = getSearchWorkerManager();
     workerManager.setParallelMode(enabled);
-    
-    console.log(`🔧 Parallel mode changed to: ${enabled ? 'enabled' : 'disabled'}`);
   };
 
   const handleMaxWorkersChange = (values: number[]) => {
@@ -178,8 +173,6 @@ export function SearchControlCard() {
     // SearchWorkerManagerにも反映
     const workerManager = getSearchWorkerManager();
     workerManager.setMaxWorkers(newWorkerCount);
-    
-    console.log(`🔧 Worker count changed to: ${newWorkerCount}`);
   };
 
   const maxCpuCores = navigator.hardwareConcurrency || 4;

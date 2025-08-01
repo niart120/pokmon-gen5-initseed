@@ -180,7 +180,7 @@ export class SearchWorkerManager {
         },
         onResult: callbacks.onResult,
         onComplete: (message: string) => {
-          // 📊 並列進捗は保持（統計表示のため）
+          // 並列進捗は保持（統計表示のため）
           // if (callbacks.onParallelProgress) {
           //   callbacks.onParallelProgress(null);
           // }
