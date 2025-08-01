@@ -83,7 +83,7 @@ export function TargetSeedsCard() {
   ];
 
   return (
-    <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full'} gap-2 overflow-hidden`}>
+    <Card className={`flex flex-col ${isStack ? 'max-h-96' : 'h-full'} overflow-hidden`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
           <span>Target Seeds</span>
@@ -113,7 +113,7 @@ export function TargetSeedsCard() {
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 flex-1 min-h-0 flex flex-col overflow-hidden">
+      <CardContent className="space-y-2 flex-1 flex flex-col min-h-0">
         <div className="space-y-2 flex-1 min-h-0 flex flex-col">
           <Label htmlFor="seed-input" className="text-sm">Enter target seed values (one per line)</Label>
           <Textarea
@@ -121,7 +121,7 @@ export function TargetSeedsCard() {
             placeholder={`Enter seed values in hexadecimal format:\n${exampleSeeds.join('\n')}`}
             value={targetSeedInput}
             onChange={(e) => setTargetSeedInput(e.target.value)}
-            className="flex-1 min-h-[80px] max-h-[80px] font-mono text-sm resize-none overflow-auto"
+            className="flex-1 min-h-24 font-mono text-sm resize-none overflow-auto"
           />
           <p className="text-xs text-muted-foreground">
             Supports hex format with or without 0x prefix. One seed per line.
