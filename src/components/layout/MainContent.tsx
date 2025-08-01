@@ -3,14 +3,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { MagnifyingGlass, Info, Gear } from '@phosphor-icons/react';
 import { useAppStore } from '@/store/app-store';
-import { useIsStackLayout } from '@/hooks/use-mobile-new';
+import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { SearchPanel } from './SearchPanel';
 import { OptionPanel } from './OptionPanel';
 import { HelpPanel } from './HelpPanel';
 
 export function MainContent() {
   const { activeTab, setActiveTab, targetSeeds, searchResults } = useAppStore();
-  const { isStack } = useIsStackLayout();
+  const { isStack } = useResponsiveLayout();
 
   // MainContentデバッグログ追加
   console.log('🏠 MainContent Hook result:', { isStack });

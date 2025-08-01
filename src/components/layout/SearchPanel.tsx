@@ -9,21 +9,15 @@ import {
 } from '../search/configuration';
 import { SearchControlCard, SearchProgressCard } from '../search/control';
 import { ResultsControlCard, ResultsCard, ResultDetailsDialog, type SortField } from '../search/results';
-import { useIsStackLayout } from '@/hooks/use-mobile-new';
+import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { getResponsiveSizes } from '../../utils/responsive-sizes';
 import type { InitialSeedResult, SearchResult } from '../../types/pokemon';
 
 export function SearchPanel() {
   const { searchConditions, setSearchConditions, searchResults } = useAppStore();
-  const { isStack, uiScale } = useIsStackLayout();
   
-  // デバッグログを追加
-  console.log('🔥 SearchPanel Debug:', {
-    isStack,
-    uiScale,
-    windowSize: typeof window !== 'undefined' ? { width: window.innerWidth, height: window.innerHeight } : 'SSR',
-    layout: isStack ? 'STACK' : '3-COLUMN'
-  });
+  // Phase 3 Revised: シンプルな環境変数ベース実装選択
+  const { isStack, uiScale } = useResponsiveLayout();
   
   // スケールに応じたレスポンシブサイズ
   const sizes = getResponsiveSizes(uiScale);

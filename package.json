@@ -25,6 +25,7 @@
         "test:rust:browser": "cd wasm-pkg && wasm-pack test --chrome --headless",
         "test:all": "npm run test:rust && npm run test:rust:browser && npm run test",
         "test:e2e": "node scripts/run-e2e-consistency-test.js",
+        "test:performance": "node scripts/performance-comparison.js",
         "copy:wasm": "node scripts/copy-wasm-files.js"
     },
     "dependencies": {

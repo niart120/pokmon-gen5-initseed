@@ -3,6 +3,7 @@ import { useAppStore } from './store/app-store';
 import { AppHeader, AppFooter, MainContent } from './components/layout';
 import { initializeApplication } from './lib/initialization/app-initializer';
 import { runDevelopmentVerification } from './lib/initialization/development-verification';
+import { featureFlags } from './lib/core/feature-flags';
 
 function App() {
   const { targetSeeds } = useAppStore();
@@ -18,6 +19,14 @@ function App() {
 
     initializeApp();
   }, []); // Empty dependency array - run only once
+  
+  // Development: Global access to feature flags
+  React.useEffect(() => {
+    if (import.meta.env.DEV) {
+      (window as any).featureFlags = featureFlags;
+      console.log('🚀 Phase 3a: Feature flags available globally as window.featureFlags');
+    }
+  }, []);
 
   // Debug: Show target seeds when they change (separate effect)
   React.useEffect(() => {
