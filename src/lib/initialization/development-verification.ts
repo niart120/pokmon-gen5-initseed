@@ -7,12 +7,12 @@ import { InitializationResult } from '@/lib/initialization/app-initializer';
 
 export async function runDevelopmentVerification(initResult: InitializationResult): Promise<void> {
   // Only run in development environment
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.MODE === 'production') {
     return;
   }
 
   // Allow disabling verbose verification for agent/E2E testing
-  const enableVerboseVerification = process.env.VITE_ENABLE_VERBOSE_VERIFICATION !== 'false';
+  const enableVerboseVerification = import.meta.env.VITE_ENABLE_VERBOSE_VERIFICATION !== 'false';
   
   if (!enableVerboseVerification) {
     // Minimal verification for agent/E2E testing

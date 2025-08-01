@@ -25,7 +25,7 @@ function App() {
   }, [targetSeeds.seeds]);
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col">
       <AppHeader />
       <MainContent />
       <AppFooter />
