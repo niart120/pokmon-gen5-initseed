@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Trash, Upload, Download, Warning } from '@phosphor-icons/react';
+import { Trash, Upload, Download, Warning, Target } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
 import { SeedCalculator } from '../../../lib/core/seed-calculator';
 import { useResponsiveLayout } from '../../../hooks/use-mobile';
@@ -83,10 +83,13 @@ export function TargetSeedsCard() {
   ];
 
   return (
-    <Card className={`flex flex-col ${isStack ? 'max-h-96' : 'h-full'} overflow-hidden`}>
+    <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full'} overflow-hidden`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
-          <span>Target Seeds</span>
+          <div className="flex items-center gap-2">
+            <Target size={20} />
+            Target Seeds
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => document.getElementById('target-file-input')?.click()}>
               <Upload size={14} className="mr-2" />

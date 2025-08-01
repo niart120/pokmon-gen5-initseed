@@ -180,7 +180,7 @@ export function SearchControlCard() {
 
   // 統一レイアウト: シンプルな検索制御
   return (
-    <Card className="flex flex-col gap-2">
+    <Card className="py-2 flex flex-col gap-2">
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="text-base flex items-center">
           <Gear size={16} className="mr-2" />

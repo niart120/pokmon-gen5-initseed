@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CaretDown, CaretUp } from '@phosphor-icons/react';
+import { CaretDown, CaretUp, ChartBar } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
 import { useResponsiveLayout } from '../../../hooks/use-mobile';
 import { getResponsiveSizes } from '../../../utils/responsive-sizes';
@@ -50,10 +50,13 @@ export function SearchProgressCard() {
   const workerLayout = getWorkerLayout(totalWorkerCount);
 
   return (
-    <Card className="flex flex-col h-full gap-2">
+    <Card className="py-2 flex flex-col h-full gap-2">
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
-          Search Progress
+          <div className="flex items-center gap-2">
+            <ChartBar size={20} />
+            Search Progress
+          </div>
           {isParallelMode && parallelProgress && totalWorkerCount > 0 && (
             <Badge variant="outline" className="text-xs">
               {totalWorkerCount} Workers
