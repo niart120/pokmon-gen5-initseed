@@ -10,10 +10,10 @@ import { HelpPanel } from './HelpPanel';
 
 export function MainContent() {
   const { activeTab, setActiveTab, targetSeeds, searchResults } = useAppStore();
-  const isStackLayout = useIsStackLayout();
+  const { isStack } = useIsStackLayout();
 
   // レスポンシブに応じたoverflow設定
-  const overflowClasses = isStackLayout 
+  const overflowClasses = isStack 
     ? "overflow-x-hidden overflow-y-auto" // 縦スタック時：水平スクロール無し、垂直スクロール有り
     : "overflow-x-auto overflow-y-hidden"; // 横並び時：水平スクロール有り、垂直スクロール無し
 

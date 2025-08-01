@@ -10,11 +10,15 @@ import {
 import { SearchControlCard, SearchProgressCard } from '../search/control';
 import { ResultsControlCard, ResultsCard, ResultDetailsDialog, type SortField } from '../search/results';
 import { useIsStackLayout } from '../../hooks/use-mobile';
+import { getResponsiveSizes } from '../../utils/responsive-sizes';
 import type { InitialSeedResult, SearchResult } from '../../types/pokemon';
 
 export function SearchPanel() {
   const { searchConditions, setSearchConditions, searchResults } = useAppStore();
-  const isStackLayout = useIsStackLayout();
+  const { isStack, uiScale } = useIsStackLayout();
+  
+  // スケールに応じたレスポンシブサイズ
+  const sizes = getResponsiveSizes(uiScale);
 
   // Results state management (moved from ResultsPanel)
   const [filterSeed, setFilterSeed] = useState('');
@@ -100,10 +104,10 @@ export function SearchPanel() {
     setIsDetailsOpen(true);
   };
 
-  if (isStackLayout) {
+  if (isStack) {
     // スマートフォン・縦長画面: 縦スタック配置
     return (
-      <div className="space-y-3 h-full overflow-y-auto flex flex-col">
+      <div className={`${sizes.gap} h-full overflow-y-auto flex flex-col`}>
         <ROMConfigurationCard />
         <Timer0VCountCard />
         <DateRangeCard />
@@ -133,9 +137,9 @@ export function SearchPanel() {
 
   // PC: 3カラム配置（設定 | 検索制御・進捗 | 結果）
   return (
-    <div className="flex gap-2 max-w-full h-full min-h-0 min-w-fit">
+    <div className={`flex ${sizes.gap} max-w-full h-full min-h-0 min-w-fit`}>
       {/* 左カラム: 設定エリア */}
-      <div className="flex-1 flex flex-col gap-3 min-w-0 sm:min-w-64" style={{ minHeight: 0 }}>
+      <div className={`flex-1 flex flex-col ${sizes.gap} min-w-0 ${sizes.columnWidth}`} style={{ minHeight: 0 }}>
         <div className="flex-none">
           <ROMConfigurationCard />
         </div>
@@ -154,7 +158,7 @@ export function SearchPanel() {
       </div>
       
       {/* 中央カラム: 検索制御・進捗エリア */}
-      <div className="flex-1 flex flex-col gap-3 min-w-0 sm:min-w-64" style={{ minHeight: 0 }}>
+      <div className={`flex-1 flex flex-col ${sizes.gap} min-w-0 ${sizes.columnWidth}`} style={{ minHeight: 0 }}>
         <div className="flex-none">
           <SearchControlCard />
         </div>
@@ -164,7 +168,7 @@ export function SearchPanel() {
       </div>
       
       {/* 右カラム: 結果エリア */}
-      <div className="flex-1 flex flex-col gap-3 min-w-0 sm:min-w-64" style={{ minHeight: 0 }}>
+      <div className={`flex-1 flex flex-col ${sizes.gap} min-w-0 ${sizes.columnWidth}`} style={{ minHeight: 0 }}>
         <div className="flex-none">
           <ResultsControlCard
             filteredResultsCount={filteredAndSortedResults.length}
