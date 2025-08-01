@@ -11,7 +11,7 @@ export function ParameterConfigurationCard() {
   const { isStack } = useResponsiveLayout();
 
   return (
-    <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full'} overflow-hidden`}>
+    <Card className="py-2 flex flex-col h-full gap-2">
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center gap-2 text-base">
           <Gear size={20} />
