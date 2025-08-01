@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trash, Upload, Download, Warning } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
 import { SeedCalculator } from '../../../lib/core/seed-calculator';
-import { useIsMobile } from '../../../hooks/use-mobile';
+import { useResponsiveLayout } from '../../../hooks/use-mobile';
 
 export function TargetSeedsCard() {
   const {
@@ -19,7 +19,7 @@ export function TargetSeedsCard() {
     setTargetSeedInput,
   } = useAppStore();
 
-  const isStack = useIsMobile();
+  const { isStack } = useResponsiveLayout();
   const [parseErrors, setParseErrors] = React.useState<{ line: number; value: string; error: string }[]>([]);
   const calculator = new SeedCalculator();
 
@@ -83,13 +83,13 @@ export function TargetSeedsCard() {
   ];
 
   return (
-    <Card className={`py-2 flex flex-col gap-2 ${isStack ? 'max-h-96' : 'h-full'} overflow-hidden`}>
+    <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full'} gap-2 overflow-hidden`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
           <span>Target Seeds</span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => document.getElementById('target-file-input')?.click()}>
-              <Upload size={16} className="mr-2" />
+              <Upload size={14} className="mr-2" />
               Import
             </Button>
             <Button 
@@ -98,7 +98,7 @@ export function TargetSeedsCard() {
               onClick={handleExportToFile}
               disabled={targetSeeds.seeds.length === 0}
             >
-              <Download size={16} className="mr-2" />
+              <Download size={14} className="mr-2" />
               Export
             </Button>
             <Button 
@@ -107,7 +107,7 @@ export function TargetSeedsCard() {
               onClick={handleClearAll}
               disabled={targetSeeds.seeds.length === 0}
             >
-              <Trash size={16} className="mr-2" />
+              <Trash size={14} className="mr-2" />
               Clear
             </Button>
           </div>
@@ -115,13 +115,13 @@ export function TargetSeedsCard() {
       </CardHeader>
       <CardContent className="space-y-2 flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="space-y-2 flex-1 min-h-0 flex flex-col">
-          <Label htmlFor="seed-input">Enter target seed values (one per line)</Label>
+          <Label htmlFor="seed-input" className="text-sm">Enter target seed values (one per line)</Label>
           <Textarea
             id="seed-input"
             placeholder={`Enter seed values in hexadecimal format:\n${exampleSeeds.join('\n')}`}
             value={targetSeedInput}
             onChange={(e) => setTargetSeedInput(e.target.value)}
-            className="flex-1 min-h-[120px] max-h-[120px] font-mono text-sm resize-none overflow-auto"
+            className="flex-1 min-h-[80px] max-h-[80px] font-mono text-sm resize-none overflow-auto"
           />
           <p className="text-xs text-muted-foreground">
             Supports hex format with or without 0x prefix. One seed per line.
@@ -155,10 +155,10 @@ export function TargetSeedsCard() {
         {/* Parse Errors */}
         {parseErrors.length > 0 && (
           <Alert>
-            <Warning size={16} />
+            <Warning size={14} />
             <AlertDescription>
               <div className="space-y-1">
-                <p className="font-medium">Invalid seed format on the following lines:</p>
+                <p className="text-sm font-medium">Invalid seed format on the following lines:</p>
                 <ul className="text-xs space-y-1">
                   {parseErrors.map((error, index) => (
                     <li key={index} className="font-mono">

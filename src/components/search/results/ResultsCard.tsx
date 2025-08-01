@@ -4,7 +4,8 @@ import { Button } from '../../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { useAppStore } from '../../../store/app-store';
-import { useIsMobile } from '../../../hooks/use-mobile';
+import { useResponsiveLayout } from '../../../hooks/use-mobile';
+import { getResponsiveSizes } from '../../../utils/responsive-sizes';
 import type { InitialSeedResult } from '../../../types/pokemon';
 import type { SortField } from './ResultsControlCard';
 
@@ -26,7 +27,8 @@ export function ResultsCard({
   onShowDetails,
 }: ResultsCardProps) {
   const { lastSearchDuration } = useAppStore();
-  const isStack = useIsMobile();
+  const { isStack, uiScale } = useResponsiveLayout();
+  const sizes = getResponsiveSizes(uiScale);
   const formatDateTime = (date: Date): string => {
     return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
   };

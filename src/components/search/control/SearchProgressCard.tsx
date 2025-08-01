@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CaretDown, CaretUp } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
-import { useIsMobile } from '../../../hooks/use-mobile';
+import { useResponsiveLayout } from '../../../hooks/use-mobile';
+import { getResponsiveSizes } from '../../../utils/responsive-sizes';
 import { 
   formatElapsedTime, 
   formatRemainingTime, 
@@ -18,7 +19,8 @@ import { TimeDisplay } from './TimeDisplay';
 export function SearchProgressCard() {
   const { searchProgress, parallelProgress, parallelSearchSettings } = useAppStore();
   const [isWorkerDetailsExpanded, setIsWorkerDetailsExpanded] = useState(true);
-  const isMobile = useIsMobile();
+  const { isStack: isMobile, uiScale } = useResponsiveLayout();
+  const sizes = getResponsiveSizes(uiScale);
 
   const isParallelMode = parallelSearchSettings.enabled;
   const isRunning = searchProgress.isRunning;
