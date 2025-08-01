@@ -2,9 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/app-store';
 import { 
   ROMConfigurationCard, 
-  Timer0VCountCard, 
-  DateRangeCard, 
-  MACAddressCard, 
+  ParameterConfigurationCard,
   TargetSeedsCard 
 } from '../search/configuration';
 import { SearchControlCard, SearchProgressCard } from '../search/control';
@@ -113,13 +111,7 @@ export function SearchPanel() {
           <ROMConfigurationCard />
         </div>
         <div className="flex-none">
-          <Timer0VCountCard />
-        </div>
-        <div className="flex-none">
-          <DateRangeCard />
-        </div>
-        <div className="flex-none">
-          <MACAddressCard />
+          <ParameterConfigurationCard />
         </div>
         <div className="flex-1 min-h-0 overflow-hidden">
           <TargetSeedsCard />
@@ -163,13 +155,7 @@ export function SearchPanel() {
           <ROMConfigurationCard />
         </div>
         <div className="flex-none">
-          <Timer0VCountCard />
-        </div>
-        <div className="flex-none">
-          <DateRangeCard />
-        </div>
-        <div className="flex-none">
-          <MACAddressCard />
+          <ParameterConfigurationCard />
         </div>
         <div className="flex-none min-h-48">
           <TargetSeedsCard />

@@ -1,10 +1,9 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAppStore } from '../../../store/app-store';
+import { useAppStore } from '../../../../store/app-store';
 
-export function DateRangeCard() {
+export function DateRangeParam() {
   const { searchConditions, setSearchConditions } = useAppStore();
 
   // Date型からYYYY-MM-DD形式の文字列に変換
@@ -69,43 +68,38 @@ export function DateRangeCard() {
   };
 
   return (
-    <Card className="py-2 flex flex-col h-full gap-2">
-      <CardHeader className="pb-0 flex-shrink-0">
-        <CardTitle className="text-base">Date & Time Range</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 flex-1 min-h-0 flex flex-col">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-shrink-0">
-          <div className="space-y-2">
-            <Label htmlFor="start-date" className="text-sm font-medium">Start Date</Label>
-            <Input
-              id="start-date"
-              type="date"
-              min="2000-01-01"
-              max="2099-12-31"
-              className="h-9"
-              value={startDate}
-              onChange={(e) => handleStartDateChange(e.target.value)}
-            />
-          </div>
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="start-date" className="text-sm font-medium">Start Date</Label>
+          <Input
+            id="start-date"
+            type="date"
+            min="2000-01-01"
+            max="2099-12-31"
+            className="h-9"
+            value={startDate}
+            onChange={(e) => handleStartDateChange(e.target.value)}
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="end-date" className="text-sm font-medium">End Date</Label>
-            <Input
-              id="end-date"
-              type="date"
-              min="2000-01-01"
-              max="2099-12-31"
-              className="h-9"
-              value={endDate}
-              onChange={(e) => handleEndDateChange(e.target.value)}
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="end-date" className="text-sm font-medium">End Date</Label>
+          <Input
+            id="end-date"
+            type="date"
+            min="2000-01-01"
+            max="2099-12-31"
+            className="h-9"
+            value={endDate}
+            onChange={(e) => handleEndDateChange(e.target.value)}
+          />
         </div>
-        
-        <div className="text-xs text-muted-foreground flex-shrink-0">
-          Current range: {startDate} to {endDate}
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      <div className="text-xs text-muted-foreground">
+        Current range: {startDate} to {endDate}
+      </div>
+    </div>
   );
 }

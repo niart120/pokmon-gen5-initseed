@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAppStore } from '../../../store/app-store';
-import { parseMacByte, formatHexDisplay } from '../../../lib/utils/hex-parser';
+import { useAppStore } from '../../../../store/app-store';
+import { parseMacByte, formatHexDisplay } from '../../../../lib/utils/hex-parser';
 
-export function MACAddressCard() {
+export function MACAddressParam() {
   const { searchConditions, setSearchConditions } = useAppStore();
   
   // 各フィールドの表示値を管理
@@ -60,29 +58,26 @@ export function MACAddressCard() {
   };
 
   return (
-    <Card className="py-2 flex flex-col h-full gap-2">
-      <CardHeader className="pb-0 flex-shrink-0">
-        <CardTitle className="text-base">MAC Address</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 min-h-0 flex flex-col">
-        <div className="grid grid-cols-6 gap-1 sm:gap-2 flex-shrink-0">
-          {searchConditions.macAddress.map((byte, index) => (
-            <div key={index}>
-              <Input
-                id={`mac-${index}`}
-                type="text"
-                placeholder="00"
-                maxLength={2}
-                value={inputValues[index]}
-                onChange={(e) => handleInputChange(index, e.target.value)}
-                onBlur={() => handleBlur(index)}
-                onFocus={() => handleFocus(index)}
-                className="font-mono text-center min-w-[48px] text-sm"
-              />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      <div className="text-sm font-medium">MAC Address</div>
+      
+      <div className="grid grid-cols-6 gap-1 sm:gap-2">
+        {searchConditions.macAddress.map((byte, index) => (
+          <div key={index}>
+            <Input
+              id={`mac-${index}`}
+              type="text"
+              placeholder="00"
+              maxLength={2}
+              value={inputValues[index]}
+              onChange={(e) => handleInputChange(index, e.target.value)}
+              onBlur={() => handleBlur(index)}
+              onFocus={() => handleFocus(index)}
+              className="font-mono text-center min-w-[48px] text-sm"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

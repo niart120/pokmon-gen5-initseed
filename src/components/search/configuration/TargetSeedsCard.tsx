@@ -115,7 +115,9 @@ export function TargetSeedsCard() {
       </CardHeader>
       <CardContent className="space-y-2 flex-1 flex flex-col min-h-0">
         <div className="space-y-2 flex-1 min-h-0 flex flex-col">
-          <Label htmlFor="seed-input" className="text-sm">Enter target seed values (one per line)</Label>
+          <p className="text-xs text-muted-foreground">
+            Supports hex format with or without 0x prefix. One seed per line.
+          </p>
           <Textarea
             id="seed-input"
             placeholder={`Enter seed values in hexadecimal format:\n${exampleSeeds.join('\n')}`}
@@ -123,9 +125,6 @@ export function TargetSeedsCard() {
             onChange={(e) => setTargetSeedInput(e.target.value)}
             className="flex-1 min-h-24 font-mono text-sm resize-none overflow-auto"
           />
-          <p className="text-xs text-muted-foreground">
-            Supports hex format with or without 0x prefix. One seed per line.
-          </p>
         </div>
 
         {/* Hidden file input */}

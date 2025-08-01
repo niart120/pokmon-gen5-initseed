@@ -1,5 +1,3 @@
 export { ROMConfigurationCard } from './ROMConfigurationCard';
-export { Timer0VCountCard } from './Timer0VCountCard';
-export { DateRangeCard } from './DateRangeCard';
-export { MACAddressCard } from './MACAddressCard';
+export { ParameterConfigurationCard } from './ParameterConfigurationCard';
 export { TargetSeedsCard } from './TargetSeedsCard';
