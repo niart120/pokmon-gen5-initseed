@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trash, Upload, Download, Warning } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
 import { SeedCalculator } from '../../../lib/core/seed-calculator';
+import { useIsMobile } from '../../../hooks/use-mobile';
 
 export function TargetSeedsCard() {
   const {
@@ -18,6 +19,7 @@ export function TargetSeedsCard() {
     setTargetSeedInput,
   } = useAppStore();
 
+  const isStack = useIsMobile();
   const [parseErrors, setParseErrors] = React.useState<{ line: number; value: string; error: string }[]>([]);
   const calculator = new SeedCalculator();
 
@@ -81,7 +83,7 @@ export function TargetSeedsCard() {
   ];
 
   return (
-    <Card className="py-2 flex flex-col gap-2 max-h-96">
+    <Card className={`py-2 flex flex-col gap-2 ${isStack ? 'max-h-96' : 'h-full'} overflow-hidden`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
           <span>Target Seeds</span>

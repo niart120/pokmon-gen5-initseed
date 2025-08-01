@@ -4,6 +4,7 @@ import { Button } from '../../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { useAppStore } from '../../../store/app-store';
+import { useIsMobile } from '../../../hooks/use-mobile';
 import type { InitialSeedResult } from '../../../types/pokemon';
 import type { SortField } from './ResultsControlCard';
 
@@ -25,6 +26,7 @@ export function ResultsCard({
   onShowDetails,
 }: ResultsCardProps) {
   const { lastSearchDuration } = useAppStore();
+  const isStack = useIsMobile();
   const formatDateTime = (date: Date): string => {
     return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
   };
@@ -41,7 +43,7 @@ export function ResultsCard({
   const filteredResultsCount = filteredAndSortedResults.length;
 
   return (
-    <Card className="flex flex-col max-h-96">
+    <Card className={`flex flex-col ${isStack ? 'max-h-96' : 'h-full'} overflow-hidden`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center gap-2 flex-wrap">
           <Hash size={20} className="flex-shrink-0" />
