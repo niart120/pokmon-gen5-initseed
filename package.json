@@ -5,6 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
+        "dev:agent": "cross-env VITE_ENABLE_VERBOSE_VERIFICATION=false vite",
         "dev:full": "npm run build:wasm && node scripts/copy-wasm-files.js && npm run dev",
         "build": "npm run build:wasm && node scripts/copy-wasm-files.js && npm run build:ts",
         "build:wasm": "node scripts/build-wasm-optimized.js",

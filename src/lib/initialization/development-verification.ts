@@ -11,6 +11,16 @@ export async function runDevelopmentVerification(initResult: InitializationResul
     return;
   }
 
+  // Allow disabling verbose verification for agent/E2E testing
+  const enableVerboseVerification = process.env.VITE_ENABLE_VERBOSE_VERIFICATION !== 'false';
+  
+  if (!enableVerboseVerification) {
+    // Minimal verification for agent/E2E testing
+    console.log('Running minimal verification (verbose logging disabled)...');
+    await runMinimalVerification(initResult);
+    return;
+  }
+
   console.log('Running comprehensive search verification...');
 
   try {
@@ -39,5 +49,45 @@ export async function runDevelopmentVerification(initResult: InitializationResul
     }
   } catch (error) {
     console.warn('⚠️ Development verification failed to load:', error);
+  }
+}
+
+/**
+ * Minimal verification for agent/E2E testing scenarios
+ * Reduces log output to prevent context bloat
+ */
+async function runMinimalVerification(initResult: InitializationResult): Promise<void> {
+  try {
+    // Basic search verification without verbose logging
+    const { verifySearchImplementation } = await import('@/test-utils/verification/search-verification');
+    
+    // Temporarily suppress console output for minimal verification
+    const originalConsoleLog = console.log;
+    let logCount = 0;
+    console.log = (...args) => {
+      logCount++;
+      if (logCount <= 3) { // Allow only first 3 log messages
+        originalConsoleLog(...args);
+      }
+    };
+    
+    const verificationPassed = verifySearchImplementation();
+    
+    // Restore original console.log
+    console.log = originalConsoleLog;
+    
+    if (verificationPassed) {
+      console.log('✅ Basic verification passed (minimal mode)');
+    } else {
+      console.log('❌ Basic verification failed (minimal mode)');
+    }
+    
+    // Quick WebAssembly check if enabled
+    if (initResult.wasmEnabled && initResult.calculator) {
+      console.log('✅ WebAssembly enabled and ready');
+    }
+    
+  } catch (error) {
+    console.log('⚠️ Minimal verification failed:', error instanceof Error ? error.message : String(error));
   }
 }

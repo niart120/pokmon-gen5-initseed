@@ -76,6 +76,7 @@
 ## 主要スクリプト
 ### 開発
 - `npm run dev`: 開発サーバー起動
+- `npm run dev:agent`: Agent/E2Eテスト用軽量モード（詳細ログ無効化）
 - `npm run dev:full`: WASM再ビルド込み開発サーバー起動
 
 ### ビルド

@@ -13,8 +13,8 @@ applyTo: "**"
 
 ### 開発テスト (`test-development.html`)
 ```bash
-# 開発サーバー起動
-npm run dev
+# Agent/E2Eテスト用軽量モード（詳細ログ無効化）
+npm run dev:agent
 
 # ブラウザで開発テスト実行
 # http://localhost:5173/test-development.html
@@ -52,6 +52,26 @@ import { DevelopmentPerformanceAnalyzer } from '@/test-utils/profiling/developme
 const analyzer = new DevelopmentPerformanceAnalyzer();
 await analyzer.measureBasicPerformance(10000);
 ```
+
+## Agent/E2Eテスト専用デバッグ
+
+### Context圧迫回避
+```bash
+# 軽量モードでサーバー起動（ログ出力最小化）
+npm run dev:agent
+
+# 詳細ログが必要な場合のみ通常モード
+npm run dev
+```
+
+### ログ出力制御
+- `npm run dev:agent`: 検証ログを最小限に抑制（Context保護）
+- `npm run dev`: 完全な検証ログ出力（開発・デバッグ用）
+
+### Playwright-MCP使用時の推奨事項
+1. 基本動作確認は軽量モードで実行
+2. 問題発生時のみ詳細モードに切り替え
+3. Context使用量監視（50,000文字で警告）
 
 ## よくある問題
 
