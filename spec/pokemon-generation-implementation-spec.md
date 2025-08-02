@@ -615,113 +615,372 @@ impl PokemonGenerator {
 ```
 ```
 
-### 4.3 WASM最適化版（Rust）
+## 5. 性格値・色違い判定の詳細実装
+
+### 5.1 性格値（PID）生成の正確な仕様
+
+BWにおける性格値生成は遭遇タイプによって異なるアルゴリズムを使用する。
 
 ```rust
-// wasm-pkg/src/pokemon_generation.rs
-
+// wasm-pkg/src/pid_generation.rs
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub struct PokemonGenerationEngine {
-    rng_seed: u32,
+pub struct PIDGenerator;
+
+#[wasm_bindgen]
+impl PIDGenerator {
+    // 野生ポケモン・固定シンボル用PID生成
+    pub fn generate_wild_static_pid(rng: &mut PersonalityRNG) -> u32 {
+        // BW仕様: r1[n+1] ^ 0x00010000
+        let pid_base = rng.next();
+        pid_base ^ 0x00010000
+    }
+    
+    // 一部の固定シンボル用PID生成（特殊ケース）
+    pub fn generate_special_static_pid(rng: &mut PersonalityRNG) -> u32 {
+        // 特殊ケース: r1[n+1] ^ 0x80010000
+        let pid_base = rng.next();
+        pid_base ^ 0x80010000
+    }
+    
+    // 徘徊ポケモン用PID生成
+    pub fn generate_roaming_pid(rng: &mut PersonalityRNG) -> u32 {
+        // 徘徊: r1[n] (XOR処理なし)
+        rng.next()
+    }
+    
+    // タマゴ用PID生成（参考実装）
+    pub fn generate_egg_pid(rng: &mut PersonalityRNG) -> u32 {
+        // タマゴ: 特殊な生成ロジック（今回は対象外）
+        // 実装時には別の計算が必要
+        rng.next()
+    }
 }
 
 #[wasm_bindgen]
-impl PokemonGenerationEngine {
-    #[wasm_bindgen(constructor)]
-    pub fn new(initial_seed: u32) -> PokemonGenerationEngine {
-        PokemonGenerationEngine {
-            rng_seed: initial_seed,
+pub struct ShinyChecker;
+
+#[wasm_bindgen]
+impl ShinyChecker {
+    // 色違い判定の詳細実装
+    pub fn is_shiny(pid: u32, trainer_id: u16, secret_id: u16) -> bool {
+        let pid_high = (pid >> 16) as u16;
+        let pid_low = (pid & 0xFFFF) as u16;
+        
+        // 色違い値計算: TID ^ SID ^ PIDHigh ^ PIDLow
+        let shiny_value = trainer_id ^ secret_id ^ pid_high ^ pid_low;
+        
+        // BW: 色違い値が8未満で色違い（1/8192確率）
+        shiny_value < 8
+    }
+    
+    // デバッグ用: 色違い値を返す
+    pub fn get_shiny_value(pid: u32, trainer_id: u16, secret_id: u16) -> u16 {
+        let pid_high = (pid >> 16) as u16;
+        let pid_low = (pid & 0xFFFF) as u16;
+        trainer_id ^ secret_id ^ pid_high ^ pid_low
+    }
+    
+    // 色違いの種類判定
+    pub fn get_shiny_type(pid: u32, trainer_id: u16, secret_id: u16) -> u32 {
+        let shiny_value = Self::get_shiny_value(pid, trainer_id, secret_id);
+        
+        match shiny_value {
+            0 => 2,      // Square Shiny (正方形)
+            1..=7 => 1,  // Star Shiny (星型)
+            _ => 0,      // Not Shiny
         }
-    }
-    
-    // 高速バッチ生成
-    #[wasm_bindgen]
-    pub fn generate_batch(
-        &mut self,
-        count: u32,
-        encounter_type: u32,
-        trainer_id: u16,
-        secret_id: u16,
-        sync_enabled: bool,
-        sync_nature: u32,
-    ) -> Vec<u32> {
-        let mut results = Vec::new();
-        
-        for _ in 0..count {
-            let pokemon_data = self.generate_single_pokemon(
-                encounter_type,
-                trainer_id,
-                secret_id,
-                sync_enabled,
-                sync_nature,
-            );
-            
-            // 結果をu32配列として格納（パフォーマンス重視）
-            results.extend_from_slice(&pokemon_data);
-        }
-        
-        results
-    }
-    
-    fn generate_single_pokemon(
-        &mut self,
-        encounter_type: u32,
-        trainer_id: u16,
-        secret_id: u16,
-        sync_enabled: bool,
-        sync_nature: u32,
-    ) -> [u32; 12] {  // 固定サイズ配列で効率化
-        // [0]: species_id
-        // [1]: level
-        // [2]: nature_id
-        // [3]: ability_id
-        // [4]: hp_iv | (atk_iv << 8) | (def_iv << 16) | (spa_iv << 24)
-        // [5]: spd_iv | (spe_iv << 8) | (pid_low << 16)
-        // [6]: pid_high
-        // [7]: encounter_slot
-        // [8]: is_shiny | (gender << 1) | (sync_applied << 2)
-        // [9]: advances
-        // [10]: rng_value_1
-        // [11]: rng_value_2
-        
-        let mut result = [0u32; 12];
-        
-        // 実装詳細...
-        
-        result
-    }
-    
-    #[inline]
-    fn next_rng(&mut self) -> u32 {
-        self.rng_seed = self.rng_seed.wrapping_mul(0x41C64E6D).wrapping_add(0x6073);
-        self.rng_seed
-    }
-    
-    #[inline]
-    fn next_u16(&mut self) -> u16 {
-        (self.next_rng() >> 16) as u16
     }
 }
 ```
 
-## 5. データ管理実装
+### 5.2 遭遇タイプ別PID生成パターン
 
-### 5.1 Data Manager
+```rust
+impl PokemonGenerator {
+    fn generate_pid_by_encounter_type(&mut self, encounter_type: u32) -> u32 {
+        match encounter_type {
+            0 => {
+                // 草むら野生ポケモン
+                PIDGenerator::generate_wild_static_pid(&mut self.rng)
+            },
+            1 => {
+                // 固定シンボル（通常）
+                PIDGenerator::generate_wild_static_pid(&mut self.rng)
+            },
+            2 => {
+                // 徘徊ポケモン（ボルトロス・トルネロス）
+                PIDGenerator::generate_roaming_pid(&mut self.rng)
+            },
+            3 => {
+                // なみのり
+                PIDGenerator::generate_wild_static_pid(&mut self.rng)
+            },
+            4 => {
+                // つり
+                PIDGenerator::generate_wild_static_pid(&mut self.rng)
+            },
+            5 => {
+                // 砂煙
+                PIDGenerator::generate_wild_static_pid(&mut self.rng)
+            },
+            6 => {
+                // 特殊固定シンボル（一部のレジェンダリー）
+                PIDGenerator::generate_special_static_pid(&mut self.rng)
+            },
+            _ => {
+                // デフォルト
+                PIDGenerator::generate_wild_static_pid(&mut self.rng)
+            }
+        }
+    }
+}
+```
+
+## 6. 遭遇タイプ別乱数消費パターンの詳細
+
+### 6.1 消費順序の正確な仕様
+
+BWにおける乱数消費は遭遇タイプによって厳密に定義されている。
+
+```rust
+// wasm-pkg/src/encounter_patterns.rs
+use wasm_bindgen::prelude::*;
+use crate::personality_rng::PersonalityRNG;
+
+#[wasm_bindgen]
+pub struct EncounterPattern;
+
+#[wasm_bindgen]
+impl EncounterPattern {
+    // 野生ポケモン（草むら）の消費パターン
+    // シンクロ判定 → 出現ポケモン決定 → スキップ → 性格値決定 → 性格決定
+    pub fn wild_grass_pattern(
+        rng: &mut PersonalityRNG,
+        sync_enabled: bool,
+        sync_nature_id: u32,
+    ) -> EncounterResult {
+        // Step 1: シンクロ判定 (1消費)
+        let sync_applied = sync_enabled && rng.sync_check();
+        
+        // Step 2: 出現ポケモン決定 (1消費)
+        let encounter_slot = rng.encounter_slot_bw(); // またはbw2
+        
+        // Step 3: スキップ (1消費)
+        rng.next(); // この値は使用されない
+        
+        // Step 4: 性格値決定 (1消費)
+        let pid = rng.next() ^ 0x00010000;
+        
+        // Step 5: 性格決定 (1消費、シンクロ不発時のみ)
+        let nature_id = if sync_applied {
+            sync_nature_id
+        } else {
+            rng.nature_roll()
+        };
+        
+        // 合計: 5消費（シンクロ成功時）/ 5消費（シンクロ失敗時）
+        EncounterResult {
+            pid,
+            encounter_slot,
+            nature_id,
+            sync_applied,
+            total_consumption: 5,
+        }
+    }
+    
+    // 固定シンボルの消費パターン
+    // 野生と同じパターン
+    pub fn static_symbol_pattern(
+        rng: &mut PersonalityRNG,
+        sync_enabled: bool,
+        sync_nature_id: u32,
+    ) -> EncounterResult {
+        // 固定シンボルは野生と同じ消費パターン
+        Self::wild_grass_pattern(rng, sync_enabled, sync_nature_id)
+    }
+    
+    // 徘徊ポケモンの消費パターン
+    // 性格値決定 → 性格決定（シンクロ無効）
+    pub fn roaming_pattern(rng: &mut PersonalityRNG) -> EncounterResult {
+        // Step 1: 性格値決定 (1消費、XOR無し)
+        let pid = rng.next();
+        
+        // Step 2: 性格決定 (1消費)
+        let nature_id = rng.nature_roll();
+        
+        // 合計: 2消費
+        EncounterResult {
+            pid,
+            encounter_slot: 0, // 徘徊は遭遇スロット無し
+            nature_id,
+            sync_applied: false, // シンクロ無効
+            total_consumption: 2,
+        }
+    }
+    
+    // なみのり・つりの消費パターン
+    // シンクロ判定 → 出現ポケモン決定 → レベル決定 → 性格値決定 → 性格決定
+    pub fn surfing_fishing_pattern(
+        rng: &mut PersonalityRNG,
+        sync_enabled: bool,
+        sync_nature_id: u32,
+        game_version: GameVersion,
+    ) -> EncounterResult {
+        // Step 1: シンクロ判定 (1消費)
+        let sync_applied = sync_enabled && rng.sync_check();
+        
+        // Step 2: 出現ポケモン決定 (1消費)
+        let encounter_slot = match game_version {
+            GameVersion::BlackWhite => rng.encounter_slot_bw(),
+            GameVersion::BlackWhite2 => rng.encounter_slot_bw2(),
+        };
+        
+        // Step 3: レベル決定 (1消費)
+        let level_rand = rng.next();
+        
+        // Step 4: 性格値決定 (1消費)
+        let pid = rng.next() ^ 0x00010000;
+        
+        // Step 5: 性格決定 (1消費、シンクロ不発時のみ)
+        let nature_id = if sync_applied {
+            sync_nature_id
+        } else {
+            rng.nature_roll()
+        };
+        
+        // 合計: 5消費（シンクロ成功時）/ 5消費（シンクロ失敗時）
+        EncounterResult {
+            pid,
+            encounter_slot,
+            nature_id,
+            sync_applied,
+            total_consumption: 5,
+        }
+    }
+    
+    // 大量発生の消費パターン
+    // 通常野生 + 大量発生判定
+    pub fn mass_outbreak_pattern(
+        rng: &mut PersonalityRNG,
+        sync_enabled: bool,
+        sync_nature_id: u32,
+    ) -> EncounterResult {
+        // Step 1: 大量発生判定 (1消費)
+        let outbreak_check = rng.next();
+        let is_outbreak_pokemon = (outbreak_check as u64 * 100) >> 32 < 40; // 40%で大量発生
+        
+        // Step 2-6: 通常野生と同じパターン (5消費)
+        let mut result = Self::wild_grass_pattern(rng, sync_enabled, sync_nature_id);
+        
+        // 大量発生時は遭遇スロットを書き換え
+        if is_outbreak_pokemon {
+            result.encounter_slot = 100; // 大量発生専用スロット
+        }
+        
+        result.total_consumption += 1; // 大量発生判定分
+        result
+    }
+}
+
+#[wasm_bindgen]
+pub struct EncounterResult {
+    pub pid: u32,
+    pub encounter_slot: u32,
+    pub nature_id: u32,
+    pub sync_applied: bool,
+    pub total_consumption: u32,
+}
+```
+
+### 6.2 消費パターン一覧表
+
+| 遭遇タイプ | 消費順序 | 総消費数 | 備考 |
+|-----------|---------|----------|------|
+| 草むら野生 | シンクロ→出現→スキップ→性格値→性格 | 5 | スキップは固定 |
+| 固定シンボル | シンクロ→出現→スキップ→性格値→性格 | 5 | 野生と同様 |
+| 徘徊ポケモン | 性格値→性格 | 2 | シンクロ無効 |
+| なみのり | シンクロ→出現→レベル→性格値→性格 | 5 | レベル判定追加 |
+| つり | シンクロ→出現→レベル→性格値→性格 | 5 | なみのりと同様 |
+| 砂煙 | シンクロ→出現→スキップ→性格値→性格 | 5 | 草むらと同様 |
+| 大量発生 | 大量発生判定→(通常野生パターン) | 6 | 判定1消費追加 |
+
+### 6.3 統合生成エンジンでの実装
+
+```rust
+impl PokemonGenerator {
+    fn generate_by_encounter_type(
+        &mut self,
+        encounter_type: u32,
+        sync_enabled: bool,
+        sync_nature_id: u32,
+    ) -> EncounterResult {
+        match encounter_type {
+            0 => {
+                // 草むら野生
+                EncounterPattern::wild_grass_pattern(
+                    &mut self.rng, sync_enabled, sync_nature_id
+                )
+            },
+            1 => {
+                // 固定シンボル
+                EncounterPattern::static_symbol_pattern(
+                    &mut self.rng, sync_enabled, sync_nature_id
+                )
+            },
+            2 => {
+                // 徘徊ポケモン
+                EncounterPattern::roaming_pattern(&mut self.rng)
+            },
+            3 | 4 => {
+                // なみのり・つり
+                EncounterPattern::surfing_fishing_pattern(
+                    &mut self.rng, sync_enabled, sync_nature_id, self.game_version
+                )
+            },
+            5 => {
+                // 砂煙
+                EncounterPattern::wild_grass_pattern(
+                    &mut self.rng, sync_enabled, sync_nature_id
+                )
+            },
+            6 => {
+                // 大量発生
+                EncounterPattern::mass_outbreak_pattern(
+                    &mut self.rng, sync_enabled, sync_nature_id
+                )
+            },
+            _ => {
+                // デフォルト（野生扱い）
+                EncounterPattern::wild_grass_pattern(
+                    &mut self.rng, sync_enabled, sync_nature_id
+                )
+            }
+        }
+    }
+}
+
+## 7. データ管理実装（TypeScript側）
+
+### 7.1 Generation Data Manager
 
 ```typescript
-class GenerationDataManager {
+// src/lib/generation/data-manager.ts
+export class GenerationDataManager {
   private speciesData: Map<string, PokemonSpeciesData> = new Map();
   private encounterTables: Map<string, EncounterTable> = new Map();
-  private natureData: NatureData[] = [];
   private abilityData: Map<string, AbilityData> = new Map();
+  private gameConstants: GameConstants;
+  
+  constructor(gameVersion: GameVersion) {
+    this.gameConstants = this.loadGameConstants(gameVersion);
+  }
   
   async initialize(): Promise<void> {
     await Promise.all([
       this.loadSpeciesData(),
       this.loadEncounterTables(),
-      this.loadNatureData(),
       this.loadAbilityData(),
     ]);
   }
@@ -731,27 +990,91 @@ class GenerationDataManager {
     const data = await response.json();
     
     for (const species of data.species) {
-      this.speciesData.set(species.name, species);
+      this.speciesData.set(species.name.toLowerCase(), species);
     }
   }
   
-  getSpecies(name: string): PokemonSpeciesData | undefined {
-    return this.speciesData.get(name);
+  private async loadEncounterTables(): Promise<void> {
+    const response = await fetch('/data/generation/encounters/gen5-encounters.json');
+    const data = await response.json();
+    
+    for (const [locationId, table] of Object.entries(data.tables)) {
+      this.encounterTables.set(locationId, table as EncounterTable);
+    }
   }
   
+  private async loadAbilityData(): Promise<void> {
+    const response = await fetch('/data/generation/abilities/gen5-abilities.json');
+    const data = await response.json();
+    
+    for (const ability of data.abilities) {
+      this.abilityData.set(ability.name.toLowerCase(), ability);
+    }
+  }
+  
+  // 種族データ取得
+  getSpecies(name: string): PokemonSpeciesData | undefined {
+    return this.speciesData.get(name.toLowerCase());
+  }
+  
+  // 遭遇テーブル取得
   getEncounterTable(locationId: string): EncounterTable | undefined {
     return this.encounterTables.get(locationId);
+  }
+  
+  // 特性データ取得
+  getAbility(name: string): AbilityData | undefined {
+    return this.abilityData.get(name.toLowerCase());
+  }
+  
+  // 遭遇スロットからポケモン種族を特定
+  getSpeciesFromSlot(slotIndex: number, encounterTable: EncounterTable): string {
+    if (slotIndex >= encounterTable.slots.length) {
+      throw new Error(`Invalid slot index: ${slotIndex}`);
+    }
+    
+    return encounterTable.slots[slotIndex].pokemon;
+  }
+  
+  // 性別比率の閾値取得
+  getGenderThreshold(species: string): number {
+    const speciesData = this.getSpecies(species);
+    if (!speciesData) return 127; // デフォルト50:50
+    
+    const ratioMap: Record<string, number> = {
+      'genderless': -1,
+      'male-only': 256,
+      'female-only': 0,
+      '87.5:12.5': 31,   // 87.5% male (starter等)
+      '75:25': 63,       // 75% male
+      '50:50': 127,      // 50% male
+      '25:75': 191,      // 25% male
+      '12.5:87.5': 225,  // 12.5% male
+    };
+    
+    return ratioMap[speciesData.genderRatio] ?? 127;
   }
   
   // データ整合性チェック
   validateDataIntegrity(): ValidationResult {
     const errors: string[] = [];
     
-    // 参照整合性チェック
+    // 遭遇テーブルの参照整合性チェック
     for (const [locationId, table] of this.encounterTables) {
       for (const slot of table.slots) {
-        if (!this.speciesData.has(slot.pokemon)) {
+        if (!this.speciesData.has(slot.pokemon.toLowerCase())) {
           errors.push(`Unknown pokemon: ${slot.pokemon} in ${locationId}`);
+        }
+        
+        // 特性の存在チェック
+        const species = this.getSpecies(slot.pokemon);
+        if (species) {
+          if (!this.abilityData.has(species.abilities.ability1.toLowerCase())) {
+            errors.push(`Unknown ability1: ${species.abilities.ability1} for ${slot.pokemon}`);
+          }
+          if (species.abilities.ability2 && !this.abilityData.has(species.abilities.ability2.toLowerCase())) {
+            errors.push(`Unknown ability2: ${species.abilities.ability2} for ${slot.pokemon}`);
+          }
         }
       }
     }
@@ -761,13 +1084,78 @@ class GenerationDataManager {
       errors
     };
   }
+  
+  private loadGameConstants(gameVersion: GameVersion): GameConstants {
+    // ゲームバージョン別の定数
+    const constants = {
+      [GameVersion.BlackWhite]: {
+        encounterSlotDivisor: 0x290,
+        encounterSlotMultiplier: 0xFFFF,
+        vcount: { black: 0x60, white: 0x5f },
+        nazo: { black: 0x2215f10, white: 0x2215f30 },
+      },
+      [GameVersion.BlackWhite2]: {
+        encounterSlotDivisor: 1,
+        encounterSlotMultiplier: 100,
+        vcount: { black2: 0x60, white2: 0x5f }, // 要確認
+        nazo: { black2: 0x2215f10, white2: 0x2215f30 }, // 要確認
+      }
+    };
+    
+    return constants[gameVersion];
+  }
+}
+
+// 型定義
+interface PokemonSpeciesData {
+  name: string;
+  pokedexNumber: number;
+  types: { type1: string; type2?: string };
+  baseStats: { hp: number; attack: number; defense: number; specialAttack: number; specialDefense: number; speed: number };
+  abilities: { ability1: string; ability2?: string; hiddenAbility?: string };
+  genderRatio: string;
+  catchRate: number;
+  baseExperience: number;
+}
+
+interface EncounterTable {
+  location: string;
+  encounterType: string;
+  levelRange: { min: number; max: number };
+  slots: EncounterSlot[];
+}
+
+interface EncounterSlot {
+  index: number;
+  pokemon: string;
+  probability: number;
+  levelRange?: { min: number; max: number };
+}
+
+interface AbilityData {
+  name: string;
+  description: string;
+  effect: string;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+interface GameConstants {
+  encounterSlotDivisor: number;
+  encounterSlotMultiplier: number;
+  vcount: Record<string, number>;
+  nazo: Record<string, number>;
 }
 ```
 
-### 5.2 キャッシュ戦略
+### 7.2 データキャッシュ戦略
 
 ```typescript
-class DataCacheManager {
+// src/lib/generation/cache-manager.ts
+export class DataCacheManager {
   private cache = new Map<string, any>();
   private cacheExpiry = new Map<string, number>();
   private readonly TTL = 30 * 60 * 1000; // 30分
@@ -788,113 +1176,77 @@ class DataCacheManager {
     return this.cache.get(key);
   }
   
-  // よく使用されるデータのプリロード
-  async preloadCommonData(): Promise<void> {
-    const commonLocations = ['route-1', 'route-2', 'dreamyard'];
-    const commonPokemon = ['patrat', 'lillipup', 'purrloin'];
-    
-    await Promise.all([
-      ...commonLocations.map(loc => this.preloadLocation(loc)),
-      ...commonPokemon.map(pokemon => this.preloadSpecies(pokemon))
-    ]);
+  has(key: string): boolean {
+    return this.get(key) !== undefined;
   }
+  
+  clear(): void {
+    this.cache.clear();
+    this.cacheExpiry.clear();
+  }
+  
+  // 使用頻度の高いデータのプリロード
+  async preloadCommonData(dataManager: GenerationDataManager): Promise<void> {
+    const commonLocations = [
+      'route-1', 'route-2', 'route-3', 'dreamyard', 
+      'pinwheel-forest', 'desert-resort'
+    ];
+    const commonPokemon = [
+      'patrat', 'lillipup', 'purrloin', 'pidove', 
+      'audino', 'timburr', 'sewaddle'
+    ];
+    
+    // 遭遇テーブルのプリロード
+    for (const location of commonLocations) {
+      const key = `encounter-table-${location}`;
+      if (!this.has(key)) {
+        const table = dataManager.getEncounterTable(location);
+        if (table) this.set(key, table);
+      }
+    }
+    
+    // 種族データのプリロード
+    for (const pokemon of commonPokemon) {
+      const key = `species-${pokemon}`;
+      if (!this.has(key)) {
+        const species = dataManager.getSpecies(pokemon);
+        if (species) this.set(key, species);
+      }
+    }
+  }
+  
+  // キャッシュ統計情報
+  getStats(): CacheStats {
+    const totalEntries = this.cache.size;
+    const expiredEntries = Array.from(this.cacheExpiry.entries())
+      .filter(([_, expiry]) => Date.now() > expiry).length;
+    
+    return {
+      totalEntries,
+      expiredEntries,
+      activeEntries: totalEntries - expiredEntries,
+      memoryUsage: this.estimateMemoryUsage(),
+    };
+  }
+  
+  private estimateMemoryUsage(): number {
+    // 概算メモリ使用量（バイト）
+    let size = 0;
+    for (const [key, value] of this.cache) {
+      size += key.length * 2; // UTF-16
+      size += JSON.stringify(value).length * 2;
+    }
+    return size;
+  }
+}
+
+interface CacheStats {
+  totalEntries: number;
+  expiredEntries: number;
+  activeEntries: number;
+  memoryUsage: number;
 }
 ```
-
-## 6. パフォーマンス最適化
-
-### 6.1 WebWorker実装
-
-```typescript
-// pokemon-generation-worker.ts
-import { PokemonGenerator } from '../lib/generation/pokemon-generator';
-
-let generator: PokemonGenerator | null = null;
-let isRunning = false;
-let shouldStop = false;
-
-self.onmessage = async (event: MessageEvent<GenerationWorkerRequest>) => {
-  const { type, payload } = event.data;
-  
-  switch (type) {
-    case 'START':
-      if (payload) {
-        generator = new PokemonGenerator(payload.initialSeed);
-        isRunning = true;
-        shouldStop = false;
-        
-        try {
-          await generatePokemonBatch(payload);
-        } catch (error) {
-          self.postMessage({
-            type: 'ERROR',
-            payload: { error: error.message }
-          });
-        }
-      }
-      break;
-      
-    case 'STOP':
-      shouldStop = true;
-      isRunning = false;
-      break;
-      
-    case 'PAUSE':
-      isRunning = false;
-      self.postMessage({ type: 'PAUSED' });
-      break;
-      
-    case 'RESUME':
-      isRunning = true;
-      if (generator && payload) {
-        await generatePokemonBatch(payload);
-      }
-      break;
-  }
-};
-
-async function generatePokemonBatch(params: GenerationParams): Promise<void> {
-  const batchSize = 100;
-  let totalGenerated = 0;
-  
-  while (totalGenerated < params.maxCount && isRunning && !shouldStop) {
-    const batchResults = await generator!.generateBatch(
-      Math.min(batchSize, params.maxCount - totalGenerated),
-      params
-    );
-    
-    // 結果を逐次送信
-    for (const pokemon of batchResults) {
-      self.postMessage({
-        type: 'RESULT',
-        payload: { pokemon }
-      });
-    }
-    
-    totalGenerated += batchResults.length;
-    
-    // 進捗通知
-    self.postMessage({
-      type: 'PROGRESS',
-      payload: {
-        progress: {
-          current: totalGenerated,
-          total: params.maxCount,
-          percentage: (totalGenerated / params.maxCount) * 100
-        }
-      }
-    });
-    
-    // 一時停止チェック
-    while (!isRunning && !shouldStop) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-  }
-  
-  if (!shouldStop) {
-    self.postMessage({ type: 'COMPLETE' });
-  }
-}
 ```
 
 
