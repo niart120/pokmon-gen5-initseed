@@ -96,7 +96,7 @@ impl PersonalityRNG {
     /// # Returns
     /// 現在の内部シード値
     #[wasm_bindgen(getter)]
-    pub fn seed(&self) -> u64 {
+    pub fn get_seed(&self) -> u64 {
         self.seed
     }
 
@@ -129,6 +129,11 @@ impl PersonalityRNG {
 }
 
 impl PersonalityRNG {
+    /// 内部使用用：現在のシード値を取得（impl block内での使用）
+    pub fn seed(&self) -> u64 {
+        self.seed
+    }
+
     /// 内部使用用：複数乱数値の同時生成
     /// バッチ処理での高速化用
     /// 
@@ -173,7 +178,7 @@ mod tests {
         let mut rng = PersonalityRNG::new(0);
         
         // 初期値確認
-        assert_eq!(rng.seed(), 0);
+        assert_eq!(rng.get_seed(), 0);
         
         // 最初の乱数値を取得
         let first = rng.next();
@@ -183,7 +188,7 @@ mod tests {
         assert_eq!(first, 0); // シード0の場合、最初の乱数値は0
         
         // しかしシードは更新されている
-        assert_eq!(rng.seed(), 0x269EC3);
+        assert_eq!(rng.get_seed(), 0x269EC3);
         
         // 次の乱数値は0以外になる
         let second = rng.next();
@@ -200,7 +205,7 @@ mod tests {
         let expected_value = (expected_seed >> 32) as u32;
         
         assert_eq!(actual_value, expected_value);
-        assert_eq!(rng.seed(), expected_seed);
+        assert_eq!(rng.get_seed(), expected_seed);
     }
 
     #[test]
@@ -264,7 +269,7 @@ mod tests {
         
         rng2.advance(5);
         
-        assert_eq!(rng1.seed(), rng2.seed());
+        assert_eq!(rng1.get_seed(), rng2.get_seed());
         assert_eq!(rng1.next(), rng2.next());
     }
 
@@ -275,11 +280,11 @@ mod tests {
         
         // 乱数を進める
         rng.advance(10);
-        assert_ne!(rng.seed(), initial_seed);
+        assert_ne!(rng.get_seed(), initial_seed);
         
         // リセット
         rng.reset(initial_seed);
-        assert_eq!(rng.seed(), initial_seed);
+        assert_eq!(rng.get_seed(), initial_seed);
     }
 
     #[test]
@@ -309,6 +314,6 @@ mod tests {
         }
         
         let jumped_seed = PersonalityRNG::jump_seed(seed, 10);
-        assert_eq!(rng.seed(), jumped_seed);
+        assert_eq!(rng.get_seed(), jumped_seed);
     }
 }

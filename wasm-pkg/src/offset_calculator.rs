@@ -51,13 +51,13 @@ pub struct PTResult {
 #[wasm_bindgen]
 impl PTResult {
     #[wasm_bindgen(getter)]
-    pub fn advances(&self) -> u32 { self.advances }
+    pub fn get_advances(&self) -> u32 { self.advances }
     
     #[wasm_bindgen(getter)]
-    pub fn final_value(&self) -> u32 { self.final_value }
+    pub fn get_final_value(&self) -> u32 { self.final_value }
     
     #[wasm_bindgen(getter)]
-    pub fn success(&self) -> bool { self.success }
+    pub fn get_success(&self) -> bool { self.success }
 }
 
 /// オフセット計算エンジン
@@ -104,7 +104,7 @@ impl OffsetCalculator {
     /// # Returns
     /// 進行回数
     #[wasm_bindgen(getter)]
-    pub fn advances(&self) -> u32 {
+    pub fn get_advances(&self) -> u32 {
         self.advances
     }
 
@@ -113,8 +113,8 @@ impl OffsetCalculator {
     /// # Returns
     /// 現在のシード値
     #[wasm_bindgen(getter)]
-    pub fn current_seed(&self) -> u64 {
-        self.rng.seed()
+    pub fn get_current_seed(&self) -> u64 {
+        self.rng.get_seed()
     }
 
     /// TID/SID決定処理
@@ -352,16 +352,16 @@ mod tests {
         let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
         
         // 初期状態確認
-        assert_eq!(calc.advances(), 0);
-        assert_eq!(calc.current_seed(), 0x123456789ABCDEF0);
+        assert_eq!(calc.get_advances(), 0);
+        assert_eq!(calc.get_current_seed(), 0x123456789ABCDEF0);
         
         // 乱数消費
         let seed1 = calc.next_seed();
-        assert_eq!(calc.advances(), 1);
-        assert_ne!(calc.current_seed(), 0x123456789ABCDEF0);
+        assert_eq!(calc.get_advances(), 1);
+        assert_ne!(calc.get_current_seed(), 0x123456789ABCDEF0);
         
         let seed2 = calc.next_seed();
-        assert_eq!(calc.advances(), 2);
+        assert_eq!(calc.get_advances(), 2);
         assert_ne!(seed1, seed2);
     }
 
@@ -370,10 +370,10 @@ mod tests {
         let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
         
         calc.consume_random(5);
-        assert_eq!(calc.advances(), 5);
+        assert_eq!(calc.get_advances(), 5);
         
         calc.consume_random(3);
-        assert_eq!(calc.advances(), 8);
+        assert_eq!(calc.get_advances(), 8);
     }
 
     #[test]
@@ -382,7 +382,7 @@ mod tests {
         
         let tid_sid = calc.calculate_tid_sid();
         assert_eq!(tid_sid.len(), 2);
-        assert_eq!(calc.advances(), 2);
+        assert_eq!(calc.get_advances(), 2);
         
         // TID/SIDは16bit値
         assert!(tid_sid[0] <= 0xFFFF);
@@ -394,11 +394,11 @@ mod tests {
         let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
         
         let front = calc.determine_front_residents();
-        assert_eq!(calc.advances(), 1);
+        assert_eq!(calc.get_advances(), 1);
         assert!(front >= 5 && front <= 14);
         
         let back = calc.determine_back_residents();
-        assert_eq!(calc.advances(), 2);
+        assert_eq!(calc.get_advances(), 2);
         assert!(back >= 3 && back <= 10);
     }
 
@@ -409,7 +409,7 @@ mod tests {
         let result = calc.extra_process(0x12345678, 10);
         assert!(result.advances <= 10);
         assert!(result.advances > 0);
-        assert_eq!(calc.advances(), result.advances);
+        assert_eq!(calc.get_advances(), result.advances);
     }
 
     #[test]
@@ -421,7 +421,7 @@ mod tests {
         assert_eq!(result.advances, 1);
         assert!(result.success);
         assert!(result.final_value <= 5);
-        assert_eq!(calc.advances(), 1);
+        assert_eq!(calc.get_advances(), 1);
     }
 
     #[test]
@@ -431,7 +431,7 @@ mod tests {
         
         let results = calc.probability_table_process_multiple(&thresholds, 5);
         assert_eq!(results.len(), 5);
-        assert_eq!(calc.advances(), 5);
+        assert_eq!(calc.get_advances(), 5);
         
         for result in results {
             assert_eq!(result.advances, 1);
@@ -448,7 +448,7 @@ mod tests {
         let result = calc.probability_table_process(&invalid_thresholds);
         assert!(!result.success);
         assert_eq!(result.advances, 0);
-        assert_eq!(calc.advances(), 0);
+        assert_eq!(calc.get_advances(), 0);
     }
 
     #[test]
@@ -469,7 +469,7 @@ mod tests {
             let advances = calc.execute_game_initialization(mode);
             
             assert!(advances > 0, "Mode {:?} should consume some advances", mode);
-            assert_eq!(calc.advances(), advances);
+            assert_eq!(calc.get_advances(), advances);
         }
     }
 
@@ -480,13 +480,13 @@ mod tests {
         
         // 進行させる
         calc.consume_random(10);
-        assert_eq!(calc.advances(), 10);
-        assert_ne!(calc.current_seed(), initial_seed);
+        assert_eq!(calc.get_advances(), 10);
+        assert_ne!(calc.get_current_seed(), initial_seed);
         
         // リセット
         calc.reset(initial_seed);
-        assert_eq!(calc.advances(), 0);
-        assert_eq!(calc.current_seed(), initial_seed);
+        assert_eq!(calc.get_advances(), 0);
+        assert_eq!(calc.get_current_seed(), initial_seed);
     }
 
     #[test]
@@ -499,8 +499,8 @@ mod tests {
         calc1.consume_random(5);
         calc2.consume_random(5);
         
-        assert_eq!(calc1.advances(), calc2.advances());
-        assert_eq!(calc1.current_seed(), calc2.current_seed());
+        assert_eq!(calc1.get_advances(), calc2.get_advances());
+        assert_eq!(calc1.get_current_seed(), calc2.get_current_seed());
         
         // 同じPT処理
         let thresholds = OffsetCalculator::default_pt_thresholds();
