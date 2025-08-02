@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, ChevronUp, Eye, Hash } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Hash } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
@@ -94,7 +94,7 @@ export function ResultsCard({
                     onClick={() => handleSort('timer0')}
                   >
                     <div className="flex items-center gap-1">
-                      Timer0 (Hex) {getSortIcon('timer0')}
+                      Timer0 {getSortIcon('timer0')}
                     </div>
                   </TableHead>
                   <TableHead 
@@ -102,10 +102,9 @@ export function ResultsCard({
                     onClick={() => handleSort('vcount')}
                   >
                     <div className="flex items-center gap-1">
-                      VCount (Hex) {getSortIcon('vcount')}
+                      VCount {getSortIcon('vcount')}
                     </div>
                   </TableHead>
-                  <TableHead className="whitespace-normal sm:whitespace-nowrap min-w-[80px]">ROM Info</TableHead>
                   <TableHead className="whitespace-normal sm:whitespace-nowrap min-w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -116,25 +115,12 @@ export function ResultsCard({
                       0x{result.seed.toString(16).toUpperCase().padStart(8, '0')}
                     </TableCell>
                     <TableCell className="whitespace-normal sm:whitespace-nowrap min-w-[100px]">
-                      <div className="flex items-center gap-1">
-                        <Calendar size={16} className="text-muted-foreground flex-shrink-0" />
-                        <span className="font-mono text-sm break-all sm:break-normal">
-                          {formatDateTime(result.datetime)}
-                        </span>
-                      </div>
+                      <span className="font-mono text-sm break-all sm:break-normal">
+                        {formatDateTime(result.datetime)}
+                      </span>
                     </TableCell>
                     <TableCell className="font-mono whitespace-normal sm:whitespace-nowrap break-all sm:break-normal min-w-[70px]">0x{result.timer0.toString(16).toUpperCase().padStart(4, '0')}</TableCell>
                     <TableCell className="font-mono whitespace-normal sm:whitespace-nowrap break-all sm:break-normal min-w-[70px]">0x{result.vcount.toString(16).toUpperCase().padStart(2, '0')}</TableCell>
-                    <TableCell className="whitespace-normal sm:whitespace-nowrap min-w-[80px]">
-                      <div className="space-y-1">
-                        <Badge variant="outline" className="text-xs">
-                          {result.conditions.romVersion} {result.conditions.romRegion}
-                        </Badge>
-                        <div className="text-xs text-muted-foreground">
-                          {result.conditions.hardware}
-                        </div>
-                      </div>
-                    </TableCell>
                     <TableCell className="whitespace-normal sm:whitespace-nowrap min-w-[80px]">
                       <Button 
                         variant="outline" 
