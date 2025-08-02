@@ -1150,141 +1150,360 @@ interface GameConstants {
   nazo: Record<string, number>;
 }
 ```
-```
 
+---
 
-## 7. テスト戦略
+**作成日**: 2025年8月2日  
+**バージョン**: 1.0  
+**作成者**: GitHub Copilot  
+**依存**: pokemon-generation-feature-spec.md, pokemon-data-specification.md, pokemon-generation-ui-spec.md
 
-### 7.1 Unit Tests
+### 9.1 WASM Layer Tests
 
-```typescript
-// pokemon-generator.test.ts
-describe('PokemonGenerator', () => {
-  let generator: PokemonGenerator;
-  
-  beforeEach(() => {
-    generator = new PokemonGenerator(0x12345678);
-  });
-  
-  test('should generate consistent results with same seed', () => {
-    const params = createTestParams();
+#### 9.1.1 RNG Engine Tests
+```rust
+// wasm-pkg/src/tests/rng_tests.rs
+#[cfg(test)]
+mod tests {
+    use super::*;
     
-    const result1 = generator.generateSinglePokemon(params, 0);
-    generator.setSeed(0x12345678); // reset
-    const result2 = generator.generateSinglePokemon(params, 0);
-    
-    expect(result1).toEqual(result2);
-  });
-  
-  test('should respect synchronize settings', () => {
-    const params = createTestParams({
-      synchronize: { enabled: true, nature: 'Adamant' }
-    });
-    
-    // 統計的テスト: 50%程度でAdamantが出るはず
-    const results = Array.from({ length: 1000 }, (_, i) => 
-      generator.generateSinglePokemon(params, i)
-    );
-    
-    const adamantCount = results.filter(r => r.nature === 'Adamant').length;
-    expect(adamantCount).toBeGreaterThan(400);
-    expect(adamantCount).toBeLessThan(600);
-  });
-  
-  test('should generate valid shiny Pokemon', () => {
-    const params = createTestParams({ trainerId: 12345, secretId: 54321 });
-    
-    const results = Array.from({ length: 10000 }, (_, i) => 
-      generator.generateSinglePokemon(params, i)
-    );
-    
-    const shinyResults = results.filter(r => r.isShiny);
-    
-    // 期待値: 10000 / 8192 ≈ 1.22匹
-    expect(shinyResults.length).toBeGreaterThan(0);
-    expect(shinyResults.length).toBeLessThan(20); // 統計的範囲内
-    
-    // 色違い判定の正確性確認
-    for (const shiny of shinyResults) {
-      const shinyValue = params.trainerId ^ params.secretId ^ 
-                        (shiny.pid >>> 16) ^ (shiny.pid & 0xFFFF);
-      expect(shinyValue).toBeLessThan(8);
+    #[test]
+    fn test_64bit_lcg_sequence() {
+        let mut rng = PersonalityRNG::new(0x12345678ABCDEF12);
+        
+        // 既知のseed値から期待される乱数列を確認
+        let expected_sequence = [
+            0x9A7B2C3D, 0x4E5F6A8B, 0xC1D2E3F4, 0x5678A9BC
+        ];
+        
+        for &expected in &expected_sequence {
+            assert_eq!(rng.next(), expected);
+        }
     }
-  });
-});
+    
+    #[test]
+    fn test_encounter_slot_calculation() {
+        let mut rng = PersonalityRNG::new(0x12345678);
+        let calc = EncounterCalculator::new(GameVersion::BlackWhite);
+        
+        // BW: (seed*0xFFFF/0x290)>>32
+        let slot = calc.calculate_encounter_slot(rng.next());
+        assert!(slot < 12); // 遭遇スロットは0-11
+    }
+    
+    #[test]
+    fn test_shiny_calculation() {
+        let pid = 0x12345678;
+        let trainer_id = 12345;
+        let secret_id = 54321;
+        
+        let shiny_value = ShinyChecker::get_shiny_value(pid, trainer_id, secret_id);
+        let is_shiny = ShinyChecker::is_shiny(pid, trainer_id, secret_id);
+        
+        assert_eq!(is_shiny, shiny_value < 8);
+    }
+}
 ```
 
-### 7.2 Integration Tests
-
-```typescript
-// generation-integration.test.ts
-describe('Pokemon Generation Integration', () => {
-  test('should generate realistic encounter distribution', async () => {
-    const generator = new PokemonGenerator(0x12345678);
-    const dataManager = new GenerationDataManager();
-    await dataManager.initialize();
+#### 9.1.2 Reference Implementation Tests
+```rust
+#[test]
+fn test_against_reference_implementation() {
+    // 既知のツール（さびたコイル等）との結果比較
+    let test_cases = [
+        TestCase {
+            initial_seed: 0x12345678ABCDEF12,
+            encounter_type: 0, // 野生
+            sync_enabled: false,
+            expected_results: vec![
+                ExpectedPokemon {
+                    advances: 100,
+                    pid: 0x12345678,
+                    nature_id: 5,
+                    encounter_slot: 3,
+                    is_shiny: false,
+                },
+                // 追加テストケース...
+            ]
+        }
+    ];
     
-    const params = {
-      encounterType: 'wild' as const,
-      encounterParams: {
-        location: 'route-1',
-        timeOfDay: 'day' as const,
-        season: 'spring' as const
-      },
-      maxCount: 1000,
-      maxAdvances: 10000
+    for test_case in test_cases {
+        let mut generator = PokemonGenerator::new(
+            test_case.initial_seed, 
+            GameVersion::BlackWhite
+        );
+        
+        for expected in test_case.expected_results {
+            // advances回分の計算を実行
+            for _ in 0..expected.advances {
+                let result = generator.generate_single_pokemon(
+                    test_case.encounter_type,
+                    test_case.sync_enabled,
+                    0, // sync_nature_id
+                    12345, // trainer_id
+                    54321, // secret_id
+                    expected.advances,
+                );
+                
+                if let Some(pokemon) = result {
+                    assert_eq!(pokemon.personality_value, expected.pid);
+                    assert_eq!(pokemon.nature_id, expected.nature_id);
+                    assert_eq!(pokemon.encounter_slot_value, expected.encounter_slot);
+                    assert_eq!(pokemon.shiny_flag, expected.is_shiny);
+                }
+            }
+        }
+    }
+}
+```
+
+### 9.2 TypeScript Integration Tests
+
+#### 9.2.1 Data Parser Tests
+```typescript
+// src/test/result-parser.test.ts
+describe('PokemonResultParser', () => {
+  let parser: PokemonResultParser;
+  let dataManager: GenerationDataManager;
+  
+  beforeEach(async () => {
+    dataManager = new GenerationDataManager(GameVersion.BlackWhite);
+    await dataManager.initialize();
+    parser = new PokemonResultParser(dataManager, GameVersion.BlackWhite);
+  });
+  
+  test('should parse WASM output correctly', () => {
+    const rawData = new RawPokemonData();
+    rawData.personality_value = 0x12345678;
+    rawData.encounter_slot_value = 3;
+    rawData.nature_id = 5;
+    rawData.sync_applied = false;
+    
+    const encounterParams = {
+      location: 'route-1',
+      type: 0, // 野生
+      timeOfDay: 'day',
+      season: 'spring'
     };
     
-    const results = await generator.generatePokemon(params);
+    const result = parser.parseRawData(rawData, encounterParams);
     
-    // 遭遇分布の妥当性チェック
-    const patratCount = results.filter(r => r.species === 'Patrat').length;
-    const lillipupCount = results.filter(r => r.species === 'Lillipup').length;
+    expect(result.species).toBe('Patrat'); // route-1の3番スロット
+    expect(result.nature).toBe('Impish'); // nature_id 5
+    expect(result.ability.name).toBeDefined();
+    expect(result.gender).toMatch(/^(male|female|genderless)$/);
+  });
+  
+  test('should handle synchronize correctly', () => {
+    const rawData = new RawPokemonData();
+    rawData.sync_applied = true;
+    rawData.nature_id = 3; // Adamant
     
-    // Route 1の遭遇テーブルに基づく期待値
-    expect(patratCount).toBeGreaterThan(400); // ~50%
-    expect(lillipupCount).toBeGreaterThan(400); // ~50%
+    const result = parser.parseRawData(rawData, mockEncounterParams);
+    
+    expect(result.synchronizeApplied).toBe(true);
+    expect(result.nature).toBe('Adamant');
   });
 });
 ```
+
+#### 9.2.2 WASM Integration Tests
+```typescript
+// src/test/wasm-integration.test.ts
+describe('WASM Integration', () => {
+  test('should generate consistent results', async () => {
+    const generator = new PokemonGenerator(0x12345678, GameVersion.BlackWhite);
+    
+    const results1 = generator.generate_pokemon_batch(100, 0, false, 0, 12345, 54321);
+    
+    // 同じseedで再実行
+    generator.set_seed(0x12345678);
+    const results2 = generator.generate_pokemon_batch(100, 0, false, 0, 12345, 54321);
+    
+    expect(results1).toEqual(results2);
+  });
+  
+  test('should respect encounter type differences', async () => {
+    const generator = new PokemonGenerator(0x12345678, GameVersion.BlackWhite);
+    
+    // 野生と徘徊で異なる結果が出ることを確認
+    const wildResult = generator.generate_single_pokemon(0, false, 0, 12345, 54321, 0);
+    generator.set_seed(0x12345678);
+    const roamingResult = generator.generate_single_pokemon(2, false, 0, 12345, 54321, 0);
+    
+    expect(wildResult).not.toEqual(roamingResult);
+  });
+});
+```
+
+### 9.3 E2E Tests
+
+#### 9.3.1 User Workflow Tests
+```typescript
+// src/test/e2e/generation-workflow.test.ts
+describe('Pokemon Generation E2E', () => {
+  test('complete generation workflow', async () => {
+    // 1. 初期設定
+    const params = {
+      gameVersion: GameVersion.BlackWhite,
+      initialSeed: 0x12345678,
+      encounterType: 'wild',
+      location: 'route-1',
+      syncEnabled: false,
+      maxCount: 1000
+    };
+    
+    // 2. 生成実行
+    const results = await runPokemonGeneration(params);
+    
+    // 3. 結果検証
+    expect(results).toHaveLength(1000);
+    
+    // 遭遇分布の確認
+    const speciesCount = countBySpecies(results);
+    expect(speciesCount['Patrat']).toBeGreaterThan(400); // 約50%
+    expect(speciesCount['Lillipup']).toBeGreaterThan(400); // 約50%
+    
+    // 色違い出現率の確認
+    const shinyCount = results.filter(p => p.isShiny).length;
+    expect(shinyCount).toBeGreaterThan(0);
+    expect(shinyCount).toBeLessThan(results.length * 0.002); // 1/8192より少し多め
+  });
+});
+```
+
+### 9.4 テスト実行戦略
+
+#### 9.4.1 開発時テスト
+```bash
+# WASM単体テスト
+npm run test:rust
+
+# TypeScript単体テスト  
+npm run test:ts
+
+# 統合テスト
+npm run test:integration
+```
+
+#### 9.4.2 CI/CDテスト
+```bash
+# 全テスト実行
+npm run test:all
+
+# 参照実装との比較
+npm run test:reference
+
+# パフォーマンステスト
+npm run test:performance
+```
+
+#### 9.4.3 テストデータ
+- **既知seed値**: 参照ツールで検証済みの結果
+- **エッジケース**: 色違い境界値、性格境界値
+- **大量データ**: 統計的な分布確認用
 
 ## 8. 実装フェーズ
 
-### 8.1 Phase 1: Core Engine（2週間）
-1. 基本RNGエンジン実装
-2. Pokemon Generator基本機能
-3. 野生ポケモン生成
-4. Unit Tests
+### 8.1 Phase 1: WASM Core Engine（3週間）
+1. **64bit LCG乱数エンジン実装**
+   - 正確な線形合同法（0x5D588B656C078965 + 0x269EC3）
+   - BW/BW2別の遭遇スロット計算
+   - 性格値生成・色違い判定
+2. **遭遇パターン実装**
+   - 野生・固定シンボル・徘徊・なみのり・つり・大量発生
+   - 正確な乱数消費順序
+3. **RawPokemonData構造体**
+   - WASM-TypeScript間データインターフェース
+4. **基本テスト**
+   - 参照実装との一致確認
+   - 各遭遇タイプの動作検証
 
-### 8.2 Phase 2: Data Integration（1週間）
-1. Data Manager実装
-2. 種族データ・遭遇テーブル統合
-3. データ検証機能
-4. Integration Tests
+### 8.2 Phase 2: TypeScript Integration（2週間）
+1. **結果パーサー実装**
+   - WASM出力のTypeScript型変換
+   - 種族・特性・性別決定ロジック
+2. **データ管理**
+   - 種族データ・遭遇テーブル・特性データ読み込み
+   - データ整合性チェック
+3. **WASMラッパーサービス**
+   - 生成パラメータの検証・変換
+   - エラーハンドリング
+4. **統合テスト**
+   - WASM-TypeScript連携確認
+   - データ変換の正確性検証
 
-### 8.3 Phase 3: UI Implementation（2週間）
-1. React コンポーネント実装
-2. 状態管理（Zustand）
-3. 基本的な表示機能
-4. UI Tests
+### 8.3 Phase 3: UI Components（2週間）
+1. **入力コンポーネント**
+   - 基本パラメータ・遭遇設定フォーム
+   - バリデーション機能
+2. **結果表示コンポーネント**
+   - テーブル・カード表示
+   - フィルタリング・ソート
+3. **制御コンポーネント**
+   - 生成開始・停止・進捗表示
+   - エクスポート機能
+4. **状態管理**
+   - Zustand store実装
 
-### 8.4 Phase 4: Advanced Features（2週間）
-1. 固定シンボル・つり対応
-2. フィルタリング・ソート
-3. エクスポート機能
-4. パフォーマンス最適化
+### 8.4 Phase 4: WebWorker & Performance（1週間）
+1. **WebWorker実装**
+   - WASM + WebWorker連携
+   - バックグラウンド処理
+2. **バッチ処理最適化**
+   - 大量生成時のメモリ効率化
+   - 進捗通知の最適化
+3. **パフォーマンステスト**
+   - 生成速度測定
+   - メモリ使用量監視
 
-### 8.5 Phase 5: WebWorker & Performance（1週間）
-1. WebWorker実装
-2. WASM最適化
-3. メモリ効率化
-4. Performance Tests
+### 8.5 Phase 5: Polish & Validation（1週間）
+1. **品質向上**
+   - エラーハンドリング強化
+   - ユーザビリティ改善
+2. **包括テスト**
+   - E2Eテスト実装
+   - 既知パターンとの検証
+3. **ドキュメント整備**
+   - API仕様書
+   - 使用方法ガイド
 
-### 8.6 Phase 6: Polish & Documentation（1週間）
-1. エラーハンドリング強化
-2. アクセシビリティ対応
-3. ドキュメント整備
-4. E2E Tests
+### 8.6 実装優先順位
+
+**最優先（Phase 1必須）**
+- 64bit LCG実装
+- BW/BW2遭遇スロット計算
+- 性格値・色違い判定
+
+**高優先（Phase 2必須）**
+- WASM結果パーサー
+- 基本データ管理
+- 統合テスト
+
+**中優先（Phase 3-4）**
+- UI実装
+- WebWorker連携
+
+**低優先（Phase 5）**
+- 品質向上
+- 詳細テスト
+
+### 8.7 依存関係
+
+```
+Phase 1 (WASM Core) 
+    ↓
+Phase 2 (TS Integration) 
+    ↓ 
+Phase 3 (UI Components)
+    ↓
+Phase 4 (Performance)
+    ↓
+Phase 5 (Polish)
+```
+
+**重要**: Phase 1のWASM実装完了が全体の前提条件。TypeScript側はWASM結果の表示・変換のみを担当。
 
 
 
