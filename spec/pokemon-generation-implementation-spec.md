@@ -6,32 +6,235 @@
 
 ## 2. アーキテクチャ設計
 
-### 2.1 全体構成
+### 2.1 全体構成（修正版）
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   UI Layer      │    │  Service Layer  │    │   Data Layer    │
+│  (TypeScript)   │    │  (TypeScript)   │    │  (TypeScript)   │
 │                 │    │                 │    │                 │
-│ - React         │ ←→ │ - Pokemon Gen   │ ←→ │ - Species Data  │
-│   Components    │    │   Service       │    │ - Encounter     │
-│ - Form Handling │    │ - RNG Engine    │    │   Tables        │
-│ - State Mgmt    │    │ - Calculation   │    │ - Static Data   │
-│   (Zustand)     │    │   Workers       │    │   (JSON)        │
+│ - React         │ ←→ │ - Result Parser │ ←→ │ - Species Data  │
+│   Components    │    │ - Data Manager  │    │ - Encounter     │
+│ - Form Handling │    │ - UI Controller │    │   Tables        │
+│ - State Mgmt    │    │ - Export Logic  │    │ - Static Data   │
+│   (Zustand)     │    │                 │    │   (JSON)        │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          └───────────────────────┼───────────────────────┘
                                  │
                     ┌─────────────────┐
                     │  WASM Layer     │
+                    │     (Rust)      │
                     │                 │
-                    │ - RNG Engine    │
-                    │ - LCG Algorithm │
-                    │ - SIMD Parallel │
-                    │   Processing    │
+                    │ - 64bit LCG     │
+                    │ - Pokemon Gen   │
+                    │ - Encounter     │
+                    │   Calculation   │
+                    │ - Raw Data Gen  │
                     └─────────────────┘
 ```
 
-### 2.2 モジュール設計
+**重要な設計変更**:
+- **計算ロジック**: 全てWASM側で実装
+- **TypeScript側**: 結果のパース・UI表示のみ
+- **フォールバック実装**: 提供しない
+
+### 2.2 WASM-TypeScript データインターフェース
+
+#### 2.2.1 WASM側出力データ構造
+
+```rust
+// wasm-pkg/src/pokemon_data.rs
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+pub struct RawPokemonData {
+    // 基本データ
+    personality_value: u32,      // 性格値（PID）
+    encounter_slot_value: u32,   // 遭遇スロット値
+    nature_id: u32,             // 性格ID（0-24）
+    sync_applied: bool,         // シンクロ適用フラグ
+    advances: u32,              // 消費数
+    
+    // 追加情報
+    level: u8,                  // レベル
+    shiny_flag: bool,           // 色違いフラグ
+    ability_slot: u8,           // 特性スロット（1 or 2）
+    gender_value: u8,           // 性別判定値
+    
+    // デバッグ情報
+    rng_seed_used: u64,         // 使用されたseed
+    encounter_type: u32,        // 遭遇タイプ
+}
+
+#[wasm_bindgen]
+impl RawPokemonData {
+    // Getter methods for JavaScript access
+    #[wasm_bindgen(getter)]
+    pub fn personality_value(&self) -> u32 { self.personality_value }
+    
+    #[wasm_bindgen(getter)]
+    pub fn encounter_slot_value(&self) -> u32 { self.encounter_slot_value }
+    
+    #[wasm_bindgen(getter)]
+    pub fn nature_id(&self) -> u32 { self.nature_id }
+    
+    #[wasm_bindgen(getter)]
+    pub fn sync_applied(&self) -> bool { self.sync_applied }
+    
+    #[wasm_bindgen(getter)]
+    pub fn advances(&self) -> u32 { self.advances }
+    
+    #[wasm_bindgen(getter)]
+    pub fn level(&self) -> u8 { self.level }
+    
+    #[wasm_bindgen(getter)]
+    pub fn shiny_flag(&self) -> bool { self.shiny_flag }
+    
+    #[wasm_bindgen(getter)]
+    pub fn ability_slot(&self) -> u8 { self.ability_slot }
+    
+    #[wasm_bindgen(getter)]
+    pub fn gender_value(&self) -> u8 { self.gender_value }
+    
+    #[wasm_bindgen(getter)]
+    pub fn rng_seed_used(&self) -> u64 { self.rng_seed_used }
+    
+    #[wasm_bindgen(getter)]
+    pub fn encounter_type(&self) -> u32 { self.encounter_type }
+}
+```
+
+#### 2.2.2 TypeScript側データパーサー
+
+```typescript
+// src/lib/generation/result-parser.ts
+interface GeneratedPokemon {
+  // 基本情報
+  species: string;
+  level: number;
+  nature: PokemonNature;
+  ability: AbilityData;
+  gender: Gender;
+  isShiny: boolean;
+  
+  // 詳細情報
+  personalityValue: number;
+  encounterSlot: number;
+  advances: number;
+  
+  // メタ情報
+  synchronizeApplied: boolean;
+  frame: number;
+  rngSeedUsed: bigint;
+}
+
+class PokemonResultParser {
+  constructor(
+    private dataManager: GenerationDataManager,
+    private gameVersion: GameVersion
+  ) {}
+  
+  // WASM出力をTypeScript型に変換
+  parseRawData(rawData: RawPokemonData, encounterParams: EncounterParams): GeneratedPokemon {
+    return {
+      // 出現ポケモン決定（遭遇スロット → エンカウントテーブル参照）
+      species: this.determineSpecies(rawData.encounter_slot_value, encounterParams),
+      
+      // レベルはWASM側で計算済み
+      level: rawData.level,
+      
+      // 性格は性格IDから変換
+      nature: this.getNatureFromId(rawData.nature_id),
+      
+      // 特性決定（性格値の16bit目で判定）
+      ability: this.determineAbility(rawData.personality_value, rawData.encounter_slot_value, encounterParams),
+      
+      // 性別決定（性格値下位8bit vs 種族閾値）
+      gender: this.determineGender(rawData.personality_value, rawData.encounter_slot_value, encounterParams),
+      
+      // 色違いはWASM側で判定済み
+      isShiny: rawData.shiny_flag,
+      
+      // 詳細情報
+      personalityValue: rawData.personality_value,
+      encounterSlot: rawData.encounter_slot_value,
+      advances: rawData.advances,
+      
+      // メタ情報
+      synchronizeApplied: rawData.sync_applied,
+      frame: rawData.advances,
+      rngSeedUsed: BigInt(rawData.rng_seed_used),
+    };
+  }
+  
+  private determineSpecies(slotValue: number, encounterParams: EncounterParams): string {
+    const encounterTable = this.dataManager.getEncounterTable(encounterParams.location);
+    if (!encounterTable) throw new Error(`Unknown location: ${encounterParams.location}`);
+    
+    // 遭遇スロット値をテーブルインデックスに変換
+    const calculator = new EncounterCalculator(this.gameVersion);
+    const tableIndex = calculator.slot_to_table_index(slotValue, encounterParams.type);
+    
+    return encounterTable.slots[tableIndex]?.pokemon || 'Unknown';
+  }
+  
+  private determineAbility(pid: number, slotValue: number, encounterParams: EncounterParams): AbilityData {
+    const species = this.determineSpecies(slotValue, encounterParams);
+    const speciesData = this.dataManager.getSpecies(species);
+    if (!speciesData) throw new Error(`Unknown species: ${species}`);
+    
+    // 性格値の16bit目で特性判定
+    const abilitySlot = (pid >> 16) & 1;
+    const abilityName = abilitySlot === 0 ? speciesData.abilities.ability1 : speciesData.abilities.ability2;
+    
+    return this.dataManager.getAbility(abilityName);
+  }
+  
+  private determineGender(pid: number, slotValue: number, encounterParams: EncounterParams): Gender {
+    const species = this.determineSpecies(slotValue, encounterParams);
+    const speciesData = this.dataManager.getSpecies(species);
+    if (!speciesData) throw new Error(`Unknown species: ${species}`);
+    
+    // 性別比率が固定の場合
+    if (speciesData.genderRatio === 'genderless') return 'genderless';
+    if (speciesData.genderRatio === 'male-only') return 'male';
+    if (speciesData.genderRatio === 'female-only') return 'female';
+    
+    // 性格値下位8bit vs 種族閾値で判定
+    const genderValue = pid & 0xFF;
+    const threshold = this.getGenderThreshold(speciesData.genderRatio);
+    
+    return genderValue < threshold ? 'female' : 'male';
+  }
+  
+  private getNatureFromId(natureId: number): PokemonNature {
+    const natureList = [
+      'Hardy', 'Lonely', 'Brave', 'Adamant', 'Naughty',
+      'Bold', 'Docile', 'Relaxed', 'Impish', 'Lax',
+      'Timid', 'Hasty', 'Serious', 'Jolly', 'Naive',
+      'Modest', 'Mild', 'Quiet', 'Bashful', 'Rash',
+      'Calm', 'Gentle', 'Sassy', 'Careful', 'Quirky'
+    ];
+    
+    return natureList[natureId] as PokemonNature;
+  }
+  
+  private getGenderThreshold(genderRatio: string): number {
+    const ratioMap: Record<string, number> = {
+      '87.5:12.5': 31,   // 87.5% male (starter等)
+      '75:25': 63,       // 75% male
+      '50:50': 127,      // 50% male
+      '25:75': 191,      // 25% male
+      '12.5:87.5': 225,  // 12.5% male
+    };
+    
+    return ratioMap[genderRatio] || 127;
+  }
+}
+```
+
+### 2.3 モジュール設計（修正版）
 
 ```
 src/
@@ -43,7 +246,7 @@ src/
 │       │   ├── EncounterSettingsCard.tsx # 遭遇設定
 │       │   ├── WildEncounterForm.tsx   # 野生遭遇フォーム
 │       │   ├── StaticEncounterForm.tsx # 固定シンボルフォーム
-│       │   ├── FishingEncounterForm.tsx # つりフォーム
+│       │   ├── RoamingEncounterForm.tsx # 徘徊ポケモンフォーム
 │       │   └── GenerationRangeCard.tsx # 生成範囲設定
 │       ├── results/
 │       │   ├── ResultsTable.tsx        # 結果テーブル
@@ -57,25 +260,55 @@ src/
 │           └── ExportControls.tsx      # エクスポート制御
 ├── lib/
 │   └── generation/
-│       ├── pokemon-generator.ts        # メイン生成エンジン
-│       ├── rng-engine.ts              # 乱数生成エンジン
-│       ├── encounter-calculator.ts     # 遭遇計算
-│       ├── pokemon-calculator.ts       # ポケモン計算
-│       ├── shiny-calculator.ts        # 色違い判定
-│       └── data-manager.ts            # データ管理
+│       ├── pokemon-generator-service.ts # WASMラッパーサービス
+│       ├── result-parser.ts            # WASM結果パーサー
+│       ├── data-manager.ts             # 静的データ管理
+│       ├── validation.ts               # 入力検証
+│       └── export-manager.ts           # エクスポート処理
 ├── data/
 │   └── generation/
-│       ├── species/                   # 種族データ
-│       ├── encounters/                # 遭遇データ
-│       ├── game-data/                # ゲームデータ
-│       └── constants/                # 定数データ
+│       ├── species/                    # 種族データ
+│       ├── encounters/                 # 遭遇データ
+│       ├── game-data/                 # ゲームデータ
+│       └── constants/                 # 定数データ
 ├── types/
-│   └── generation.ts                 # 型定義
+│   └── generation.ts                  # 型定義
 ├── store/
-│   └── generation-store.ts           # 状態管理
+│   └── generation-store.ts            # 状態管理
 └── workers/
-    └── pokemon-generation-worker.ts   # バックグラウンド処理
+    └── pokemon-generation-worker.ts    # バックグラウンド処理
+
+wasm-pkg/
+├── src/
+│   ├── lib.rs                         # WASMエントリーポイント
+│   ├── personality_rng.rs             # 性格値乱数列エンジン
+│   ├── encounter_calculator.rs        # 遭遇スロット計算
+│   ├── pokemon_generator.rs           # メイン生成エンジン
+│   ├── pokemon_data.rs                # データ構造定義
+│   └── utils.rs                       # ユーティリティ
+└── Cargo.toml                         # Rust設定
 ```
+
+### 2.4 責任分離の原則
+
+#### WASM側の責任
+- **64bit線形合同法による乱数生成**
+- **BW/BW2別の遭遇スロット計算**
+- **性格値・性格・レベル決定**
+- **色違い判定**
+- **高速バッチ処理**
+
+#### TypeScript側の責任
+- **WASM結果のパース・変換**
+- **エンカウントテーブルとの照合**
+- **種族データとの統合**
+- **UI表示・状態管理**
+- **エクスポート・フィルタリング**
+
+#### 境界の明確化
+- **WASMはRawPokemonDataのみ返却**
+- **TypeScriptは表示用データに変換**
+- **計算ロジックの重複を完全に排除**
 
 ## 3. データフロー設計
 
@@ -151,159 +384,235 @@ interface GenerationWorkerResponse {
 
 ## 4. 核心アルゴリズム実装
 
-### 4.1 RNG Engine（TypeScript）
+### 4.1 性格値乱数列エンジン（WASM実装）
 
-```typescript
-class PokemonRNGEngine {
-  private seed: number;
-  
-  constructor(initialSeed: number) {
-    this.seed = initialSeed >>> 0; // 32bit unsigned
-  }
-  
-  // LCG乱数生成
-  next(): number {
-    this.seed = ((this.seed * 0x41C64E6D) + 0x6073) >>> 0;
-    return this.seed;
-  }
-  
-  // 上位16bit取得
-  nextU16(): number {
-    return this.next() >>> 16;
-  }
-  
-  // 範囲指定乱数
-  nextRange(max: number): number {
-    return this.nextU16() % max;
-  }
-  
-  // 現在のseed値取得
-  getCurrentSeed(): number {
-    return this.seed;
-  }
-  
-  // seed値設定
-  setSeed(seed: number): void {
-    this.seed = seed >>> 0;
-  }
+**重要**: 計算ロジックは全てWASM側で実装し、TypeScript側はフォールバック実装を行わない。
+
+```rust
+// wasm-pkg/src/personality_rng.rs
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+pub struct PersonalityRNG {
+    seed: u64,
+}
+
+#[wasm_bindgen]
+impl PersonalityRNG {
+    #[wasm_bindgen(constructor)]
+    pub fn new(initial_seed: u64) -> PersonalityRNG {
+        PersonalityRNG {
+            seed: initial_seed,
+        }
+    }
+    
+    // BW仕様64bit線形合同法
+    // S1[n+1] = S1[n] * 0x5D588B656C078965 + 0x269EC3
+    pub fn next(&mut self) -> u32 {
+        self.seed = self.seed
+            .wrapping_mul(0x5D588B656C078965)
+            .wrapping_add(0x269EC3);
+        
+        // 上位32bitを返す（実際の乱数として使用）
+        (self.seed >> 32) as u32
+    }
+    
+    // シンクロ判定用: (r1[n]*2)>>32
+    pub fn sync_check(&mut self) -> bool {
+        let rand = self.next();
+        ((rand as u64 * 2) >> 32) == 0
+    }
+    
+    // 性格決定用: (r1[n]*25)>>32
+    pub fn nature_roll(&mut self) -> u32 {
+        let rand = self.next();
+        ((rand as u64 * 25) >> 32) as u32
+    }
+    
+    // 遭遇スロット決定（BW用）: (seed*0xFFFF/0x290)>>32
+    pub fn encounter_slot_bw(&mut self) -> u32 {
+        let rand = self.next();
+        ((rand as u64 * 0xFFFF / 0x290) >> 32) as u32
+    }
+    
+    // 遭遇スロット決定（BW2用）: (seed*100)>>32
+    pub fn encounter_slot_bw2(&mut self) -> u32 {
+        let rand = self.next();
+        ((rand as u64 * 100) >> 32) as u32
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn current_seed(&self) -> u64 {
+        self.seed
+    }
+    
+    #[wasm_bindgen(setter)]
+    pub fn set_seed(&mut self, seed: u64) {
+        self.seed = seed;
+    }
 }
 ```
 
-### 4.2 Pokemon Generator
+### 4.3 統合Pokemon Generator（WASM実装）
 
-```typescript
-class PokemonGenerator {
-  private rng: PokemonRNGEngine;
-  private dataManager: GenerationDataManager;
-  
-  constructor(initialSeed: number) {
-    this.rng = new PokemonRNGEngine(initialSeed);
-    this.dataManager = new GenerationDataManager();
-  }
-  
-  // メイン生成メソッド
-  async generatePokemon(params: GenerationParams): Promise<GeneratedPokemon[]> {
-    const results: GeneratedPokemon[] = [];
-    let advances = 0;
-    
-    while (results.length < params.maxCount && advances < params.maxAdvances) {
-      const pokemon = await this.generateSinglePokemon(params, advances);
-      if (pokemon) {
-        results.push(pokemon);
-      }
-      advances++;
-      
-      // 進捗通知
-      if (advances % 100 === 0) {
-        this.notifyProgress(advances, params.maxAdvances, results.length);
-      }
-    }
-    
-    return results;
-  }
-  
-  private async generateSinglePokemon(
-    params: GenerationParams, 
-    advances: number
-  ): Promise<GeneratedPokemon | null> {
-    const startSeed = this.rng.getCurrentSeed();
-    
-    // Step 1: 遭遇判定
-    const encounterSlot = this.calculateEncounterSlot(params.encounterType, params.encounterParams);
-    if (!encounterSlot) return null;
-    
-    // Step 2: ポケモン種族決定
-    const species = this.determineSpecies(encounterSlot, params.encounterParams);
-    
-    // Step 3: レベル決定
-    const level = this.determineLevel(encounterSlot, params.encounterParams);
-    
-    // Step 4: 性格決定
-    const nature = this.determineNature(params.synchronize);
-    
-    // Step 5: 特性決定
-    const ability = this.determineAbility(species);
-    
-    // Step 6: 個体値生成
-    const ivs = this.generateIVs();
-    
-    // Step 7: PID生成・色違い判定
-    const { pid, isShiny } = this.generatePIDAndShiny(params.trainerId, params.secretId);
-    
-    // Step 8: 性別決定
-    const gender = this.determineGender(species, pid);
-    
-    return {
-      species: species.name,
-      level,
-      nature,
-      ability,
-      gender,
-      ivs,
-      isShiny,
-      pid,
-      encounterSlot: encounterSlot.id,
-      advances,
-      rngValues: this.rng.getUsedValues(), // デバッグ用
-      synchronizeApplied: params.synchronize.enabled && nature === params.synchronize.nature,
-      frame: advances
-    };
-  }
-  
-  private determineNature(synchronize: SynchronizeSettings): PokemonNature {
-    const random = this.rng.nextRange(100);
-    
-    if (synchronize.enabled && random < 50) {
-      return synchronize.nature!;
-    }
-    
-    const natureId = this.rng.nextRange(25);
-    return NATURE_LIST[natureId];
-  }
-  
-  private generateIVs(): IVSet {
-    return {
-      hp: this.rng.nextRange(32),
-      attack: this.rng.nextRange(32),
-      defense: this.rng.nextRange(32),
-      specialAttack: this.rng.nextRange(32),
-      specialDefense: this.rng.nextRange(32),
-      speed: this.rng.nextRange(32)
-    };
-  }
-  
-  private generatePIDAndShiny(trainerId: number, secretId: number): { pid: number; isShiny: boolean } {
-    const pidLow = this.rng.nextU16();
-    const pidHigh = this.rng.nextU16();
-    const pid = (pidHigh << 16) | pidLow;
-    
-    // 色違い判定: (TID ^ SID ^ PIDHigh ^ PIDLow) < 8
-    const shinyValue = trainerId ^ secretId ^ pidHigh ^ pidLow;
-    const isShiny = shinyValue < 8;
-    
-    return { pid, isShiny };
-  }
+```rust
+// wasm-pkg/src/pokemon_generator.rs
+use wasm_bindgen::prelude::*;
+use crate::personality_rng::PersonalityRNG;
+use crate::encounter_calculator::{EncounterCalculator, GameVersion};
+use crate::pokemon_data::RawPokemonData;
+
+#[wasm_bindgen]
+pub struct PokemonGenerator {
+    rng: PersonalityRNG,
+    encounter_calc: EncounterCalculator,
+    game_version: GameVersion,
 }
+
+#[wasm_bindgen]
+impl PokemonGenerator {
+    #[wasm_bindgen(constructor)]
+    pub fn new(initial_seed: u64, game_version: GameVersion) -> PokemonGenerator {
+        PokemonGenerator {
+            rng: PersonalityRNG::new(initial_seed),
+            encounter_calc: EncounterCalculator::new(game_version),
+            game_version,
+        }
+    }
+    
+    // メイン生成メソッド
+    pub fn generate_pokemon_batch(
+        &mut self,
+        count: u32,
+        encounter_type: u32,
+        sync_enabled: bool,
+        sync_nature_id: u32,
+        trainer_id: u16,
+        secret_id: u16,
+    ) -> Vec<RawPokemonData> {
+        let mut results = Vec::new();
+        
+        for advances in 0..count {
+            if let Some(pokemon) = self.generate_single_pokemon(
+                encounter_type,
+                sync_enabled,
+                sync_nature_id,
+                trainer_id,
+                secret_id,
+                advances,
+            ) {
+                results.push(pokemon);
+            }
+        }
+        
+        results
+    }
+    
+    fn generate_single_pokemon(
+        &mut self,
+        encounter_type: u32,
+        sync_enabled: bool,
+        sync_nature_id: u32,
+        trainer_id: u16,
+        secret_id: u16,
+        advances: u32,
+    ) -> Option<RawPokemonData> {
+        let start_seed = self.rng.current_seed();
+        
+        // Step 1: シンクロ判定（固定シンボル・野生のみ）
+        let (sync_applied, nature_id) = if encounter_type <= 1 {
+            let sync_check = sync_enabled && self.rng.sync_check();
+            if sync_check {
+                (true, sync_nature_id)
+            } else {
+                (false, self.rng.nature_roll())
+            }
+        } else {
+            // 徘徊ポケモンはシンクロ無効
+            (false, self.rng.nature_roll())
+        };
+        
+        // Step 2: 遭遇スロット決定
+        let encounter_slot_value = match self.game_version {
+            GameVersion::BlackWhite => self.rng.encounter_slot_bw(),
+            GameVersion::BlackWhite2 => self.rng.encounter_slot_bw2(),
+        };
+        
+        // Step 3: 性格値決定
+        let personality_value = match encounter_type {
+            0 | 1 => {
+                // 野生・固定シンボル: r1[n+1]^0x00010000
+                let pid_base = self.rng.next();
+                pid_base ^ 0x00010000
+            },
+            2 => {
+                // 徘徊ポケモン: r1[n] (XOR無し)
+                self.rng.next()
+            },
+            _ => return None, // 未対応のエンカウントタイプ
+        };
+        
+        // Step 4: レベル決定（簡易実装、実際は遭遇テーブル依存）
+        let level = self.calculate_level(encounter_slot_value, encounter_type);
+        
+        // Step 5: 色違い判定
+        let shiny_flag = self.check_shiny(personality_value, trainer_id, secret_id);
+        
+        // Step 6: 特性スロット決定
+        let ability_slot = if (personality_value >> 16) & 1 == 0 { 1 } else { 2 };
+        
+        // Step 7: 性別判定値
+        let gender_value = (personality_value & 0xFF) as u8;
+        
+        Some(RawPokemonData {
+            personality_value,
+            encounter_slot_value,
+            nature_id,
+            sync_applied,
+            advances,
+            level,
+            shiny_flag,
+            ability_slot,
+            gender_value,
+            rng_seed_used: start_seed,
+            encounter_type,
+        })
+    }
+    
+    fn calculate_level(&mut self, slot_value: u32, encounter_type: u32) -> u8 {
+        // 簡易実装：実際はエンカウントテーブルとレベル範囲に依存
+        match encounter_type {
+            0 => 25, // 草むら：固定レベル例
+            1 => {
+                // なみのり：レベル範囲からランダム選択
+                let level_rand = self.rng.next();
+                let min_lv = 25;
+                let max_lv = 35;
+                ((level_rand as u64 * (max_lv - min_lv + 1) as u64) >> 32) as u8 + min_lv
+            },
+            2 => 30, // 徘徊：固定レベル
+            _ => 25,
+        }
+    }
+    
+    fn check_shiny(&self, pid: u32, trainer_id: u16, secret_id: u16) -> bool {
+        let pid_high = (pid >> 16) as u16;
+        let pid_low = (pid & 0xFFFF) as u16;
+        let shiny_value = trainer_id ^ secret_id ^ pid_high ^ pid_low;
+        shiny_value < 8
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn current_seed(&self) -> u64 {
+        self.rng.current_seed()
+    }
+    
+    #[wasm_bindgen(setter)]
+    pub fn set_seed(&mut self, seed: u64) {
+        self.rng.set_seed(seed);
+    }
+}
+```
 ```
 
 ### 4.3 WASM最適化版（Rust）
