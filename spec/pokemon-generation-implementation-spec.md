@@ -1,10 +1,52 @@
 # ポケモン生成機能 実装仕様書
 
-## 1. 概要
+> ⚠️ **重要なお知らせ**  
+> この実装仕様書は分割されました。新しい構成については以下をご確認ください：
 
-ポケモン生成機能の技術的な実装詳細、アーキテクチャ設計、および開発手順を定義する。
+## 📁 新しいドキュメント構成
 
-## 2. アーキテクチャ設計
+実装仕様書は保守性向上のため、以下の4つのドキュメントに分割されました：
+
+### 1. **[implementation/01-architecture.md](./implementation/01-architecture.md)** - アーキテクチャ設計
+- 全体構成設計
+- WASM-TypeScript データインターフェース  
+- モジュール設計と責任分離
+- データフロー設計
+
+### 2. **[implementation/02-algorithms.md](./implementation/02-algorithms.md)** - 核心アルゴリズム実装
+- 性格値乱数列エンジン（WASM実装）
+- 遭遇計算エンジン（WASM実装） 
+- 統合Pokemon Generator（WASM実装）
+- 性格値・色違い判定の詳細実装
+
+### 3. **[implementation/03-data-management.md](./implementation/03-data-management.md)** - データ管理実装  
+- Generation Data Manager（TypeScript側）
+- 種族データ・遭遇テーブル・特性データ管理
+- データ整合性チェック
+
+### 4. **[implementation/04-implementation-phases.md](./implementation/04-implementation-phases.md)** - 実装フェーズ
+- Phase 1: WASM Core Engine（3週間）
+- Phase 2: TypeScript Integration（2週間） 
+- Phase 3: UI Components（2週間）
+- Phase 4: WebWorker & Performance（1週間）
+- Phase 5: Polish & Validation（1週間）
+
+## 🎯 推奨利用方法
+
+1. **新規実装時**: `implementation/README.md` → 各分割ドキュメント参照
+2. **保守・更新時**: 該当する分割ドキュメントを直接参照
+3. **アーキテクチャ理解**: `01-architecture.md` から開始
+4. **アルゴリズム実装**: `02-algorithms.md` を参照
+
+---
+
+## 分割前の統合実装仕様書（レガシー）
+
+以下は分割前の実装仕様書です。新しい分割ドキュメントへの移行を推奨しますが、参考として保持しています。
+
+---
+
+## 2. アーキテクチャ設計（レガシー）
 
 ### 2.1 全体構成（修正版）
 
