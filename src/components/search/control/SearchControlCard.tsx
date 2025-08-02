@@ -9,6 +9,7 @@ import { Play, Pause, Square, Gear } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
 import { useResponsiveLayout } from '../../../hooks/use-mobile';
 import { getSearchWorkerManager, resetSearchWorkerManager } from '../../../lib/search/search-worker-manager';
+import { isWakeLockSupported, requestWakeLock, releaseWakeLock, setupAutoWakeLockManagement } from '../../../lib/utils/wake-lock';
 import type { InitialSeedResult } from '../../../types/pokemon';
 
 export function SearchControlCard() {
@@ -27,6 +28,8 @@ export function SearchControlCard() {
     setParallelSearchEnabled,
     setMaxWorkers,
     setParallelProgress,
+    wakeLockEnabled,
+    setWakeLockEnabled,
   } = useAppStore();
 
   // ワーカー数設定を初期化時に同期
@@ -35,6 +38,22 @@ export function SearchControlCard() {
     workerManager.setMaxWorkers(parallelSearchSettings.maxWorkers);
     workerManager.setParallelMode(parallelSearchSettings.enabled);
   }, [parallelSearchSettings.maxWorkers, parallelSearchSettings.enabled]);
+
+  // Wake Lock自動管理のセットアップ
+  useEffect(() => {
+    if (isWakeLockSupported()) {
+      setupAutoWakeLockManagement(() => wakeLockEnabled && searchProgress.isRunning);
+    }
+  }, []);
+
+  // Wake Lock状態管理: 検索開始/終了時に制御
+  useEffect(() => {
+    if (wakeLockEnabled && searchProgress.isRunning) {
+      requestWakeLock();
+    } else if (!searchProgress.isRunning) {
+      releaseWakeLock();
+    }
+  }, [wakeLockEnabled, searchProgress.isRunning]);
 
   // Worker management functions
   const handlePauseSearch = () => {
@@ -179,6 +198,16 @@ export function SearchControlCard() {
 
   const maxCpuCores = navigator.hardwareConcurrency || 4;
   const isParallelAvailable = getSearchWorkerManager().isParallelSearchAvailable();
+  const isWakeLockAvailable = isWakeLockSupported();
+
+  // Wake Lock設定の変更
+  const handleWakeLockChange = (enabled: boolean) => {
+    setWakeLockEnabled(enabled);
+    if (!enabled) {
+      // 無効にした場合は即座にWake Lockを解除
+      releaseWakeLock();
+    }
+  };
 
   // 統一レイアウト: シンプルな検索制御
   return (
@@ -191,94 +220,112 @@ export function SearchControlCard() {
       </CardHeader>
       <CardContent className="pt-0 flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="space-y-2">
-          {/* 検索制御ボタン */}
-          <div className="flex gap-2">
-            {!searchProgress.isRunning ? (
-              <Button 
-                onClick={handleStartSearch} 
-                disabled={targetSeeds.seeds.length === 0}
-                className="flex-1"
-                size="sm"
-              >
-                <Play size={16} className="mr-2" />
-                Start Search
-              </Button>
-            ) : (
-              <>
-                {!searchProgress.isPaused ? (
-                  <Button 
-                    onClick={handlePauseSearch}
-                    variant="secondary"
-                    className="flex-1"
-                    size="sm"
-                  >
-                    <Pause size={16} className="mr-2" />
-                    Pause
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={handleResumeSearch}
-                    className="flex-1"
-                    size="sm"
-                  >
-                    <Play size={16} className="mr-2" />
-                    Resume
-                  </Button>
-                )}
+          {/* 検索制御ボタンと設定 */}
+          <div className="flex gap-2 items-center flex-wrap">
+            {/* 検索ボタン */}
+            <div className="flex gap-2 flex-1 min-w-0">
+              {!searchProgress.isRunning ? (
                 <Button 
-                  onClick={handleStopSearch}
-                  variant="destructive"
+                  onClick={handleStartSearch} 
+                  disabled={targetSeeds.seeds.length === 0}
+                  className="flex-1"
                   size="sm"
                 >
-                  <Square size={16} className="mr-2" />
-                  Stop
+                  <Play size={16} className="mr-2" />
+                  Start Search
                 </Button>
-              </>
-            )}
-          </div>
+              ) : (
+                <>
+                  {!searchProgress.isPaused ? (
+                    <Button 
+                      onClick={handlePauseSearch}
+                      variant="secondary"
+                      className="flex-1"
+                      size="sm"
+                    >
+                      <Pause size={16} className="mr-2" />
+                      Pause
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleResumeSearch}
+                      className="flex-1"
+                      size="sm"
+                    >
+                      <Play size={16} className="mr-2" />
+                      Resume
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={handleStopSearch}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    <Square size={16} className="mr-2" />
+                    Stop
+                  </Button>
+                </>
+              )}
+            </div>
 
-          {/* 並列検索設定 */}
-          {isParallelAvailable && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
+            {/* 設定チェックボックス */}
+            <div className="flex gap-3 items-center">
+              {/* 並列検索設定 */}
+              {isParallelAvailable && (
+                <div className="flex items-center space-x-1">
                   <Checkbox
-                    id="parallel-search"
+                    id="parallel-search-inline"
                     checked={parallelSearchSettings.enabled}
                     onCheckedChange={handleParallelModeChange}
                     disabled={searchProgress.isRunning}
                   />
-                  <Label htmlFor="parallel-search" className="text-sm font-medium">
-                    Parallel Search {parallelSearchSettings.enabled ? '(Active)' : '(Experimental)'}
+                  <Label htmlFor="parallel-search-inline" className="text-xs whitespace-nowrap">
+                    Parallel
                   </Label>
                 </div>
+              )}
 
-                {/* ワーカー数設定 */}
-                {parallelSearchSettings.enabled && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm">Worker Threads</Label>
-                      <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                        {parallelSearchSettings.maxWorkers}
-                      </span>
-                    </div>
-                    <Slider
-                      value={[parallelSearchSettings.maxWorkers]}
-                      onValueChange={([value]) => handleMaxWorkersChange([value])}
-                      min={1}
-                      max={Math.max(maxCpuCores, 8)}
-                      step={1}
-                      disabled={searchProgress.isRunning}
-                      className="flex-1"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>1 worker</span>
-                      <span>CPU cores: {maxCpuCores}</span>
-                      <span>{Math.max(maxCpuCores, 8)} max</span>
-                    </div>
-                  </div>
-                )}
+              {/* Wake Lock設定 */}
+              {isWakeLockAvailable && (
+                <div className="flex items-center space-x-1">
+                  <Checkbox
+                    id="wake-lock-inline"
+                    checked={wakeLockEnabled}
+                    onCheckedChange={handleWakeLockChange}
+                  />
+                  <Label htmlFor="wake-lock-inline" className="text-xs whitespace-nowrap">
+                    Keep Screen On
+                  </Label>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 並列検索詳細設定 */}
+          {isParallelAvailable && parallelSearchSettings.enabled && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Worker Threads</Label>
+                  <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                    {parallelSearchSettings.maxWorkers}
+                  </span>
+                </div>
+                <Slider
+                  value={[parallelSearchSettings.maxWorkers]}
+                  onValueChange={([value]) => handleMaxWorkersChange([value])}
+                  min={1}
+                  max={Math.max(maxCpuCores, 8)}
+                  step={1}
+                  disabled={searchProgress.isRunning}
+                  className="flex-1"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>1 worker</span>
+                  <span>CPU cores: {maxCpuCores}</span>
+                  <span>{Math.max(maxCpuCores, 8)} max</span>
+                </div>
               </div>
             </>
           )}

@@ -48,6 +48,10 @@ interface AppStore {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   
+  // Wake Lock settings for preventing screen sleep on mobile devices
+  wakeLockEnabled: boolean;
+  setWakeLockEnabled: (enabled: boolean) => void;
+  
   // Raw target seed input
   targetSeedInput: string;
   setTargetSeedInput: (input: string) => void;
@@ -217,6 +221,10 @@ export const useAppStore = create<AppStore>()(
       // UI state
       activeTab: 'search',
       setActiveTab: (tab) => set({ activeTab: tab }),
+      
+      // Wake Lock settings for preventing screen sleep on mobile devices
+      wakeLockEnabled: false,
+      setWakeLockEnabled: (enabled) => set({ wakeLockEnabled: enabled }),
       
       // Raw target seed input
       targetSeedInput: DEMO_TARGET_SEEDS.map(s => '0x' + s.toString(16).padStart(8, '0')).join('\n'),
