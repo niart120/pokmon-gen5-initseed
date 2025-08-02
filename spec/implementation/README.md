@@ -17,6 +17,7 @@
 2. **[02-algorithms.md](./02-algorithms.md)** - 核心アルゴリズム実装
    - 性格値乱数列エンジン（WASM実装）
    - 遭遇計算エンジン（WASM実装）
+   - オフセット計算エンジン（WASM実装）
    - 統合Pokemon Generator（WASM実装）
    - 性格値・色違い判定の詳細実装
 
@@ -32,13 +33,6 @@
    - Phase 3: UI Components（2週間）
    - Phase 4: WebWorker & Performance（1週間）
    - Phase 5: Polish & Validation（1週間）
-
-5. オフセット計算仕様（BW/BW2）
-
-   - 05-offset-calculation.md：BW/BW2のオフセット計算全体仕様・用語・ロジック・検証方法
-   - 05-offset-calculation-detailed.md：実装仕様詳細（手順・アルゴリズム・疑似コード）
-
- 仕様詳細・ロジックは親ファイルから参照リンクあり
 
 ## 関連ドキュメント
 
