@@ -19,7 +19,7 @@ LCG初期Seed値から、ポケモンBW/BW2において遭遇するポケモン�
 ### 2.1 入力条件
 
 #### 2.1.1 基本パラメータ
-- **初期Seed値**: 32bit値（16進数表記）
+- **初期Seed値**: 64bit値（16進数表記）
 - **遭遇方法**: 野生/固定シンボル/つり
 - **シンクロ設定**: シンクロ有効/無効、対象性格
 - **表ID**: トレーナーID（16bit、0-65535）
@@ -29,9 +29,7 @@ LCG初期Seed値から、ポケモンBW/BW2において遭遇するポケモン�
 
 ##### 野生ポケモン
 - **出現場所**: エリア情報（ルート、ダンジョン名等）
-- **時間帯**: 朝/昼/夜（一部ポケモンの出現に影響）
-- **季節**: 春/夏/秋/冬（BW/BW2の季節システム）
-- **レベル範囲**: 最小・最大レベル
+- **出現方法**: 通常, 揺れる草むら、泡、砂ぼこり、ポケモンの影
 
 ##### 固定シンボル
 - **ポケモン種族**: 具体的なポケモン名
@@ -39,9 +37,8 @@ LCG初期Seed値から、ポケモンBW/BW2において遭遇するポケモン�
 - **配布イベント情報**: 該当する場合
 
 ##### つりポケモン
-- **つりざお種類**: ボロ/いい/すごい
 - **つり場所**: 水域の場所情報
-- **レベル範囲**: つりざお種類に応じた範囲
+- **出現方法**: 通常、泡
 
 ### 2.2 出力情報
 
@@ -49,7 +46,7 @@ LCG初期Seed値から、ポケモンBW/BW2において遭遇するポケモン�
 - **ポケモン名**: 種族名
 - **レベル**: 遭遇時レベル
 - **性格**: 25種類の性格のいずれか
-- **特性**: 通常特性1/2、隠れ特性（該当する場合）
+- **特性**: 通常特性1/2
 - **個体値**: HP/攻撃/防御/特攻/特防/素早さ（各0-31）
 
 #### 2.2.2 乱数関連情報
@@ -67,11 +64,10 @@ LCG初期Seed値から、ポケモンBW/BW2において遭遇するポケモン�
 #### 2.3.1 リスト表示
 - **表形式**: 複数の生成結果を一覧表示
 - **ソート機能**: 消費乱数順、性格順、色違い優先等
-- **フィルタリング**: 色違いのみ、特定性格のみ等
+- **フィルタリング**: 検索条件によるフィルタリング、色違いのみ、特定性格のみ等
 
 #### 2.3.2 詳細表示
 - **個別詳細**: 各ポケモンの詳細情報
-- **計算過程**: 乱数生成の計算手順（デバッグモード）
 
 ## 3. 技術仕様
 
@@ -106,8 +102,6 @@ type EncounterType = 'wild' | 'static' | 'fishing';
 
 interface WildEncounter {
   location: string;             // 出現場所
-  timeOfDay: 'morning' | 'day' | 'night';
-  season: 'spring' | 'summer' | 'autumn' | 'winter';
   levelRange: {
     min: number;
     max: number;
@@ -121,7 +115,6 @@ interface StaticEncounter {
 }
 
 interface FishingEncounter {
-  rodType: 'old' | 'good' | 'super';  // つりざお種類
   location: string;             // つり場所
   levelRange: {
     min: number;
@@ -183,7 +176,7 @@ interface PokemonAbility {
 次の乱数 = (現在の乱数 × 0x41C64E6D + 0x6073) & 0xFFFFFFFF
 ```
 
-#### 3.2.2 ポケモン生成手順
+#### 3.2.2 ポケモン生成手順(WIP)
 
 ##### Step 1: 遭遇判定
 1. 野生の場合：遭遇スロット決定（乱数消費1回）
@@ -254,14 +247,12 @@ interface PokemonAbility {
 interface PokemonSpecies {
   id: number;                   // 全国図鑑番号
   name: string;                 // ポケモン名
-  abilities: string[];          // 通常特性1, 2
-  hiddenAbility?: string;       // 隠れ特性
+  abilities: string[];          // 通常特性1, 2, 隠れ特性
   genderRatio: number;          // 性別比率（-1:性別不明, 0-254）
-  encounterRate: number;        // 基本遭遇率
 }
 ```
 
-### 5.2 遭遇テーブル
+### 5.2 遭遇テーブル(WIP)
 ```typescript
 interface EncounterTable {
   location: string;             // 場所名
@@ -287,9 +278,7 @@ interface EncounterSlot {
 ## 6. 拡張性考慮
 
 ### 6.1 将来対応
-- **他世代対応**: アルゴリズム変更に対応した設計
-- **新機能追加**: めざめるパワー、努力値計算等
-- **データ更新**: 新たな発見への対応
+- **新機能追加**: めざめるパワー等
 
 ### 6.2 モジュール設計
 - **計算エンジン分離**: 他プロジェクトでの再利用
@@ -304,7 +293,6 @@ interface EncounterSlot {
 - **色違い判定テスト**: 色違い計算の検証
 
 ### 7.2 統合テスト
-- **実際のSeed値検証**: 実機との比較
 - **大量データテスト**: パフォーマンス検証
 - **エッジケーステスト**: 境界値の動作確認
 
@@ -315,14 +303,18 @@ interface EncounterSlot {
 ## 8. 参考資料
 
 ### 8.1 技術資料
-- [ポケモン第5世代乱数調整](https://rusted-coil.sakura.ne.jp/pokemon/ran/ran_5.htm)
-- [BW/BW2 RNG研究](https://xxsakixx.com/archives/53922673.html)
-- [ポケモン生成アルゴリズム解析](https://sugarchud1152.hatenablog.com/entry/2025/05/11/130050)
+- [ポケモン第5世代乱数調整](https://rusted-coil.sakura.ne.jp/pokemon/ran/ran_5.htm) : 乱数調整の基礎
+- [BWなみのり、つり、大量発生野生乱数](https://xxsakixx.com/archives/53402929.html) :
+  なみのりやつり、大量発生の個体生成
+- [BW出現スロットの閾値](https://xxsakixx.com/archives/53962575.html) : 出現スロットの計算方法
+
 
 ### 8.2 データソース
-- [ポケモン図鑑データ](https://zukan.pokemon.co.jp/)
-- [遭遇テーブル情報](https://wiki.ポケモン.com/)
-- [乱数調整ツール参考](https://github.com/niart120/Project_Veni)
+- [ポケモン攻略DE.com](http://blog.game-de.com/pokedata/pokemon-data/) : ポケモン種族データ
+- [ポケモンの友(B)](https://pokebook.jp/data/sp5/enc_b) : ブラックの遭遇テーブル
+- [ポケモンの友(W)](https://pokebook.jp/data/sp5/enc_w) : ホワイトの遭遇テーブル
+- [ポケモンの友(B2)](https://pokebook.jp/data/sp5/enc_b2) : ブラック2の遭遇テーブル
+- [ポケモンの友(W2)](https://pokebook.jp/data/sp5/enc_w2) : ホワイト2の遭遇テーブル
 
 ---
 

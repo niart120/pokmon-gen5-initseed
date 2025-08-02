@@ -588,39 +588,6 @@ async function generatePokemonBatch(params: GenerationParams): Promise<void> {
 }
 ```
 
-### 6.2 メモリ効率化
-
-```typescript
-class ResultsManager {
-  private results: GeneratedPokemon[] = [];
-  private readonly MAX_MEMORY_RESULTS = 10000;
-  
-  addResult(pokemon: GeneratedPokemon): void {
-    this.results.push(pokemon);
-    
-    // メモリ使用量制限
-    if (this.results.length > this.MAX_MEMORY_RESULTS) {
-      this.compressOldResults();
-    }
-  }
-  
-  private compressOldResults(): void {
-    // 古い結果を圧縮または外部ストレージに移動
-    const threshold = this.MAX_MEMORY_RESULTS * 0.8;
-    const toCompress = this.results.slice(0, threshold);
-    
-    // IndexedDBに保存
-    this.saveToIndexedDB(toCompress);
-    
-    // メモリから削除
-    this.results = this.results.slice(threshold);
-  }
-  
-  private async saveToIndexedDB(results: GeneratedPokemon[]): Promise<void> {
-    // IndexedDB実装
-  }
-}
-```
 
 ## 7. テスト戦略
 
@@ -755,39 +722,7 @@ describe('Pokemon Generation Integration', () => {
 3. ドキュメント整備
 4. E2E Tests
 
-## 9. デプロイ・監視
 
-### 9.1 ビルド設定
-```json
-{
-  "scripts": {
-    "build:generation": "npm run build:wasm && npm run build:generation-data",
-    "build:generation-data": "node scripts/build-generation-data.js",
-    "test:generation": "vitest run src/**/*generation*.test.ts"
-  }
-}
-```
-
-### 9.2 パフォーマンス監視
-```typescript
-class GenerationPerformanceMonitor {
-  trackGenerationTime(duration: number, count: number): void {
-    const rate = count / (duration / 1000); // Pokemon/sec
-    
-    // メトリクス送信
-    this.sendMetric('generation.rate', rate);
-    this.sendMetric('generation.duration', duration);
-    this.sendMetric('generation.count', count);
-  }
-  
-  trackMemoryUsage(): void {
-    if (performance.memory) {
-      this.sendMetric('memory.used', performance.memory.usedJSHeapSize);
-      this.sendMetric('memory.limit', performance.memory.jsHeapSizeLimit);
-    }
-  }
-}
-```
 
 ---
 

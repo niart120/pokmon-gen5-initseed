@@ -101,7 +101,6 @@ interface LocationEncounterData {
     japanese: string;
     english: string;
   };
-  region: 'unova';              // 地方（BW/BW2はイッシュのみ）
   
   encounters: {
     wild?: WildEncounterData;   // 野生遭遇データ
@@ -114,26 +113,10 @@ interface WildEncounterData {
   encounterType: 'grass' | 'cave' | 'building'; // 遭遇場所タイプ
   
   slots: EncounterSlot[];       // 遭遇スロット（通常12スロット）
-  
-  // 条件別遭遇（時間帯・季節変動）
-  timeVariants?: {
-    morning?: EncounterSlot[];
-    day?: EncounterSlot[];
-    night?: EncounterSlot[];
-  };
-  
-  seasonVariants?: {
-    spring?: EncounterSlot[];
-    summer?: EncounterSlot[];
-    autumn?: EncounterSlot[];
-    winter?: EncounterSlot[];
-  };
 }
 
 interface FishingEncounterData {
-  oldRod?: EncounterSlot[];     // ボロのつりざお
-  goodRod?: EncounterSlot[];    // いいつりざお
-  superRod?: EncounterSlot[];   // すごいつりざお
+  slots: EncounterSlot[];
 }
 
 interface SurfingEncounterData {
@@ -144,7 +127,7 @@ interface EncounterSlot {
   slotId: number;               // スロット番号（0-11通常、つりは異なる）
   pokemon: string;              // ポケモン種族名
   probability: number;          // 出現確率（%）
-  levelRange: {
+  levelRange: {                 // レベル範囲(通常は固定、釣りは変動)
     min: number;
     max: number;
   };
@@ -214,18 +197,11 @@ interface StaticEncounterData {
   isLegendary: boolean;         // 伝説ポケモンフラグ
   isMythical: boolean;          // 幻のポケモンフラグ
   isEvent: boolean;             // 配布イベントフラグ
-  
-  // 固定情報（該当する場合）
-  fixedAbility?: string;        // 固定特性
-  fixedNature?: PokemonNature;  // 固定性格
-  fixedIVs?: Partial<IVSet>;    // 固定個体値
+  isBlockRoutine: boolean;      // ブロックルーチンフラグ（色違いブロック）
   
   // 出現条件
   conditions?: {
     gameVersion?: ('B' | 'W' | 'B2' | 'W2')[];
-    story?: string;             // ストーリー進行条件
-    items?: string[];           // 必要アイテム
-    special?: string;           // その他条件
   };
 }
 
@@ -256,9 +232,9 @@ interface IVSet {
       "isLegendary": true,
       "isMythical": false,
       "isEvent": false,
+    　"isBlockRoutine": true,
       "conditions": {
-        "gameVersion": ["B"],
-        "story": "チャンピオン戦直前"
+        "gameVersion": ["B"]
       }
     }
   ]
@@ -286,7 +262,7 @@ interface NatureData {
   synchronizable: boolean;
 }
 
-type StatType = 'attack' | 'defense' | 'specialAttack' | 'specialDefense' | 'speed';
+type StatType = 'hp' | 'attack' | 'defense' | 'specialAttack' | 'specialDefense' | 'speed';
 ```
 
 ### 5.2 特性データ
@@ -314,7 +290,7 @@ interface AbilityData {
 
 ## 6. 乱数テーブルデータ
 
-### 6.1 遭遇スロットテーブル
+### 6.1 遭遇スロットテーブル(WIP)
 
 ```typescript
 interface EncounterSlotTable {
@@ -329,7 +305,6 @@ interface EncounterSlotTable {
   
   // つり専用テーブル
   fishingSlots?: {
-    rod: 'old' | 'good' | 'super';
     slots: {
       slot: number;
       rngRange: [number, number];
