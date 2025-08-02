@@ -48,7 +48,7 @@ export function ROMConfigurationCard() {
               value={searchConditions.romVersion}
               onValueChange={(value) => setSearchConditions({ romVersion: value as ROMVersion })}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="rom-version" className="w-full">
                 <SelectValue placeholder="Select ROM version" />
               </SelectTrigger>
               <SelectContent>
@@ -67,7 +67,7 @@ export function ROMConfigurationCard() {
               value={searchConditions.romRegion}
               onValueChange={(value) => setSearchConditions({ romRegion: value as ROMRegion })}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="rom-region" className="w-full">
                 <SelectValue placeholder="Select region" />
               </SelectTrigger>
               <SelectContent>
@@ -86,7 +86,7 @@ export function ROMConfigurationCard() {
               value={searchConditions.hardware}
               onValueChange={(value) => setSearchConditions({ hardware: value as Hardware })}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="hardware" className="w-full">
                 <SelectValue placeholder="Select hardware" />
               </SelectTrigger>
               <SelectContent>

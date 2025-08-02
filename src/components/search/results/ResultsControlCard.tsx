@@ -71,7 +71,7 @@ export function ResultsControlCard({
           <div>
             <Label htmlFor="sort-field">Sort by</Label>
             <Select value={sortField} onValueChange={(value) => setSortField(value as SortField)}>
-              <SelectTrigger className="w-28 sm:w-32">
+              <SelectTrigger id="sort-field" className="w-28 sm:w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

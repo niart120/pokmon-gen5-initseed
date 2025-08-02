@@ -74,6 +74,7 @@ export function MACAddressParam() {
               onBlur={() => handleBlur(index)}
               onFocus={() => handleFocus(index)}
               className="font-mono text-center min-w-[48px] text-sm"
+              aria-label={`MAC Address byte ${index + 1}`}
             />
           </div>
         ))}

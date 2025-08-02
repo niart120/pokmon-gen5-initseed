@@ -158,8 +158,8 @@ export function Timer0VCountParam() {
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label className="text-sm font-medium">Timer0 Range</Label>
-          <div className="grid grid-cols-2 gap-2 mt-1">
+          <div className="text-sm font-medium mb-1">Timer0 Range</div>
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <Label htmlFor="timer0-min" className="text-xs">Min (hex)</Label>
               <Input
@@ -186,8 +186,8 @@ export function Timer0VCountParam() {
         </div>
         
         <div>
-          <Label className="text-sm font-medium">VCount Range</Label>
-          <div className="grid grid-cols-2 gap-2 mt-1">
+          <div className="text-sm font-medium mb-1">VCount Range</div>
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <Label htmlFor="vcount-min" className="text-xs">Min (hex)</Label>
               <Input

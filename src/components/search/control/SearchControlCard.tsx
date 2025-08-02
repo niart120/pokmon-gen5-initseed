@@ -316,12 +316,13 @@ export function SearchControlCard() {
               <Separator />
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm">Worker Threads</Label>
+                  <div id="worker-threads-label" className="text-sm">Worker Threads</div>
                   <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
                     {parallelSearchSettings.maxWorkers}
                   </span>
                 </div>
                 <Slider
+                  aria-labelledby="worker-threads-label"
                   value={[parallelSearchSettings.maxWorkers]}
                   onValueChange={([value]) => handleMaxWorkersChange([value])}
                   min={1}
