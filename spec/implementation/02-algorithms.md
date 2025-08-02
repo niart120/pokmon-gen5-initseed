@@ -113,16 +113,20 @@ impl EncounterCalculator {
     // スロット値をテーブルインデックスに変換
     pub fn slot_to_table_index(&self, slot_value: u32, encounter_type: u32) -> usize {
         match encounter_type {
-            0 => self.grass_slot_to_index(slot_value),     // 草むら
-            1 => self.surfing_slot_to_index(slot_value),   // なみのり  
-            2 => self.fishing_slot_to_index(slot_value),   // つり
-            3 => self.cave_slot_to_index(slot_value),      // 洞窟
+            0 => self.normal_encounter_slot(slot_value),       // 通常(草むら・洞窟・ダンジョン共通)
+            1 => self.surfing_slot_to_index(slot_value),       // なみのり
+            2 => self.fishing_slot_to_index(slot_value),       // 釣り
+            3 => self.shaking_grass_slot(slot_value),          // 揺れる草むら (特殊エンカウント)
+            4 => self.dust_cloud_slot(slot_value),             // 砂煙 (特殊エンカウント)
+            5 => self.pokemon_shadow_slot(slot_value),         // ポケモンの影 (特殊エンカウント)
+            6 => self.surfing_bubble_slot(slot_value),         // 水泡 (なみのり版特殊エンカウント)
+            7 => self.fishing_bubble_slot(slot_value),         // 水泡釣り(釣り版特殊エンカウント)
             _ => 0, // デフォルト
         }
     }
     
-    fn grass_slot_to_index(&self, slot: u32) -> usize {
-        // 草むら遭遇テーブル（12スロット）
+    fn normal_encounter_slot(&self, slot: u32) -> usize {
+        // 通常遭遇テーブル（草むら・洞窟・ダンジョン共通、12スロット）
         match slot {
             0..=19 => 0,   // 20%
             20..=39 => 1,  // 20%
@@ -151,7 +155,7 @@ impl EncounterCalculator {
     }
     
     fn fishing_slot_to_index(&self, slot: u32) -> usize {
-        // つり遭遇テーブル（5スロット）
+        // 釣り遭遇テーブル（5スロット）
         match slot {
             0..=69 => 0,   // 70%
             70..=84 => 1,  // 15%
@@ -161,14 +165,87 @@ impl EncounterCalculator {
         }
     }
     
-    fn cave_slot_to_index(&self, slot: u32) -> usize {
-        // 洞窟遭遇テーブル（12スロット、草むらと同様）
-        self.grass_slot_to_index(slot)
+    fn shaking_grass_slot(&self, slot: u32) -> usize {
+        // 揺れる草むら（特殊エンカウント）
+        // 通常より高レベル・レアポケモンが出現
+        match slot {
+            0..=39 => 0,   // 40%
+            40..=59 => 1,  // 20%
+            60..=79 => 2,  // 20%
+            80..=94 => 3,  // 15%
+            _ => 4,        // 5% (隠れ特性持ち等)
+        }
+    }
+    
+    fn dust_cloud_slot(&self, slot: u32) -> usize {
+        // 砂煙（特殊エンカウント）
+        // ポケモンまたはジュエル・進化石が出現
+        match slot {
+            0..=69 => 0,   // 70% ポケモン
+            70..=89 => 1,  // 20% ジュエル類
+            _ => 2,        // 10% 進化石類
+        }
+    }
+    
+    fn pokemon_shadow_slot(&self, slot: u32) -> usize {
+        // ポケモンの影（特殊エンカウント）
+        // 橋や建物の影で出現
+        match slot {
+            0..=49 => 0,   // 50%
+            50..=79 => 1,  // 30%
+            80..=94 => 2,  // 15%
+            _ => 3,        // 5%
+        }
+    }
+    
+    fn surfing_bubble_slot(&self, slot: u32) -> usize {
+        // 水泡（なみのり版特殊エンカウント）
+        // なみのりエリアでの特殊遭遇
+        match slot {
+            0..=49 => 0,   // 50%
+            50..=79 => 1,  // 30%
+            80..=94 => 2,  // 15%
+            _ => 3,        // 5%
+        }
+    }
+    
+    fn fishing_bubble_slot(&self, slot: u32) -> usize {
+        // 水泡釣り（釣り版特殊エンカウント）
+        // 釣りエリアでの特殊遭遇
+        match slot {
+            0..=59 => 0,   // 60%
+            60..=84 => 1,  // 25%
+            85..=94 => 2,  // 10%
+            _ => 3,        // 5%
+        }
     }
 }
 ```
 
-### 4.3 統合Pokemon Generator（WASM実装）
+### 4.3 ポケモンデータ構造（WASM実装）
+
+```rust
+// wasm-pkg/src/pokemon_data.rs
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+#[derive(Debug, Clone)]
+pub struct RawPokemonData {
+    pub personality_value: u32,     // 性格値（PID）
+    pub encounter_slot_value: u32,  // 遭遇スロット値
+    pub nature_id: u32,             // 性格ID
+    pub sync_applied: bool,         // シンクロ適用フラグ
+    pub advances: u32,              // 進行度（乱数消費回数）
+    pub level_rand_value: u32,      // 生のレベル乱数値（TypeScript側でレベル計算に使用）
+    pub shiny_flag: bool,           // 色違いフラグ
+    pub ability_slot: u32,          // 特性スロット
+    pub gender_value: u8,           // 性別判定値
+    pub rng_seed_used: u64,         // 使用された乱数シード
+    pub encounter_type: u32,        // エンカウントタイプ
+}
+```
+
+### 4.4 統合Pokemon Generator（WASM実装）
 
 ```rust
 // wasm-pkg/src/pokemon_generator.rs
@@ -234,8 +311,9 @@ impl PokemonGenerator {
     ) -> Option<RawPokemonData> {
         let start_seed = self.rng.current_seed();
         
-        // Step 1: シンクロ判定（固定シンボル・野生のみ）
-        let (sync_applied, nature_id) = if encounter_type <= 1 {
+        // Step 1: シンクロ判定（野生エンカウントのみ）
+        let (sync_applied, nature_id) = if encounter_type <= 7 {
+            // 通常・なみのり・釣り・特殊エンカウント全般
             let sync_check = sync_enabled && self.rng.sync_check();
             if sync_check {
                 (true, sync_nature_id)
@@ -243,7 +321,7 @@ impl PokemonGenerator {
                 (false, self.rng.nature_roll())
             }
         } else {
-            // 徘徊ポケモンはシンクロ無効
+            // 固定シンボル・ギフト・徘徊ポケモンはシンクロ無効
             (false, self.rng.nature_roll())
         };
         
@@ -255,20 +333,24 @@ impl PokemonGenerator {
         
         // Step 3: 性格値決定
         let personality_value = match encounter_type {
-            0 | 1 => {
-                // 野生・固定シンボル: r1[n+1]^0x00010000
+            0..=7 => {
+                // 野生エンカウント（通常・特殊含む）: r1[n+1]^0x00010000
                 let pid_base = self.rng.next();
                 pid_base ^ 0x00010000
             },
-            2 => {
-                // 徘徊ポケモン: r1[n] (XOR無し)
+            10..=11 => {
+                // 固定シンボル・ギフト: r1[n] (XOR無し)
+                self.rng.next()
+            },
+            20 => {
+                // 徘徊ポケモン: r1[n] (XOR無し、固定シンボルと同様)
                 self.rng.next()
             },
             _ => return None, // 未対応のエンカウントタイプ
         };
         
-        // Step 4: レベル決定（簡易実装、実際は遭遇テーブル依存）
-        let level = self.calculate_level(encounter_slot_value, encounter_type);
+        // Step 4: レベル決定（乱数値保持、実際のレベル計算はTypeScript側で実行）
+        let (level, level_rand) = self.calculate_level_with_rand(encounter_slot_value, encounter_type);
         
         // Step 5: 色違い判定
         let shiny_flag = self.check_shiny(personality_value, trainer_id, secret_id);
@@ -280,33 +362,51 @@ impl PokemonGenerator {
         let gender_value = (personality_value & 0xFF) as u8;
         
         Some(RawPokemonData {
-            personality_value,
-            encounter_slot_value,
-            nature_id,
-            sync_applied,
-            advances,
-            level,
-            shiny_flag,
-            ability_slot,
-            gender_value,
-            rng_seed_used: start_seed,
-            encounter_type,
+            personality_value, // 性格値（PID）
+            encounter_slot_value, // 遭遇スロット値
+            nature_id, // 性格ID
+            sync_applied, // シンクロ適用フラグ
+            advances, // 進行度（乱数消費回数）
+            level_rand_value: level_rand, // 生のレベル乱数値（TypeScript側でレベル計算に使用）
+            shiny_flag, // 色違いフラグ
+            ability_slot, // 特性スロット
+            gender_value, // 性別判定値
+            rng_seed_used: start_seed, 
+            encounter_type, 
         })
     }
     
-    fn calculate_level(&mut self, slot_value: u32, encounter_type: u32) -> u8 {
-        // 簡易実装：実際はエンカウントテーブルとレベル範囲に依存
+    fn calculate_level_with_rand(&mut self, slot_value: u32, encounter_type: u32) -> (u8, u32) {
+        // エンカウントタイプ別レベル決定とレベル乱数値の取得
+        // 戻り値: (プレースホルダーレベル, 生の乱数値)
         match encounter_type {
-            0 => 25, // 草むら：固定レベル例
-            1 => {
-                // なみのり：レベル範囲からランダム選択
-                let level_rand = self.rng.next();
-                let min_lv = 25;
-                let max_lv = 35;
-                ((level_rand as u64 * (max_lv - min_lv + 1) as u64) >> 32) as u8 + min_lv
+            0 => {
+                // 通常(草むら・洞窟・ダンジョン共通)：エンカウントテーブルに固定レベル埋め込み
+                // レベル乱数生成は実行されるが結果は使用されない（スキップ扱い）
+                let level_rand = self.rng.next(); // 乱数消費
+                (127, level_rand) // 127はプレースホルダー、実際のレベルはエンカウントテーブルから決定
             },
-            2 => 30, // 徘徊：固定レベル
-            _ => 25,
+            1 | 2 | 6 | 7 => {
+                // なみのり・釣り・水泡系：レベル範囲からランダム選択
+                // 生の乱数値をTypeScript側でエンカウントテーブル情報と組み合わせて計算
+                let level_rand = self.rng.next();
+                (0, level_rand) // 0はプレースホルダー、実際の計算はTypeScript側で実行
+            },
+            3 | 4 | 5 => {
+                // 特殊エンカウント：エンカウントテーブルに固定レベル埋め込み
+                // レベル乱数生成は実行されるが結果は使用されない（スキップ扱い）
+                let level_rand = self.rng.next(); // 乱数消費
+                (127, level_rand) // 127はプレースホルダー
+            },
+            10..=11 => {
+                // 固定シンボル・ギフト：固定レベル（乱数消費なし）
+                (255, 0) // 乱数消費なし、255は固定レベルのプレースホルダー
+            },
+            20 => {
+                // 徘徊ポケモン：イベント発生時に個体決定、固定レベル（乱数消費なし）
+                (254, 0) // 徘徊専用プレースホルダー、実際のレベルは固定
+            },
+            _ => (0, 0), // 未対応タイプ
         }
     }
     
@@ -335,6 +435,18 @@ impl PokemonGenerator {
 
 BW/BW2では遭遇タイプによって性格値の生成アルゴリズムが異なる：
 
+- **野生エンカウント（0-7）**: 通常・なみのり・釣り・特殊エンカウント全般
+  - 通常（草むら・洞窟・ダンジョン共通）
+  - なみのり
+  - 釣り  
+  - 揺れる草むら（特殊エンカウント）
+  - 砂煙（特殊エンカウント）
+  - ポケモンの影（特殊エンカウント）
+  - 水泡（なみのり版特殊エンカウント）
+  - 水泡釣り（釣り版特殊エンカウント）
+- **固定シンボル・ギフト（10-11）**: 固定位置・イベントポケモン
+- **徘徊ポケモン（20）**: イベント発生時に個体決定、陸上・海上統合
+
 ```rust
 // wasm-pkg/src/pid_calculator.rs
 use wasm_bindgen::prelude::*;
@@ -354,28 +466,22 @@ impl PIDCalculator {
         }
     }
     
-    // 野生ポケモン: PID = r1[n+1] ^ 0x00010000
+    // 野生エンカウント全般（0-7）: PID = r1[n+1] ^ 0x00010000
+    // 通常・なみのり・釣り・特殊エンカウント全て同じ処理
     pub fn generate_wild_pid(&mut self) -> u32 {
         let base_pid = self.rng.next();
         base_pid ^ 0x00010000
     }
     
-    // 固定シンボル: PID = r1[n+1] ^ 0x00010000
+    // 固定シンボル・ギフト（10-11）: PID = r1[n] (XOR処理無し)
     pub fn generate_static_pid(&mut self) -> u32 {
-        let base_pid = self.rng.next();
-        base_pid ^ 0x00010000
-    }
-    
-    // 徘徊ポケモン: PID = r1[n] (XOR処理無し)
-    pub fn generate_roaming_pid(&mut self) -> u32 {
         self.rng.next()
     }
     
-    // ギフトポケモン（卵等）: PID = r1[n+1] ^ r1[n+2]
-    pub fn generate_gift_pid(&mut self) -> u32 {
-        let pid_low = self.rng.next();
-        let pid_high = self.rng.next();
-        ((pid_high as u64) << 32 | pid_low as u64) as u32
+    // 徘徊ポケモン（20）: PID = r1[n] (XOR処理無し、固定シンボルと同様)
+    // イベント発生時に個体決定され、以降の遭遇では同じ個体が出現
+    pub fn generate_roaming_pid(&mut self) -> u32 {
+        self.rng.next()
     }
 }
 
@@ -424,14 +530,17 @@ use crate::pid_calculator::{PIDCalculator, ShinyChecker};
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
 pub enum EncounterType {
-    WildGrass = 0,      // 草むら野生
-    WildSurf = 1,       // なみのり野生
-    WildFish = 2,       // つり野生
-    WildCave = 3,       // 洞窟野生
-    StaticSymbol = 10,  // 固定シンボル
-    StaticGift = 11,    // ギフト（化石等）
-    RoamingLand = 20,   // 徘徊（陸上）
-    RoamingSea = 21,    // 徘徊（海上）
+    Normal = 0,              // 通常(草むら・洞窟・ダンジョン共通)
+    Surfing = 1,             // なみのり
+    Fishing = 2,             // 釣り
+    ShakingGrass = 3,        // 揺れる草むら (特殊エンカウント)
+    DustCloud = 4,           // 砂煙 (特殊エンカウント)
+    PokemonShadow = 5,       // ポケモンの影 (特殊エンカウント)
+    SurfingBubble = 6,       // 水泡 (なみのり版特殊エンカウント)
+    FishingBubble = 7,       // 水泡釣り(釣り版特殊エンカウント)
+    StaticSymbol = 10,       // 固定シンボル
+    StaticGift = 11,         // ギフト（化石等）
+    Roaming = 20,            // 徘徊（陸上・海上統合）
 }
 
 #[wasm_bindgen]
@@ -613,6 +722,98 @@ pub struct EncounterResult {
     pub is_shiny: bool,
     pub advances: u32,
 }
+```
+
+## 6. 特殊エンカウントの詳細仕様
+
+### 6.1 特殊エンカウントの種類と特徴
+
+BW/BW2では通常の野生エンカウントに加えて、特殊条件で発生するエンカウントが存在する：
+
+**揺れる草むら（ShakingGrass）**
+- 通常の草むらより高レベルのポケモンが出現
+- 隠れ特性を持つポケモンの出現率が高い
+- レベル範囲: 35-50（通常草むらより約10-15レベル高い）
+
+**砂煙（DustCloud）**
+- ポケモンだけでなくジュエルや進化石も出現する可能性
+- 出現内容の判定は性格値乱数で決定
+- ドリュウズなど特定ポケモンの出現場所として重要
+
+**ポケモンの影（PokemonShadow）**
+- 橋や建物の影の下で発生
+- エリア固有のポケモンが出現
+- 通常エンカウントでは出現しないポケモンが含まれる場合
+
+**水泡（SurfingBubble/FishingBubble）**
+- なみのりエリア・釣りエリアでの特殊エンカウント
+- 水上・水中での特殊条件で発生
+- 通常の水上エンカウントより高レベル・レアポケモン
+
+### 6.2 特殊エンカウントの乱数消費パターン
+
+特殊エンカウントは通常エンカウントと同じ乱数消費パターンを使用：
+
+```rust
+// 特殊エンカウント共通処理
+pub fn process_special_encounter(&mut self, encounter_type: u32) -> EncounterResult {
+    // Step 1: シンクロ判定
+    let sync_check = self.rng.sync_check(); // r1[n] 消費
+    
+    // Step 2: 性格決定
+    let nature_id = if sync_check && sync_enabled {
+        sync_nature_id // シンクロ成功
+    } else {
+        self.rng.nature_roll() // r1[n+1] 消費
+    };
+    
+    // Step 3: 遭遇スロット決定
+    let slot_value = match self.game_version {
+        GameVersion::BlackWhite => self.rng.encounter_slot_bw(),   // r1[n+2] 消費
+        GameVersion::BlackWhite2 => self.rng.encounter_slot_bw2(), // r1[n+2] 消費
+    };
+    
+    // Step 4: レベル乱数生成（エンカウントタイプ依存）
+    let level_rand = match encounter_type {
+        0 | 3..=5 => {
+            // 通常・特殊エンカウント: エンカウントテーブルに固定レベル埋め込み
+            // 乱数は生成されるが結果は使用されない（スキップ扱い）
+            self.rng.next() // r1[n+3] 消費（スキップ）
+        },
+        1 | 2 | 6 | 7 => {
+            // なみのり・釣り・水泡系: レベル範囲からランダム選択
+            self.rng.next() // r1[n+3] 消費（実際のレベル計算はTypeScript側）
+        },
+        _ => 0, // 固定シンボル等は乱数消費なし
+    };
+    
+    // Step 5: 性格値生成（特殊エンカウントも野生扱い）
+    let pid = self.rng.next() ^ 0x00010000; // r1[n+4] 消費
+    
+    // 生の乱数値をTypeScript側に渡して詳細計算を実行
+}
+```
+
+### 6.3 レベル計算の実装方針
+
+**WASM側（Rust）**:
+- 乱数消費の管理のみ実行
+- エンカウントタイプに応じて乱数を生成またはスキップ
+- 生の乱数値をTypeScript側に渡す
+
+**TypeScript側**:
+- エンカウントテーブル情報の保持
+- 生の乱数値とエンカウントテーブルを組み合わせてレベル計算
+- エリア・バージョン・釣り竿タイプ等の詳細条件を考慮
+
+### 6.4 実装上の注意点
+
+- 特殊エンカウントは基本的に野生エンカウントと同じ乱数消費パターン
+- 遭遇スロットテーブルのみが通常エンカウントと異なる
+- レベル計算は実際のエンカウントテーブル情報が必要なためTypeScript側で実行
+- 通常・特殊エンカウントではレベル乱数は生成されるがスキップ扱い
+- なみのり・釣り・水泡系でのみレベル乱数値が実際に使用される
+- 砂煙でのアイテム出現判定は別途実装が必要
 ```
 
 ---
