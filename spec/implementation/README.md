@@ -2,7 +2,9 @@
 
 ## 実装ドキュメント構成
 
-本実装仕様書は以下の4つのドキュメントに分割されています：
+
+# 実装仕様ドキュメント
+
 
 ### 📁 `/spec/implementation/`
 
@@ -30,6 +32,13 @@
    - Phase 3: UI Components（2週間）
    - Phase 4: WebWorker & Performance（1週間）
    - Phase 5: Polish & Validation（1週間）
+
+5. オフセット計算仕様（BW/BW2）
+
+   - 05-offset-calculation.md：BW/BW2のオフセット計算全体仕様・用語・ロジック・検証方法
+   - 05-offset-calculation-detailed.md：実装仕様詳細（手順・アルゴリズム・疑似コード）
+
+ 仕様詳細・ロジックは親ファイルから参照リンクあり
 
 ## 関連ドキュメント
 
