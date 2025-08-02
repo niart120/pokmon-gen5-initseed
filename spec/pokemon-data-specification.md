@@ -123,6 +123,20 @@ interface SurfingEncounterData {
   slots: EncounterSlot[];
 }
 
+// エンカウントタイプ定義（WASM実装に準拠）
+type EncounterType =
+  | 0  // Normal: 通常(草むら・洞窟・ダンジョン)
+  | 1  // Surfing: なみのり
+  | 2  // Fishing: 釣り
+  | 3  // ShakingGrass: 揺れる草むら
+  | 4  // DustCloud: 砂煙
+  | 5  // PokemonShadow: ポケモンの影
+  | 6  // SurfingBubble: 水泡(なみのり)
+  | 7  // FishingBubble: 水泡(釣り)
+  | 10 // StaticSymbol: 固定シンボル
+  | 11 // StaticGift: ギフト
+  | 20 // Roaming: 徘徊
+
 interface EncounterSlot {
   slotId: number;               // スロット番号（0-11通常、つりは異なる）
   pokemon: string;              // ポケモン種族名
@@ -131,7 +145,8 @@ interface EncounterSlot {
     min: number;
     max: number;
   };
-  
+  encounterType: EncounterType; // エンカウントタイプ（WASM実装に準拠）
+  levelRandValue?: number;      // WASMから受け取る生乱数値（TypeScript側でレベル計算に使用）
   // 特殊条件
   conditions?: {
     gameVersion?: ('B' | 'W' | 'B2' | 'W2')[];
@@ -184,21 +199,19 @@ interface EncounterSlot {
 interface StaticEncounterData {
   encounterId: string;          // 遭遇ID
   pokemon: string;              // ポケモン種族名
-  
   encounterName: {
     japanese: string;
     english: string;
   };
-  
   level: number;                // 固定レベル
   location: string;             // 遭遇場所ID
-  
+  encounterType: EncounterType; // エンカウントタイプ（10:固定, 11:ギフト, 20:徘徊等）
+  levelRandValue?: number;      // WASMから受け取る生乱数値（徘徊等で使用）
   // 特殊情報
   isLegendary: boolean;         // 伝説ポケモンフラグ
   isMythical: boolean;          // 幻のポケモンフラグ
   isEvent: boolean;             // 配布イベントフラグ
   isBlockRoutine: boolean;      // ブロックルーチンフラグ（色違いブロック）
-  
   // 出現条件
   conditions?: {
     gameVersion?: ('B' | 'W' | 'B2' | 'W2')[];
@@ -252,14 +265,12 @@ interface NatureData {
     japanese: string;
     english: string;
   };
-  
   statModifier: {
     increased?: StatType;       // 上昇ステータス
     decreased?: StatType;       // 下降ステータス
   };
-  
-  // シンクロ対象フラグ
-  synchronizable: boolean;
+  synchronizable: boolean;      // シンクロ対象フラグ
+  syncApplied?: boolean;        // シンクロ判定結果（WASM側で決定）
 }
 
 type StatType = 'hp' | 'attack' | 'defense' | 'specialAttack' | 'specialDefense' | 'speed';
@@ -347,6 +358,29 @@ interface EncounterSlotTable {
 - **コミュニティ検証**: 実機での動作確認結果
 
 ## 9. データ更新・管理
+## 10. WASM連携用ポケモン生成データ構造
+
+WASM実装の RawPokemonData 構造に準拠したデータ定義：
+
+```typescript
+interface RawPokemonData {
+  personalityValue: number;     // 性格値（PID）
+  encounterSlotValue: number;   // 遭遇スロット値
+  natureId: number;             // 性格ID
+  syncApplied: boolean;         // シンクロ適用フラグ
+  advances: number;             // 乱数消費回数
+  levelRandValue: number;       // 生のレベル乱数値（TypeScript側でレベル計算に使用）
+  shinyFlag: boolean;           // 色違いフラグ
+  abilitySlot: number;          // 特性スロット（(personalityValue >> 16) & 1 で決定、1/2）
+  genderValue: number;          // 性別判定値
+  rngSeedUsed: number;          // 使用された乱数シード
+  encounterType: EncounterType; // エンカウントタイプ
+}
+```
+
+### 色違い判定仕様
+- 色違い判定は `shinyFlag` フィールドで管理し、判定ロジックは `(TID ^ SID ^ PID_high ^ PID_low) < 8` に準拠。
+- 必要に応じて `shinyValue: number` フィールドを追加可能。
 
 ### 9.1 バージョン管理
 - データファイルのバージョン番号
