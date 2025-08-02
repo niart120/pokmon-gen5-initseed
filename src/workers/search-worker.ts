@@ -456,7 +456,7 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
         type: 'COMPLETE',
         message: `Search completed. Found ${matchesFound} matches out of ${totalSteps} combinations.`,
         progress: {
-          currentStep: totalSteps,
+          currentStep, // 実際の処理ステップ数を保持（totalStepsではなく）
           totalSteps,
           elapsedTime: finalElapsedTime,
           estimatedTimeRemaining: 0,

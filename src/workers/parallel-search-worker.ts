@@ -391,6 +391,9 @@ async function processChunkWithTypeScript(
     }
   }
   
+  // 最終進捗報告
+  reportProgress(processedCount, totalOperations, matchesFound);
+  
   return matchesFound;
 }
 

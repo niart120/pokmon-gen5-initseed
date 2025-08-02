@@ -389,7 +389,7 @@ export class MultiWorkerSearchManager {
    * 全Worker完了処理
    */
   private handleAllWorkersCompleted(): void {
-    const totalElapsed = Date.now() - this.startTime;
+    const totalElapsed = this.getManagerElapsedTime(); // 一時停止時間を除外した正確な時間
     const totalResults = this.results.length;
     
     console.log(`🎉 Parallel search completed in ${totalElapsed}ms with ${totalResults} results`);
