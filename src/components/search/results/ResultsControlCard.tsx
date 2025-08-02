@@ -1,4 +1,4 @@
-import { Settings } from 'lucide-react';
+import { Funnel } from '@phosphor-icons/react';
 import { Button } from '../../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Input } from '../../ui/input';
@@ -36,7 +36,7 @@ export function ResultsControlCard({
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Settings size={20} />
+            <Funnel size={20} />
             Results Control
           </div>
           <div className="flex gap-2">

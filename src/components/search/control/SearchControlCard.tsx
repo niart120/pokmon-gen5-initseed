@@ -223,7 +223,7 @@ export function SearchControlCard() {
     <Card className={`py-2 flex flex-col ${isStack ? 'max-h-96' : 'h-full'} gap-2`}>
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="text-base flex items-center">
-          <Gear size={16} className="mr-2" />
+          <Play size={20} className="mr-2" />
           Search Control
         </CardTitle>
       </CardHeader>

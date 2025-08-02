@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { MagnifyingGlass } from '@phosphor-icons/react';
+import { GameController } from '@phosphor-icons/react';
 import { useAppStore } from '../../../store/app-store';
 import type { ROMVersion, ROMRegion, Hardware } from '../../../types/pokemon';
 
@@ -36,7 +36,7 @@ export function ROMConfigurationCard() {
     <Card className="py-2 flex flex-col h-full gap-2">
       <CardHeader className="pb-0 flex-shrink-0">
         <CardTitle className="flex items-center gap-2 text-base">
-          <MagnifyingGlass size={18} />
+          <GameController size={20} />
           ROM Configuration
         </CardTitle>
       </CardHeader>
