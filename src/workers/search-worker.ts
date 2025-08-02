@@ -34,11 +34,25 @@ export interface WorkerResponse {
   message?: string;
 }
 
+// Timer state for accurate elapsed time calculation
+interface TimerState {
+  cumulativeRunTime: number;  // 累積実行時間（ミリ秒）
+  segmentStartTime: number;   // 現在セグメント開始時刻
+  isPaused: boolean;          // 一時停止状態
+}
+
 // Worker state
 let searchState = {
   isRunning: false,
   isPaused: false,
   shouldStop: false
+};
+
+// Timer state for elapsed time management
+let timerState: TimerState = {
+  cumulativeRunTime: 0,
+  segmentStartTime: 0,
+  isPaused: false
 };
 
 let calculator: SeedCalculator;
@@ -54,6 +68,35 @@ async function initializeCalculator() {
       console.warn('WebAssembly failed in worker, using TypeScript fallback:', error);
     }
   }
+}
+
+/**
+ * Timer management functions for accurate elapsed time calculation
+ */
+function startTimer() {
+  timerState.cumulativeRunTime = 0;
+  timerState.segmentStartTime = Date.now();
+  timerState.isPaused = false;
+}
+
+function pauseTimer() {
+  if (!timerState.isPaused) {
+    timerState.cumulativeRunTime += Date.now() - timerState.segmentStartTime;
+    timerState.isPaused = true;
+  }
+}
+
+function resumeTimer() {
+  if (timerState.isPaused) {
+    timerState.segmentStartTime = Date.now();
+    timerState.isPaused = false;
+  }
+}
+
+function getElapsedTime(): number {
+  return timerState.isPaused 
+    ? timerState.cumulativeRunTime
+    : timerState.cumulativeRunTime + (Date.now() - timerState.segmentStartTime);
 }
 
 /**
@@ -297,8 +340,10 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
 
     let currentStep = 0;
     let matchesFound = 0;
-    const startTime = Date.now();
-    let lastProgressUpdate = startTime;
+    
+    // Start accurate timer for elapsed time calculation
+    startTimer();
+    let lastProgressUpdate = Date.now();
     const progressUpdateInterval = 500; // Update progress every 500ms
 
     // Search using integrated approach
@@ -362,7 +407,7 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
           if (shouldUpdateProgress) {
             lastProgressUpdate = now;
             
-            const elapsedTime = now - startTime;
+            const elapsedTime = getElapsedTime();
             
             // More accurate estimated time remaining calculation
             let estimatedTimeRemaining = 0;
@@ -392,7 +437,7 @@ async function performSearch(conditions: SearchConditions, targetSeeds: number[]
     }
 
     // Send completion message
-    const finalElapsedTime = Date.now() - startTime;
+    const finalElapsedTime = getElapsedTime();
     
     if (searchState.shouldStop) {
       postMessage({
@@ -464,6 +509,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     case 'PAUSE_SEARCH':
       if (searchState.isRunning && !searchState.isPaused) {
         searchState.isPaused = true;
+        pauseTimer(); // タイマーを一時停止
         postMessage({
           type: 'PAUSED',
           message: 'Search paused'
@@ -474,6 +520,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     case 'RESUME_SEARCH':
       if (searchState.isRunning && searchState.isPaused) {
         searchState.isPaused = false;
+        resumeTimer(); // タイマーを再開
         postMessage({
           type: 'RESUMED',
           message: 'Search resumed'

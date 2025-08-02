@@ -25,6 +25,13 @@ export interface SearchCallbacks {
   onStopped: () => void;
 }
 
+// Timer state for accurate elapsed time calculation
+interface ManagerTimerState {
+  cumulativeRunTime: number;  // 累積実行時間（ミリ秒）
+  segmentStartTime: number;   // 現在セグメント開始時刻
+  isPaused: boolean;          // 一時停止状態
+}
+
 export class MultiWorkerSearchManager {
   private workers: Map<number, Worker> = new Map();
   private workerProgresses: Map<number, WorkerProgress> = new Map();
@@ -32,14 +39,50 @@ export class MultiWorkerSearchManager {
   private results: InitialSeedResult[] = [];
   private completedWorkers = 0;
   private callbacks: SearchCallbacks | null = null;
-  private startTime: number = 0;
+  private startTime: number = 0; // 後方互換性のため保持
   private searchRunning = false;
   private progressUpdateTimer: number | NodeJS.Timeout | null = null;
   private lastProgressCheck: Map<number, number> = new Map();
+  
+  // Manager timer state for elapsed time management
+  private timerState: ManagerTimerState = {
+    cumulativeRunTime: 0,
+    segmentStartTime: 0,
+    isPaused: false
+  };
 
   constructor(
     private maxWorkers: number = navigator.hardwareConcurrency || 4
   ) {}
+
+  /**
+   * Timer management functions for accurate elapsed time calculation
+   */
+  private startManagerTimer(): void {
+    this.timerState.cumulativeRunTime = 0;
+    this.timerState.segmentStartTime = Date.now();
+    this.timerState.isPaused = false;
+  }
+
+  private pauseManagerTimer(): void {
+    if (!this.timerState.isPaused) {
+      this.timerState.cumulativeRunTime += Date.now() - this.timerState.segmentStartTime;
+      this.timerState.isPaused = true;
+    }
+  }
+
+  private resumeManagerTimer(): void {
+    if (this.timerState.isPaused) {
+      this.timerState.segmentStartTime = Date.now();
+      this.timerState.isPaused = false;
+    }
+  }
+
+  private getManagerElapsedTime(): number {
+    return this.timerState.isPaused 
+      ? this.timerState.cumulativeRunTime
+      : this.timerState.cumulativeRunTime + (Date.now() - this.timerState.segmentStartTime);
+  }
 
   /**
    * ワーカー数設定
@@ -76,7 +119,11 @@ export class MultiWorkerSearchManager {
 
     this.callbacks = callbacks;
     this.searchRunning = true;
-    this.startTime = Date.now();
+    this.startTime = Date.now(); // 後方互換性のため保持
+    
+    // Start accurate manager timer for elapsed time calculation
+    this.startManagerTimer();
+    
     // resetState()は不要（safeCleanupで実行済み）
 
     try {
@@ -266,7 +313,7 @@ export class MultiWorkerSearchManager {
     // 集約計算
     const totalCurrentStep = progresses.reduce((sum, p) => sum + p.currentStep, 0);
     const totalSteps = progresses.reduce((sum, p) => sum + p.totalSteps, 0);
-    const totalElapsedTime = Date.now() - this.startTime;
+    const totalElapsedTime = this.getManagerElapsedTime(); // マネージャータイマーを使用
     const totalMatchesFound = progresses.reduce((sum, p) => sum + p.matchesFound, 0);
     
     const activeWorkers = progresses.filter(p => 
@@ -445,6 +492,9 @@ export class MultiWorkerSearchManager {
    * 一時停止
    */
   public pauseAll(): void {
+    // マネージャータイマーを一時停止
+    this.pauseManagerTimer();
+    
     console.info('Pausing all workers...');
     for (const worker of this.workers.values()) {
       const request: ParallelWorkerRequest = {
@@ -460,6 +510,9 @@ export class MultiWorkerSearchManager {
    * 再開
    */
   public resumeAll(): void {
+    // マネージャータイマーを再開
+    this.resumeManagerTimer();
+    
     for (const worker of this.workers.values()) {
       const request: ParallelWorkerRequest = {
         type: 'RESUME_SEARCH',

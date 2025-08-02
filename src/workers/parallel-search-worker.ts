@@ -12,6 +12,13 @@ import type {
   WorkerChunk 
 } from '../types/pokemon';
 
+// Timer state for accurate elapsed time calculation
+interface TimerState {
+  cumulativeRunTime: number;  // 累積実行時間（ミリ秒）
+  segmentStartTime: number;   // 現在セグメント開始時刻
+  isPaused: boolean;          // 一時停止状態
+}
+
 // Worker状態
 let searchState = {
   isRunning: false,
@@ -22,7 +29,43 @@ let searchState = {
   startTime: 0
 };
 
+// Timer state for elapsed time management
+let timerState: TimerState = {
+  cumulativeRunTime: 0,
+  segmentStartTime: 0,
+  isPaused: false
+};
+
 let calculator: SeedCalculator;
+
+/**
+ * Timer management functions for accurate elapsed time calculation
+ */
+function startTimer() {
+  timerState.cumulativeRunTime = 0;
+  timerState.segmentStartTime = Date.now();
+  timerState.isPaused = false;
+}
+
+function pauseTimer() {
+  if (!timerState.isPaused) {
+    timerState.cumulativeRunTime += Date.now() - timerState.segmentStartTime;
+    timerState.isPaused = true;
+  }
+}
+
+function resumeTimer() {
+  if (timerState.isPaused) {
+    timerState.segmentStartTime = Date.now();
+    timerState.isPaused = false;
+  }
+}
+
+function getElapsedTime(): number {
+  return timerState.isPaused 
+    ? timerState.cumulativeRunTime
+    : timerState.cumulativeRunTime + (Date.now() - timerState.segmentStartTime);
+}
 
 /**
  * Calculator初期化
@@ -355,7 +398,7 @@ async function processChunkWithTypeScript(
  * 進捗報告
  */
 function reportProgress(current: number, total: number, matches: number): void {
-  const elapsedTime = Date.now() - searchState.startTime;
+  const elapsedTime = getElapsedTime();
   const progressRatio = current / total;
   const estimatedTimeRemaining = progressRatio > 0 ? 
     Math.round((elapsedTime / progressRatio) * (1 - progressRatio)) : 0;
@@ -400,6 +443,9 @@ self.onmessage = async (event: MessageEvent<ParallelWorkerRequest>) => {
       searchState.isRunning = true;
       searchState.shouldStop = false;
       searchState.isPaused = false;
+      
+      // Start accurate timer for elapsed time calculation
+      startTimer();
 
       try {
         await initializeCalculator();
@@ -417,6 +463,7 @@ self.onmessage = async (event: MessageEvent<ParallelWorkerRequest>) => {
 
     case 'PAUSE_SEARCH':
       searchState.isPaused = true;
+      pauseTimer(); // タイマーを一時停止
       postMessage({
         type: 'PAUSED',
         workerId: searchState.workerId
@@ -425,6 +472,7 @@ self.onmessage = async (event: MessageEvent<ParallelWorkerRequest>) => {
 
     case 'RESUME_SEARCH':
       searchState.isPaused = false;
+      resumeTimer(); // タイマーを再開
       postMessage({
         type: 'RESUMED',
         workerId: searchState.workerId
