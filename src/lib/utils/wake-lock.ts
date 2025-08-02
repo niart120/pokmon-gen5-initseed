@@ -75,6 +75,9 @@ export function getWakeLockStatus(): {
 /**
  * Handle page visibility changes to reacquire wake lock when page becomes visible
  * Call this function to set up automatic wake lock management
+ * 
+ * @param shouldKeepAwake Function that returns whether wake lock should be maintained
+ *                        This should consider both running and paused states for search operations
  */
 export function setupAutoWakeLockManagement(shouldKeepAwake: () => boolean): void {
   if (!isWakeLockSupported()) {
@@ -84,6 +87,7 @@ export function setupAutoWakeLockManagement(shouldKeepAwake: () => boolean): voi
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'visible' && shouldKeepAwake()) {
       // Reacquire wake lock when page becomes visible
+      // This handles cases where wake lock was automatically released when tab became hidden
       await requestWakeLock();
     }
   });

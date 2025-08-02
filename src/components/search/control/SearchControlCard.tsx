@@ -42,18 +42,27 @@ export function SearchControlCard() {
   // Wake Lock自動管理のセットアップ
   useEffect(() => {
     if (isWakeLockSupported()) {
-      setupAutoWakeLockManagement(() => wakeLockEnabled && searchProgress.isRunning);
+      // 検索実行中または一時停止中はWake Lockを維持
+      // 一時停止中も維持する理由：
+      // - ユーザーがすぐに再開する可能性が高い
+      // - 画面が暗くなると再開ボタンを押すためにタップが必要
+      // - 長時間検索の途中での短時間一時停止では画面を維持したい
+      setupAutoWakeLockManagement(() => 
+        wakeLockEnabled && (searchProgress.isRunning || searchProgress.isPaused)
+      );
     }
   }, []);
 
-  // Wake Lock状態管理: 検索開始/終了時に制御
+  // Wake Lock状態管理: 検索開始/一時停止/終了時に制御
   useEffect(() => {
-    if (wakeLockEnabled && searchProgress.isRunning) {
+    if (wakeLockEnabled && (searchProgress.isRunning || searchProgress.isPaused)) {
+      // 検索実行中または一時停止中はWake Lockを維持
       requestWakeLock();
-    } else if (!searchProgress.isRunning) {
+    } else if (!searchProgress.isRunning && !searchProgress.isPaused) {
+      // 検索が完全に終了した場合のみWake Lockを解除
       releaseWakeLock();
     }
-  }, [wakeLockEnabled, searchProgress.isRunning]);
+  }, [wakeLockEnabled, searchProgress.isRunning, searchProgress.isPaused]);
 
   // Worker management functions
   const handlePauseSearch = () => {
