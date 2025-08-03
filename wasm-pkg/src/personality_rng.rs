@@ -54,7 +54,7 @@ impl PersonalityRNG {
     /// (r1[n] * 25) >> 32 の計算
     /// 
     /// # Returns
-    /// 性格値（0-24）
+    /// 性格（0-24）
     pub fn nature_roll(&mut self) -> u32 {
         let r1 = self.next();
         ((r1 as u64 * 25) >> 32) as u32
