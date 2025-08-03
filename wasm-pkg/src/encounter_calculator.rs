@@ -34,6 +34,8 @@ pub enum EncounterType {
     StaticSymbol = 10,
     /// 固定配布（イベント・配布ポケモン等）
     StaticGift = 11,
+    /// 徘徊ポケモン（ドキュメント仕様準拠）
+    Roaming = 20,
 }
 
 /// 砂煙出現内容の種類
@@ -129,6 +131,7 @@ impl EncounterCalculator {
             EncounterType::FishingBubble => Self::calculate_fishing_bubble_encounter_from_slot(slot_value),
             EncounterType::StaticSymbol => 0, // 固定シンボルは常にスロット0
             EncounterType::StaticGift => 0,   // 固定配布は常にスロット0
+            EncounterType::Roaming => 0,      // 徘徊ポケモンは常にスロット0
         }
     }
 
@@ -180,6 +183,10 @@ impl EncounterCalculator {
             },
             EncounterType::StaticGift => {
                 // 固定配布：1スロット（0のみ）
+                0
+            },
+            EncounterType::Roaming => {
+                // 徘徊ポケモン：1スロット（0のみ）
                 0
             },
         }
@@ -693,7 +700,7 @@ mod tests {
                         EncounterType::Surfing | EncounterType::Fishing | EncounterType::ShakingGrass => 4,
                         EncounterType::DustCloud => 2,
                         EncounterType::PokemonShadow | EncounterType::SurfingBubble | EncounterType::FishingBubble => 3,
-                        EncounterType::StaticSymbol | EncounterType::StaticGift => 0,
+                        EncounterType::StaticSymbol | EncounterType::StaticGift | EncounterType::Roaming => 0,
                     };
                     
                     assert!(
