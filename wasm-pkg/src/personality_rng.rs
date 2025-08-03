@@ -60,26 +60,6 @@ impl PersonalityRNG {
         ((r1 as u64 * 25) >> 32) as u32
     }
 
-    /// 遭遇スロット決定（BW用）
-    /// (r1[n] * 0xFFFF / 0x290) >> 32 の計算
-    /// 
-    /// # Returns
-    /// 遭遇スロット判定値
-    pub fn encounter_slot_bw(&mut self) -> u32 {
-        let rand = self.next();
-        ((rand as u64 * 0xFFFF / 0x290) >> 32) as u32
-    }
-
-    /// 遭遇スロット決定（BW2用）
-    /// BW2では計算式が若干異なる場合がある
-    /// 
-    /// # Returns
-    /// 遭遇スロット判定値（0-99）
-    pub fn encounter_slot_bw2(&mut self) -> u32 {
-        let r1 = self.next();
-        ((r1 as u64 * 100) >> 32) as u32
-    }
-
     /// 現在のシード値を取得
     /// 
     /// # Returns
@@ -217,20 +197,6 @@ mod tests {
             let sync = rng.sync_check();
             // sync_check()は現在boolを返すため、trueまたはfalseであることを確認
             assert!(sync == true || sync == false, "Sync value should be true or false");
-        }
-    }
-
-    #[test]
-    fn test_encounter_slot_range() {
-        let mut rng = PersonalityRNG::new(0x123456789ABCDEF0);
-        
-        // 遭遇スロット値が正しい範囲内にあることを確認
-        for _ in 0..100 {
-            let slot_bw = rng.encounter_slot_bw();
-            assert!(slot_bw < 100, "BW encounter slot {} should be less than 100", slot_bw);
-            
-            let slot_bw2 = rng.encounter_slot_bw2();
-            assert!(slot_bw2 < 100, "BW2 encounter slot {} should be less than 100", slot_bw2);
         }
     }
 
