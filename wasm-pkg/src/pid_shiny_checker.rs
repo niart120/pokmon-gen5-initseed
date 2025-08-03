@@ -114,7 +114,7 @@ impl ShinyChecker {
     /// 色違いかどうか
     pub fn is_shiny(tid: u16, sid: u16, pid: u32) -> bool {
         let shiny_value = Self::get_shiny_value(tid, sid, pid);
-        shiny_value < 16
+        shiny_value < 8
     }
 
     /// 色違い値の計算
@@ -143,7 +143,7 @@ impl ShinyChecker {
     pub fn get_shiny_type(shiny_value: u16) -> ShinyType {
         match shiny_value {
             0 => ShinyType::Star,      // 星形色違い
-            1..=15 => ShinyType::Square, // 四角い色違い
+            1..=7 => ShinyType::Square, // 四角い色違い
             _ => ShinyType::Normal,    // 通常
         }
     }
@@ -168,7 +168,7 @@ impl ShinyChecker {
     /// # Returns
     /// 色違い確率（分母）
     pub fn shiny_probability() -> u32 {
-        // 第5世代の通常色違い確率: 1/8192
+        // 第5世代の通常色違い確率: 1/8192 (色違い値 < 8の確率)
         8192
     }
 
@@ -324,8 +324,8 @@ mod tests {
     fn test_shiny_type_classification() {
         assert_eq!(ShinyChecker::get_shiny_type(0), ShinyType::Star);
         assert_eq!(ShinyChecker::get_shiny_type(1), ShinyType::Square);
-        assert_eq!(ShinyChecker::get_shiny_type(15), ShinyType::Square);
-        assert_eq!(ShinyChecker::get_shiny_type(16), ShinyType::Normal);
+        assert_eq!(ShinyChecker::get_shiny_type(7), ShinyType::Square);
+        assert_eq!(ShinyChecker::get_shiny_type(8), ShinyType::Normal);
         assert_eq!(ShinyChecker::get_shiny_type(100), ShinyType::Normal);
     }
 
@@ -437,5 +437,19 @@ mod tests {
         assert_eq!(shiny_value, 0x0000);
         assert!(ShinyChecker::is_shiny(tid, sid, pid));
         assert_eq!(ShinyChecker::check_shiny_type(tid, sid, pid), ShinyType::Star);
+        
+        // 境界値テスト - 色違い閾値の境界
+        let tid = 0x0000;
+        let sid = 0x0000;
+        
+        // shiny_value = 7 (最大の色違い値)
+        let pid_shiny_7 = 0x00070000; // XOR結果が7になるPID
+        assert!(ShinyChecker::is_shiny(tid, sid, pid_shiny_7));
+        assert_eq!(ShinyChecker::check_shiny_type(tid, sid, pid_shiny_7), ShinyType::Square);
+        
+        // shiny_value = 8 (色違いでない最小値)
+        let pid_normal_8 = 0x00080000; // XOR結果が8になるPID
+        assert!(!ShinyChecker::is_shiny(tid, sid, pid_normal_8));
+        assert_eq!(ShinyChecker::check_shiny_type(tid, sid, pid_normal_8), ShinyType::Normal);
     }
 }
