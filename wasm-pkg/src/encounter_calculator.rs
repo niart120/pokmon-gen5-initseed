@@ -32,6 +32,18 @@ pub enum EncounterType {
     FishingBubble = 7,
 }
 
+/// 砂煙出現内容の種類
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum DustCloudContent {
+    /// ポケモン出現
+    Pokemon = 0,
+    /// ジュエル類出現
+    Jewel = 1,
+    /// 進化石類出現
+    EvolutionStone = 2,
+}
+
 /// 遭遇計算エンジン
 #[wasm_bindgen]
 pub struct EncounterCalculator;
@@ -59,7 +71,7 @@ impl EncounterCalculator {
         random_value: u32,
     ) -> u8 {
         // ゲームバージョンに応じた数学的計算でスロット値を算出
-        let slot_value = Self::calculate_raw_encounter_slot(version, random_value);
+        let slot_value = Self::calculate_raw_encounter_slot_internal(version, random_value);
         
         // スロット値を各エンカウントタイプの確率分布に変換
         Self::slot_value_to_encounter_slot(encounter_type, slot_value)
@@ -74,7 +86,13 @@ impl EncounterCalculator {
     /// 
     /// # Returns
     /// 生スロット値（0-99範囲）
-    fn calculate_raw_encounter_slot(version: GameVersion, random_value: u32) -> u32 {
+    #[cfg(test)]
+    pub fn calculate_raw_encounter_slot(version: GameVersion, random_value: u32) -> u32 {
+        Self::calculate_raw_encounter_slot_internal(version, random_value)
+    }
+
+    /// 内部用の生スロット値計算
+    fn calculate_raw_encounter_slot_internal(version: GameVersion, random_value: u32) -> u32 {
         match version {
             GameVersion::BlackWhite => {
                 // BW: (rand * 0xFFFF / 0x290) >> 32
@@ -150,6 +168,22 @@ impl EncounterCalculator {
                 // 水泡釣り：4スロット（0-3）
                 if slot < 4 { slot as usize } else { 3 }
             },
+        }
+    }
+
+    /// 砂煙の出現内容を判定
+    /// 
+    /// # Arguments
+    /// * `slot` - 砂煙スロット値（0-2）
+    /// 
+    /// # Returns
+    /// 出現内容の種類
+    pub fn get_dust_cloud_content(slot: u8) -> DustCloudContent {
+        match slot {
+            0 => DustCloudContent::Pokemon,        // 70% ポケモン
+            1 => DustCloudContent::Jewel,          // 20% ジュエル類
+            2 => DustCloudContent::EvolutionStone, // 10% 進化石類
+            _ => DustCloudContent::Pokemon,        // フォールバック
         }
     }
 }
@@ -387,6 +421,63 @@ mod tests {
     }
 
     #[test]
+    fn test_pokemon_shadow_encounter_distribution() {
+        let dist = EncounterCalculator::calculate_slot_distribution(
+            EncounterType::PokemonShadow,
+            GameVersion::BlackWhite
+        );
+        
+        // 期待される分布を確認
+        assert_eq!(dist[0], 50); // 50%
+        assert_eq!(dist[1], 30); // 30%
+        assert_eq!(dist[2], 15); // 15%
+        assert_eq!(dist[3], 5);  // 5%
+        
+        // 未使用スロットは0
+        for i in 4..12 {
+            assert_eq!(dist[i], 0);
+        }
+    }
+
+    #[test]
+    fn test_surfing_bubble_encounter_distribution() {
+        let dist = EncounterCalculator::calculate_slot_distribution(
+            EncounterType::SurfingBubble,
+            GameVersion::BlackWhite
+        );
+        
+        // 期待される分布を確認
+        assert_eq!(dist[0], 50); // 50%
+        assert_eq!(dist[1], 30); // 30%
+        assert_eq!(dist[2], 15); // 15%
+        assert_eq!(dist[3], 5);  // 5%
+        
+        // 未使用スロットは0
+        for i in 4..12 {
+            assert_eq!(dist[i], 0);
+        }
+    }
+
+    #[test]
+    fn test_fishing_bubble_encounter_distribution() {
+        let dist = EncounterCalculator::calculate_slot_distribution(
+            EncounterType::FishingBubble,
+            GameVersion::BlackWhite
+        );
+        
+        // 期待される分布を確認
+        assert_eq!(dist[0], 60); // 60%
+        assert_eq!(dist[1], 25); // 25%
+        assert_eq!(dist[2], 10); // 10%
+        assert_eq!(dist[3], 5);  // 5%
+        
+        // 未使用スロットは0
+        for i in 4..12 {
+            assert_eq!(dist[i], 0);
+        }
+    }
+
+    #[test]
     fn test_slot_to_table_index() {
         // 通常エンカウント
         assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::Normal, 5), 5);
@@ -407,6 +498,18 @@ mod tests {
         // 砂煙
         assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::DustCloud, 1), 1);
         assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::DustCloud, 5), 2);
+        
+        // ポケモンの影
+        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::PokemonShadow, 2), 2);
+        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::PokemonShadow, 5), 3);
+        
+        // 水泡なみのり
+        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::SurfingBubble, 1), 1);
+        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::SurfingBubble, 6), 3);
+        
+        // 水泡釣り
+        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::FishingBubble, 2), 2);
+        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::FishingBubble, 7), 3);
     }
 
     #[test]
@@ -474,6 +577,28 @@ mod tests {
     }
 
     #[test]
+    fn test_version_mathematical_differences() {
+        // BW/BW2の数学的計算式の違いをテスト
+        let test_values = [0u32, 1000, 0x12345678, 0x80000000, u32::MAX];
+        
+        for &rand_val in &test_values {
+            let bw_slot = EncounterCalculator::calculate_raw_encounter_slot(
+                GameVersion::BlackWhite, 
+                rand_val
+            );
+            let bw2_slot = EncounterCalculator::calculate_raw_encounter_slot(
+                GameVersion::BlackWhite2, 
+                rand_val
+            );
+            
+            // 計算式が異なるため、結果が異なる場合がある
+            // ただし、両方とも有効な範囲内であることを確認
+            assert!(bw_slot <= 100, "BW slot value {} out of range", bw_slot);
+            assert!(bw2_slot <= 100, "BW2 slot value {} out of range", bw2_slot);
+        }
+    }
+
+    #[test]
     fn test_deterministic_behavior() {
         // 同じ入力に対して同じ出力が得られることを確認
         let test_cases = [
@@ -496,6 +621,81 @@ mod tests {
                 rand_val
             );
             assert_eq!(result1, result2);
+        }
+    }
+
+    #[test]
+    fn test_dust_cloud_content_classification() {
+        // 砂煙の出現内容判定テスト
+        assert_eq!(
+            EncounterCalculator::get_dust_cloud_content(0),
+            DustCloudContent::Pokemon
+        );
+        assert_eq!(
+            EncounterCalculator::get_dust_cloud_content(1),
+            DustCloudContent::Jewel
+        );
+        assert_eq!(
+            EncounterCalculator::get_dust_cloud_content(2),
+            DustCloudContent::EvolutionStone
+        );
+        
+        // 範囲外値のテスト
+        assert_eq!(
+            EncounterCalculator::get_dust_cloud_content(5),
+            DustCloudContent::Pokemon
+        );
+    }
+
+    #[test]
+    fn test_comprehensive_integration() {
+        // 包括的統合テスト：全エンカウントタイプとバージョンの組み合わせ
+        let encounter_types = [
+            EncounterType::Normal,
+            EncounterType::Surfing,
+            EncounterType::Fishing,
+            EncounterType::ShakingGrass,
+            EncounterType::DustCloud,
+            EncounterType::PokemonShadow,
+            EncounterType::SurfingBubble,
+            EncounterType::FishingBubble,
+        ];
+        
+        let versions = [GameVersion::BlackWhite, GameVersion::BlackWhite2];
+        let test_values = [0u32, 0x12345678, 0x80000000, u32::MAX];
+        
+        for version in versions {
+            for encounter_type in encounter_types {
+                for &rand_val in &test_values {
+                    let slot = EncounterCalculator::calculate_encounter_slot(
+                        version,
+                        encounter_type,
+                        rand_val
+                    );
+                    
+                    // スロット値が適切な範囲内であることを確認
+                    let max_slot = match encounter_type {
+                        EncounterType::Normal => 11,
+                        EncounterType::Surfing | EncounterType::Fishing | EncounterType::ShakingGrass => 4,
+                        EncounterType::DustCloud => 2,
+                        EncounterType::PokemonShadow | EncounterType::SurfingBubble | EncounterType::FishingBubble => 3,
+                    };
+                    
+                    assert!(
+                        slot <= max_slot,
+                        "Slot {} exceeds max {} for {:?} in {:?}",
+                        slot, max_slot, encounter_type, version
+                    );
+                    
+                    // テーブルインデックス変換のテスト
+                    let table_index = EncounterCalculator::slot_to_table_index(encounter_type, slot);
+                    assert!(
+                        table_index <= max_slot as usize,
+                        "Table index {} exceeds max {} for slot {} in {:?}",
+                        table_index, max_slot, slot, encounter_type
+                    );
+                }
+            }
         }
     }
 }
