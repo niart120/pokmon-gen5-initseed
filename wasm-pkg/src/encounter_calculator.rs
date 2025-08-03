@@ -30,6 +30,10 @@ pub enum EncounterType {
     SurfingBubble = 6,
     /// 水泡釣り（釣り版特殊エンカウント）
     FishingBubble = 7,
+    /// 固定シンボル（徘徊・レジェンダリー等）
+    StaticSymbol = 10,
+    /// 固定配布（イベント・配布ポケモン等）
+    StaticGift = 11,
 }
 
 /// 砂煙出現内容の種類
@@ -123,6 +127,8 @@ impl EncounterCalculator {
             EncounterType::PokemonShadow => Self::calculate_pokemon_shadow_encounter_from_slot(slot_value),
             EncounterType::SurfingBubble => Self::calculate_surfing_bubble_encounter_from_slot(slot_value),
             EncounterType::FishingBubble => Self::calculate_fishing_bubble_encounter_from_slot(slot_value),
+            EncounterType::StaticSymbol => 0, // 固定シンボルは常にスロット0
+            EncounterType::StaticGift => 0,   // 固定配布は常にスロット0
         }
     }
 
@@ -167,6 +173,14 @@ impl EncounterCalculator {
             EncounterType::FishingBubble => {
                 // 水泡釣り：4スロット（0-3）
                 if slot < 4 { slot as usize } else { 3 }
+            },
+            EncounterType::StaticSymbol => {
+                // 固定シンボル：1スロット（0のみ）
+                0
+            },
+            EncounterType::StaticGift => {
+                // 固定配布：1スロット（0のみ）
+                0
             },
         }
     }
@@ -679,6 +693,7 @@ mod tests {
                         EncounterType::Surfing | EncounterType::Fishing | EncounterType::ShakingGrass => 4,
                         EncounterType::DustCloud => 2,
                         EncounterType::PokemonShadow | EncounterType::SurfingBubble | EncounterType::FishingBubble => 3,
+                        EncounterType::StaticSymbol | EncounterType::StaticGift => 0,
                     };
                     
                     assert!(
