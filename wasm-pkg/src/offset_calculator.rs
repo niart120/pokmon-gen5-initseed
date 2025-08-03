@@ -136,7 +136,7 @@ impl OffsetCalculator {
     /// 現在のシード値
     #[wasm_bindgen(getter)]
     pub fn get_current_seed(&self) -> u64 {
-        self.rng.get_seed()
+        self.rng.current_seed()
     }
 
     /// 計算器をリセット

@@ -41,13 +41,13 @@ impl PersonalityRNG {
     }
 
     /// シンクロ判定用乱数生成
-    /// (r1[n] * 2) >> 32 の計算
+    /// (r1[n] * 2) >> 32 == 0 の計算
     /// 
     /// # Returns
-    /// シンクロ判定用の値（0または1）
-    pub fn sync_check(&mut self) -> u32 {
-        let r1 = self.next();
-        ((r1 as u64 * 2) >> 32) as u32
+    /// シンクロ判定結果（true: シンクロ成功, false: シンクロ失敗）
+    pub fn sync_check(&mut self) -> bool {
+        let rand = self.next();
+        ((rand as u64 * 2) >> 32) == 0
     }
 
     /// 性格決定用乱数生成
@@ -61,13 +61,13 @@ impl PersonalityRNG {
     }
 
     /// 遭遇スロット決定（BW用）
-    /// (r1[n] * 100) >> 32 の計算
+    /// (r1[n] * 0xFFFF / 0x290) >> 32 の計算
     /// 
     /// # Returns
-    /// 遭遇スロット判定値（0-99）
+    /// 遭遇スロット判定値
     pub fn encounter_slot_bw(&mut self) -> u32 {
-        let r1 = self.next();
-        ((r1 as u64 * 100) >> 32) as u32
+        let rand = self.next();
+        ((rand as u64 * 0xFFFF / 0x290) >> 32) as u32
     }
 
     /// 遭遇スロット決定（BW2用）
@@ -85,7 +85,7 @@ impl PersonalityRNG {
     /// # Returns
     /// 現在の内部シード値
     #[wasm_bindgen(getter)]
-    pub fn get_seed(&self) -> u64 {
+    pub fn current_seed(&self) -> u64 {
         self.seed
     }
 
@@ -167,7 +167,7 @@ mod tests {
         let mut rng = PersonalityRNG::new(0);
         
         // 初期値確認
-        assert_eq!(rng.get_seed(), 0);
+        assert_eq!(rng.current_seed(), 0);
         
         // 最初の乱数値を取得
         let first = rng.next();
@@ -177,7 +177,7 @@ mod tests {
         assert_eq!(first, 0); // シード0の場合、最初の乱数値は0
         
         // しかしシードは更新されている
-        assert_eq!(rng.get_seed(), 0x269EC3);
+        assert_eq!(rng.current_seed(), 0x269EC3);
         
         // 次の乱数値は0以外になる
         let second = rng.next();
@@ -194,7 +194,7 @@ mod tests {
         let expected_value = (expected_seed >> 32) as u32;
         
         assert_eq!(actual_value, expected_value);
-        assert_eq!(rng.get_seed(), expected_seed);
+        assert_eq!(rng.current_seed(), expected_seed);
     }
 
     #[test]
@@ -215,7 +215,8 @@ mod tests {
         // シンクロ判定値が0または1であることを確認
         for _ in 0..100 {
             let sync = rng.sync_check();
-            assert!(sync <= 1, "Sync value {} should be 0 or 1", sync);
+            // sync_check()は現在boolを返すため、trueまたはfalseであることを確認
+            assert!(sync == true || sync == false, "Sync value should be true or false");
         }
     }
 
@@ -258,7 +259,7 @@ mod tests {
         
         rng2.advance(5);
         
-        assert_eq!(rng1.get_seed(), rng2.get_seed());
+        assert_eq!(rng1.current_seed(), rng2.current_seed());
         assert_eq!(rng1.next(), rng2.next());
     }
 
@@ -269,11 +270,11 @@ mod tests {
         
         // 乱数を進める
         rng.advance(10);
-        assert_ne!(rng.get_seed(), initial_seed);
+        assert_ne!(rng.current_seed(), initial_seed);
         
         // リセット
         rng.reset(initial_seed);
-        assert_eq!(rng.get_seed(), initial_seed);
+        assert_eq!(rng.current_seed(), initial_seed);
     }
 
     #[test]
@@ -303,6 +304,6 @@ mod tests {
         }
         
         let jumped_seed = PersonalityRNG::jump_seed(seed, 10);
-        assert_eq!(rng.get_seed(), jumped_seed);
+        assert_eq!(rng.current_seed(), jumped_seed);
     }
 }

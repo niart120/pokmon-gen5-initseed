@@ -185,7 +185,7 @@ impl PokemonGenerator {
             let sync_result = rng.sync_check();
             sync_advances += 1;
             
-            if sync_result == 0 {
+            if sync_result {
                 // シンクロ成功 - 指定された性格で固定
                 let nature = config.nature_sync;
                 let advances = initialization_advances + sync_advances;
