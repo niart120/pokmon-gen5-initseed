@@ -163,30 +163,14 @@ impl PokemonGenerator {
         let start_seed = seed;
         let mut total_advances = 0;
         
-        // Step 1: シンクロ判定（シンクロ対応エンカウントのみ）
-        let (sync_applied, nature_id) = if Self::supports_sync(config.encounter_type) {
-            if config.sync_enabled {
-                let sync_success = rng.sync_check();
-                total_advances += 1;
-                
-                if sync_success {
-                    (true, config.sync_nature_id)
-                } else {
-                    let nature = rng.nature_roll();
-                    total_advances += 1;
-                    (false, nature as u8)
-                }
-            } else {
-                let nature = rng.nature_roll();
-                total_advances += 1;
-                (false, nature as u8)
-            }
-        } else {
-            // シンクロ無効（御三家・化石・イベント配布）
-            let nature = rng.nature_roll();
-            total_advances += 1;
-            (false, nature as u8)
-        };
+        // Step 1: シンクロ判定・性格決定
+        let (sync_applied, nature_id) = Self::resolve_sync_and_nature(
+            &mut rng, 
+            &mut total_advances, 
+            config.encounter_type, 
+            config.sync_enabled, 
+            config.sync_nature_id
+        );
         
         // Step 2: 遭遇スロット決定
         let encounter_slot_value = EncounterCalculator::calculate_encounter_slot(
@@ -216,7 +200,7 @@ impl PokemonGenerator {
             config.encounter_type
         );
         
-        // Step 5-7: その他個体値計算
+        // Step 5-7: その他計算
         let ability_slot = ((pid >> 16) & 1) as u8;
         let gender_value = (pid & 0xFF) as u8;
         
@@ -283,6 +267,66 @@ impl PokemonGenerator {
             EncounterType::PokemonShadow | EncounterType::SurfingBubble | 
             EncounterType::FishingBubble
         )
+    }
+
+    /// 内部使用：シンクロ判定・性格決定の統合処理（状態ベースmatch版）
+    /// 
+    /// # Arguments
+    /// * `rng` - 乱数生成器
+    /// * `advances` - 乱数消費回数
+    /// * `encounter_type` - 遭遇タイプ
+    /// * `sync_enabled` - シンクロ有効フラグ
+    /// * `sync_nature_id` - シンクロ性格ID
+    /// 
+    /// # Returns
+    /// (シンクロ適用フラグ, 性格ID)
+    fn resolve_sync_and_nature(
+        rng: &mut PersonalityRNG,
+        advances: &mut u32,
+        encounter_type: EncounterType,
+        sync_enabled: bool,
+        sync_nature_id: u8,
+    ) -> (bool, u8) {
+        // シンクロ処理状態を定義
+        #[derive(Debug)]
+        enum SyncState {
+            Disabled,        // シンクロ無効エンカウント
+            NotConfigured,   // シンクロ設定無効
+            Active,          // シンクロ判定実行
+        }
+        
+        let sync_state = match (Self::supports_sync(encounter_type), sync_enabled) {
+            (false, _) => SyncState::Disabled,
+            (true, false) => SyncState::NotConfigured,
+            (true, true) => SyncState::Active,
+        };
+        
+        match sync_state {
+            SyncState::Disabled => {
+                // シンクロ無効: 通常の性格決定のみ
+                (false, Self::roll_nature(rng, advances))
+            }
+            SyncState::NotConfigured | SyncState::Active => {
+                // シンクロ有効エンカウント: 常にシンクロ判定→性格決定の両方を実行
+                let sync_success = rng.sync_check();
+                *advances += 1;
+                
+                if sync_success && matches!(sync_state, SyncState::Active) {
+                    // シンクロ成功 & 設定有効時のみ特性で上書き
+                    (true, sync_nature_id)
+                } else {
+                    // シンクロ失敗 or 設定無効時は通常の性格決定
+                    (false, Self::roll_nature(rng, advances))
+                }
+            }
+        }
+    }
+
+    /// 内部使用：性格決定（乱数消費込み）
+    fn roll_nature(rng: &mut PersonalityRNG, advances: &mut u32) -> u8 {
+        let nature = rng.nature_roll();
+        *advances += 1;
+        nature as u8
     }
 
     /// 内部使用：EncounterType → u8 変換
