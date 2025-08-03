@@ -30,10 +30,14 @@ pub enum EncounterType {
     SurfingBubble = 6,
     /// 水泡釣り（釣り版特殊エンカウント）
     FishingBubble = 7,
-    /// 固定シンボル（徘徊・レジェンダリー等）
+    /// 固定シンボル（レジェンダリー等）- シンクロ有効
     StaticSymbol = 10,
-    /// 固定配布（イベント・配布ポケモン等）
-    StaticGift = 11,
+    /// 御三家受け取り - シンクロ無効
+    StaticStarter = 11,
+    /// 化石復元 - シンクロ無効
+    StaticFossil = 12,
+    /// イベント配布 - シンクロ無効
+    StaticEvent = 13,
     /// 徘徊ポケモン（ドキュメント仕様準拠）
     Roaming = 20,
 }
@@ -130,7 +134,9 @@ impl EncounterCalculator {
             EncounterType::SurfingBubble => Self::calculate_surfing_bubble_encounter_from_slot(slot_value),
             EncounterType::FishingBubble => Self::calculate_fishing_bubble_encounter_from_slot(slot_value),
             EncounterType::StaticSymbol => 0, // 固定シンボルは常にスロット0
-            EncounterType::StaticGift => 0,   // 固定配布は常にスロット0
+            EncounterType::StaticStarter => 0,  // 御三家は常にスロット0
+            EncounterType::StaticFossil => 0,   // 化石は常にスロット0
+            EncounterType::StaticEvent => 0,    // イベント配布は常にスロット0
             EncounterType::Roaming => 0,      // 徘徊ポケモンは常にスロット0
         }
     }
@@ -181,8 +187,16 @@ impl EncounterCalculator {
                 // 固定シンボル：1スロット（0のみ）
                 0
             },
-            EncounterType::StaticGift => {
-                // 固定配布：1スロット（0のみ）
+            EncounterType::StaticStarter => {
+                // 御三家：1スロット（0のみ）
+                0
+            },
+            EncounterType::StaticFossil => {
+                // 化石：1スロット（0のみ）
+                0
+            },
+            EncounterType::StaticEvent => {
+                // イベント配布：1スロット（0のみ）
                 0
             },
             EncounterType::Roaming => {
@@ -700,7 +714,8 @@ mod tests {
                         EncounterType::Surfing | EncounterType::Fishing | EncounterType::ShakingGrass => 4,
                         EncounterType::DustCloud => 2,
                         EncounterType::PokemonShadow | EncounterType::SurfingBubble | EncounterType::FishingBubble => 3,
-                        EncounterType::StaticSymbol | EncounterType::StaticGift | EncounterType::Roaming => 0,
+                        EncounterType::StaticSymbol | EncounterType::StaticStarter | 
+                        EncounterType::StaticFossil | EncounterType::StaticEvent | EncounterType::Roaming => 0,
                     };
                     
                     assert!(

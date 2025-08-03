@@ -163,8 +163,8 @@ impl PokemonGenerator {
         let start_seed = seed;
         let mut total_advances = 0;
         
-        // Step 1: シンクロ判定（野生エンカウントのみ）
-        let (sync_applied, nature_id) = if Self::is_wild_encounter(config.encounter_type) {
+        // Step 1: シンクロ判定（シンクロ対応エンカウントのみ）
+        let (sync_applied, nature_id) = if Self::supports_sync(config.encounter_type) {
             if config.sync_enabled {
                 let sync_success = rng.sync_check();
                 total_advances += 1;
@@ -182,6 +182,7 @@ impl PokemonGenerator {
                 (false, nature as u8)
             }
         } else {
+            // シンクロ無効（御三家・化石・イベント配布）
             let nature = rng.nature_roll();
             total_advances += 1;
             (false, nature as u8)
@@ -264,6 +265,16 @@ impl PokemonGenerator {
         results
     }
 
+    /// 内部使用：シンクロ対応エンカウント判定
+    fn supports_sync(encounter_type: EncounterType) -> bool {
+        matches!(encounter_type, 
+            EncounterType::Normal | EncounterType::Surfing | EncounterType::Fishing |
+            EncounterType::ShakingGrass | EncounterType::DustCloud | 
+            EncounterType::PokemonShadow | EncounterType::SurfingBubble | 
+            EncounterType::FishingBubble | EncounterType::StaticSymbol
+        )
+    }
+
     /// 内部使用：野生エンカウント判定
     fn is_wild_encounter(encounter_type: EncounterType) -> bool {
         matches!(encounter_type, 
@@ -286,7 +297,9 @@ impl PokemonGenerator {
             EncounterType::SurfingBubble => 6,
             EncounterType::FishingBubble => 7,
             EncounterType::StaticSymbol => 10,
-            EncounterType::StaticGift => 11,
+            EncounterType::StaticStarter => 11,
+            EncounterType::StaticFossil => 12,
+            EncounterType::StaticEvent => 13,
             EncounterType::Roaming => 20,
         }
     }
@@ -315,7 +328,8 @@ impl PokemonGenerator {
             },
             
             // 乱数消費なし
-            EncounterType::StaticSymbol | EncounterType::StaticGift | EncounterType::Roaming => {
+            EncounterType::StaticSymbol | EncounterType::StaticStarter | 
+            EncounterType::StaticFossil | EncounterType::StaticEvent | EncounterType::Roaming => {
                 0  // 乱数消費なし
             },
         }
@@ -456,6 +470,50 @@ mod tests {
     }
 
     #[test]
+    fn test_bw_sync_specificity() {
+        let seed = 0x123456789ABCDEF0;
+        
+        // 固定シンボル（シンクロ有効）
+        let mut config_symbol = BWGenerationConfig::new(
+            GameVersion::BlackWhite,
+            EncounterType::StaticSymbol,
+            12345,
+            54321,
+            true,  // シンクロ有効
+            10,    // シンクロ性格ID
+        );
+        let symbol_pokemon = PokemonGenerator::generate_single_pokemon_bw(seed, &config_symbol);
+        
+        // 御三家（シンクロ無効）
+        config_symbol.encounter_type = EncounterType::StaticStarter;
+        let starter_pokemon = PokemonGenerator::generate_single_pokemon_bw(seed, &config_symbol);
+        
+        // 化石（シンクロ無効）
+        config_symbol.encounter_type = EncounterType::StaticFossil;
+        let fossil_pokemon = PokemonGenerator::generate_single_pokemon_bw(seed, &config_symbol);
+        
+        // 御三家と化石では設定に関係なくシンクロが無効化される
+        assert!(!starter_pokemon.sync_applied);
+        assert!(!fossil_pokemon.sync_applied);
+        
+        // 固定シンボルではシンクロ判定が実行される（成功・失敗は乱数次第）
+        // 最低でもシンクロ判定の乱数消費分は差が出る
+        assert_ne!(symbol_pokemon.advances, starter_pokemon.advances);
+    }
+
+    #[test]
+    fn test_bw_encounter_type_conversion_updated() {
+        // 新しいエンカウントタイプの変換テスト
+        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::Normal), 0);
+        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::Surfing), 1);
+        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::StaticSymbol), 10);
+        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::StaticStarter), 11);
+        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::StaticFossil), 12);
+        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::StaticEvent), 13);
+        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::Roaming), 20);
+    }
+
+    #[test]
     fn test_bw_encounter_type_detection() {
         // 野生エンカウント判定テスト
         assert!(PokemonGenerator::is_wild_encounter(EncounterType::Normal));
@@ -464,7 +522,19 @@ mod tests {
         
         // 固定エンカウント判定テスト
         assert!(!PokemonGenerator::is_wild_encounter(EncounterType::StaticSymbol));
-        assert!(!PokemonGenerator::is_wild_encounter(EncounterType::StaticGift));
+        assert!(!PokemonGenerator::is_wild_encounter(EncounterType::StaticStarter));
+        assert!(!PokemonGenerator::is_wild_encounter(EncounterType::StaticFossil));
+        assert!(!PokemonGenerator::is_wild_encounter(EncounterType::StaticEvent));
         assert!(!PokemonGenerator::is_wild_encounter(EncounterType::Roaming));
+        
+        // シンクロ対応判定テスト
+        assert!(PokemonGenerator::supports_sync(EncounterType::Normal));
+        assert!(PokemonGenerator::supports_sync(EncounterType::StaticSymbol)); // 固定シンボルはシンクロ有効
+        
+        // シンクロ無効判定テスト
+        assert!(!PokemonGenerator::supports_sync(EncounterType::StaticStarter)); // 御三家はシンクロ無効
+        assert!(!PokemonGenerator::supports_sync(EncounterType::StaticFossil));  // 化石はシンクロ無効
+        assert!(!PokemonGenerator::supports_sync(EncounterType::StaticEvent));   // イベントはシンクロ無効
+        assert!(!PokemonGenerator::supports_sync(EncounterType::Roaming));       // 徘徊はシンクロ無効
     }
 }
