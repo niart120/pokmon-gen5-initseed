@@ -14,16 +14,22 @@ pub enum GameVersion {
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EncounterType {
-    /// 通常エンカウント（草むらなど）
+    /// 通常エンカウント（草むら・洞窟・ダンジョン共通）
     Normal = 0,
     /// なみのり
     Surfing = 1,
     /// つりざお
     Fishing = 2,
-    /// 特殊エンカウント（洞窟、砂漠など）
-    Special = 3,
-    /// 隠し穴
-    HiddenGrotte = 4,
+    /// 揺れる草むら（特殊エンカウント）
+    ShakingGrass = 3,
+    /// 砂煙（特殊エンカウント）
+    DustCloud = 4,
+    /// ポケモンの影（特殊エンカウント）
+    PokemonShadow = 5,
+    /// 水泡（なみのり版特殊エンカウント）
+    SurfingBubble = 6,
+    /// 水泡釣り（釣り版特殊エンカウント）
+    FishingBubble = 7,
 }
 
 /// 遭遇計算エンジン
@@ -59,8 +65,11 @@ impl EncounterCalculator {
             EncounterType::Normal => Self::calculate_normal_encounter(version, rand_val),
             EncounterType::Surfing => Self::calculate_surfing_encounter(version, rand_val),
             EncounterType::Fishing => Self::calculate_fishing_encounter(version, rand_val),
-            EncounterType::Special => Self::calculate_special_encounter(version, rand_val),
-            EncounterType::HiddenGrotte => Self::calculate_hidden_grotte_encounter(version, rand_val),
+            EncounterType::ShakingGrass => Self::calculate_shaking_grass_encounter(version, rand_val),
+            EncounterType::DustCloud => Self::calculate_dust_cloud_encounter(version, rand_val),
+            EncounterType::PokemonShadow => Self::calculate_pokemon_shadow_encounter(version, rand_val),
+            EncounterType::SurfingBubble => Self::calculate_surfing_bubble_encounter(version, rand_val),
+            EncounterType::FishingBubble => Self::calculate_fishing_bubble_encounter(version, rand_val),
         }
     }
 
@@ -72,27 +81,39 @@ impl EncounterCalculator {
     /// 
     /// # Returns
     /// テーブルインデックス
-    pub fn slot_to_table_index(encounter_type: EncounterType, slot: u8) -> u8 {
+    pub fn slot_to_table_index(encounter_type: EncounterType, slot: u8) -> usize {
         match encounter_type {
             EncounterType::Normal => {
                 // 通常エンカウント：12スロット（0-11）
-                if slot < 12 { slot } else { 11 }
+                if slot < 12 { slot as usize } else { 11 }
             },
             EncounterType::Surfing => {
                 // なみのり：5スロット（0-4）
-                if slot < 5 { slot } else { 4 }
+                if slot < 5 { slot as usize } else { 4 }
             },
             EncounterType::Fishing => {
                 // つりざお：5スロット（0-4）
-                if slot < 5 { slot } else { 4 }
+                if slot < 5 { slot as usize } else { 4 }
             },
-            EncounterType::Special => {
-                // 特殊エンカウント：場所により4-5スロット
-                if slot < 5 { slot } else { 4 }
+            EncounterType::ShakingGrass => {
+                // 揺れる草むら：5スロット（0-4）
+                if slot < 5 { slot as usize } else { 4 }
             },
-            EncounterType::HiddenGrotte => {
-                // 隠し穴：場所により異なる
-                if slot < 3 { slot } else { 2 }
+            EncounterType::DustCloud => {
+                // 砂煙：3カテゴリ（0-2）
+                if slot < 3 { slot as usize } else { 2 }
+            },
+            EncounterType::PokemonShadow => {
+                // ポケモンの影：4スロット（0-3）
+                if slot < 4 { slot as usize } else { 3 }
+            },
+            EncounterType::SurfingBubble => {
+                // 水泡なみのり：4スロット（0-3）
+                if slot < 4 { slot as usize } else { 3 }
+            },
+            EncounterType::FishingBubble => {
+                // 水泡釣り：4スロット（0-3）
+                if slot < 4 { slot as usize } else { 3 }
             },
         }
     }
@@ -145,28 +166,65 @@ impl EncounterCalculator {
         }
     }
 
-    /// 特殊エンカウントスロット計算
+    /// 特殊エンカウントスロット計算（揺れる草むら）
     /// 場所により4-5スロット、確率分布が異なる
-    fn calculate_special_encounter(_version: GameVersion, rand_val: u32) -> u8 {
-        // 基本的な5スロット分布を使用
+    fn calculate_shaking_grass_encounter(_version: GameVersion, rand_val: u32) -> u8 {
+        // 揺れる草むら（特殊エンカウント）
+        // 通常より高レベル・レアポケモンが出現
         match rand_val {
             0..=39 => 0,    // 40%
-            40..=69 => 1,   // 30%
-            70..=84 => 2,   // 15%
-            85..=94 => 3,   // 10%
-            95..=99 => 4,   // 5%
+            40..=59 => 1,   // 20%
+            60..=79 => 2,   // 20%
+            80..=94 => 3,   // 15%
+            95..=99 => 4,   // 5% (隠れ特性持ち等)
             _ => 4,         // フォールバック
         }
     }
 
-    /// 隠し穴エンカウントスロット計算
-    /// 3スロット：80%/15%/5%
-    fn calculate_hidden_grotte_encounter(_version: GameVersion, rand_val: u32) -> u8 {
+    /// 砂煙エンカウントスロット計算
+    /// ポケモンまたはジュエル・進化石が出現
+    fn calculate_dust_cloud_encounter(_version: GameVersion, rand_val: u32) -> u8 {
         match rand_val {
-            0..=79 => 0,    // 80%
-            80..=94 => 1,   // 15%
-            95..=99 => 2,   // 5%
+            0..=69 => 0,    // 70% ポケモン
+            70..=89 => 1,   // 20% ジュエル類
+            90..=99 => 2,   // 10% 進化石類
             _ => 2,         // フォールバック
+        }
+    }
+
+    /// ポケモンの影エンカウントスロット計算
+    /// 橋や建物の影で出現
+    fn calculate_pokemon_shadow_encounter(_version: GameVersion, rand_val: u32) -> u8 {
+        match rand_val {
+            0..=49 => 0,    // 50%
+            50..=79 => 1,   // 30%
+            80..=94 => 2,   // 15%
+            95..=99 => 3,   // 5%
+            _ => 3,         // フォールバック
+        }
+    }
+
+    /// 水泡（なみのり版特殊エンカウント）スロット計算
+    /// なみのりエリアでの特殊遭遇
+    fn calculate_surfing_bubble_encounter(_version: GameVersion, rand_val: u32) -> u8 {
+        match rand_val {
+            0..=49 => 0,    // 50%
+            50..=79 => 1,   // 30%
+            80..=94 => 2,   // 15%
+            95..=99 => 3,   // 5%
+            _ => 3,         // フォールバック
+        }
+    }
+
+    /// 水泡釣り（釣り版特殊エンカウント）スロット計算
+    /// 釣りエリアでの特殊遭遇
+    fn calculate_fishing_bubble_encounter(_version: GameVersion, rand_val: u32) -> u8 {
+        match rand_val {
+            0..=59 => 0,    // 60%
+            60..=84 => 1,   // 25%
+            85..=94 => 2,   // 10%
+            95..=99 => 3,   // 5%
+            _ => 3,         // フォールバック
         }
     }
 
@@ -255,17 +313,17 @@ mod tests {
     }
 
     #[test]
-    fn test_special_encounter_distribution() {
+    fn test_shaking_grass_encounter_distribution() {
         let dist = EncounterCalculator::calculate_slot_distribution(
-            EncounterType::Special,
+            EncounterType::ShakingGrass,
             GameVersion::BlackWhite
         );
         
         // 期待される分布を確認
         assert_eq!(dist[0], 40); // 40%
-        assert_eq!(dist[1], 30); // 30%
-        assert_eq!(dist[2], 15); // 15%
-        assert_eq!(dist[3], 10); // 10%
+        assert_eq!(dist[1], 20); // 20%
+        assert_eq!(dist[2], 20); // 20%
+        assert_eq!(dist[3], 15); // 15%
         assert_eq!(dist[4], 5);  // 5%
         
         // 未使用スロットは0
@@ -275,16 +333,16 @@ mod tests {
     }
 
     #[test]
-    fn test_hidden_grotte_encounter_distribution() {
+    fn test_dust_cloud_encounter_distribution() {
         let dist = EncounterCalculator::calculate_slot_distribution(
-            EncounterType::HiddenGrotte,
+            EncounterType::DustCloud,
             GameVersion::BlackWhite
         );
         
         // 期待される分布を確認
-        assert_eq!(dist[0], 80); // 80%
-        assert_eq!(dist[1], 15); // 15%
-        assert_eq!(dist[2], 5);  // 5%
+        assert_eq!(dist[0], 70); // 70%
+        assert_eq!(dist[1], 20); // 20%
+        assert_eq!(dist[2], 10); // 10%
         
         // 未使用スロットは0
         for i in 3..12 {
@@ -306,9 +364,13 @@ mod tests {
         assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::Fishing, 2), 2);
         assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::Fishing, 8), 4);
         
-        // 隠し穴
-        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::HiddenGrotte, 1), 1);
-        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::HiddenGrotte, 5), 2);
+        // 揺れる草むら
+        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::ShakingGrass, 1), 1);
+        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::ShakingGrass, 5), 4);
+        
+        // 砂煙
+        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::DustCloud, 1), 1);
+        assert_eq!(EncounterCalculator::slot_to_table_index(EncounterType::DustCloud, 5), 2);
     }
 
     #[test]
@@ -354,8 +416,11 @@ mod tests {
             EncounterType::Normal,
             EncounterType::Surfing,
             EncounterType::Fishing,
-            EncounterType::Special,
-            EncounterType::HiddenGrotte,
+            EncounterType::ShakingGrass,
+            EncounterType::DustCloud,
+            EncounterType::PokemonShadow,
+            EncounterType::SurfingBubble,
+            EncounterType::FishingBubble,
         ] {
             for rand_val in 0..100 {
                 let bw_result = EncounterCalculator::calculate_encounter_slot(
@@ -381,8 +446,8 @@ mod tests {
             (EncounterType::Normal, 50),
             (EncounterType::Surfing, 75),
             (EncounterType::Fishing, 85),
-            (EncounterType::Special, 95),
-            (EncounterType::HiddenGrotte, 90),
+            (EncounterType::ShakingGrass, 95),
+            (EncounterType::DustCloud, 90),
         ];
 
         for (encounter_type, rand_val) in test_cases {
