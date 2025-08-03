@@ -2,17 +2,6 @@
 /// WASM Core Engine全体で使用される汎用的な機能を提供
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
-/// デバッグログ出力マクロ
-macro_rules! console_log {
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
-
 /// エンディアン変換ユーティリティ
 #[wasm_bindgen]
 pub struct EndianUtils;

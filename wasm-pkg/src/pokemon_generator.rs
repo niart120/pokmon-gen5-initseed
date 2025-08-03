@@ -6,17 +6,6 @@ use crate::encounter_calculator::{EncounterCalculator, GameVersion, EncounterTyp
 use crate::offset_calculator::{OffsetCalculator, GameMode};
 use crate::pid_shiny_checker::{PIDCalculator, ShinyChecker, ShinyType};
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
-/// デバッグログ出力マクロ
-macro_rules! console_log {
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
-
 /// ポケモンタイプ列挙型
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq)]

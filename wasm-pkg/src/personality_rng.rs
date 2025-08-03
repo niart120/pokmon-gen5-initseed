@@ -2,17 +2,6 @@
 /// ポケモンBW/BW2の性格・能力・遭遇判定に使用される乱数エンジン
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
-/// デバッグログ出力マクロ
-macro_rules! console_log {
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
-
 /// PersonalityRNG構造体
 /// BW仕様64bit線形合同法: S[n+1] = S[n] * 0x5D588B656C078965 + 0x269EC3
 #[wasm_bindgen]

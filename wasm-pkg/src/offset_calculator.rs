@@ -3,17 +3,6 @@
 use wasm_bindgen::prelude::*;
 use crate::personality_rng::PersonalityRNG;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
-/// デバッグログ出力マクロ
-macro_rules! console_log {
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
-
 /// ゲームモード列挙型（仕様書準拠）
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq)]

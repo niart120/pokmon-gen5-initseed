@@ -2,17 +2,6 @@
 /// ポケモンBW/BW2の遭遇スロット決定と確率計算を実装
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
-/// デバッグログ出力マクロ
-macro_rules! console_log {
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
-
 /// ゲームバージョン列挙型
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq)]
