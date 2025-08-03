@@ -14,57 +14,89 @@ macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
 
-/// ゲームモード列挙型
+/// ゲームモード列挙型（仕様書準拠）
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum GameMode {
-    /// 続きから（Cギア有効）
-    ContinueWithCGear = 0,
-    /// 続きから（Cギア無効）
-    ContinueWithoutCGear = 1,
-    /// はじめから（Cギア有効）
-    NewGameWithCGear = 2,
-    /// はじめから（Cギア無効）
-    NewGameWithoutCGear = 3,
-    /// はじめから（メモリリンク有効、Cギア有効）
-    NewGameWithMemoryLinkWithCGear = 4,
-    /// はじめから（メモリリンク有効、Cギア無効）
-    NewGameWithMemoryLinkWithoutCGear = 5,
-    /// はじめから（チャレンジモード、Cギア有効）
-    NewGameChallengeModeWithCGear = 6,
-    /// はじめから（チャレンジモード、Cギア無効）
-    NewGameChallengeModeWithoutCGear = 7,
+    /// BW 始めから（セーブ有り）
+    BwNewGameWithSave = 0,
+    /// BW 始めから（セーブ無し）
+    BwNewGameNoSave = 1,
+    /// BW 続きから
+    BwContinue = 2,
+    /// BW2 始めから（思い出リンク済みセーブ有り）
+    Bw2NewGameWithMemoryLinkSave = 3,
+    /// BW2 始めから（思い出リンク無しセーブ有り）
+    Bw2NewGameNoMemoryLinkSave = 4,
+    /// BW2 始めから（セーブ無し）
+    Bw2NewGameNoSave = 5,
+    /// BW2 続きから（思い出リンク済み）
+    Bw2ContinueWithMemoryLink = 6,
+    /// BW2 続きから（思い出リンク無し）
+    Bw2ContinueNoMemoryLink = 7,
 }
 
-/// Probability Table操作結果
+/// TID/SID決定結果
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy)]
-pub struct PTResult {
+pub struct TidSidResult {
+    /// TID（トレーナーID下位16bit）
+    pub tid: u16,
+    /// SID（シークレットID上位16bit）
+    pub sid: u16,
     /// 消費した乱数回数
-    pub advances: u32,
-    /// 最終的な値
-    pub final_value: u32,
-    /// 成功フラグ
-    pub success: bool,
+    pub advances_used: u32,
 }
 
 #[wasm_bindgen]
-impl PTResult {
+impl TidSidResult {
+    #[wasm_bindgen(getter)]
+    pub fn get_tid(&self) -> u16 { self.tid }
+    
+    #[wasm_bindgen(getter)]
+    pub fn get_sid(&self) -> u16 { self.sid }
+    
+    #[wasm_bindgen(getter)]
+    pub fn get_advances_used(&self) -> u32 { self.advances_used }
+}
+
+/// Extra処理結果（BW2専用）
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy)]
+pub struct ExtraResult {
+    /// 消費した乱数回数
+    pub advances: u32,
+    /// 成功フラグ（重複回避完了）
+    pub success: bool,
+    /// 最終的な3つの値
+    pub value1: u32,
+    pub value2: u32,
+    pub value3: u32,
+}
+
+#[wasm_bindgen]
+impl ExtraResult {
     #[wasm_bindgen(getter)]
     pub fn get_advances(&self) -> u32 { self.advances }
     
     #[wasm_bindgen(getter)]
-    pub fn get_final_value(&self) -> u32 { self.final_value }
+    pub fn get_success(&self) -> bool { self.success }
     
     #[wasm_bindgen(getter)]
-    pub fn get_success(&self) -> bool { self.success }
+    pub fn get_value1(&self) -> u32 { self.value1 }
+    
+    #[wasm_bindgen(getter)]
+    pub fn get_value2(&self) -> u32 { self.value2 }
+    
+    #[wasm_bindgen(getter)]
+    pub fn get_value3(&self) -> u32 { self.value3 }
 }
 
 /// オフセット計算エンジン
 #[wasm_bindgen]
 pub struct OffsetCalculator {
-    advances: u32,
     rng: PersonalityRNG,
+    advances: u32,
 }
 
 #[wasm_bindgen]
@@ -76,27 +108,28 @@ impl OffsetCalculator {
     #[wasm_bindgen(constructor)]
     pub fn new(seed: u64) -> OffsetCalculator {
         OffsetCalculator {
-            advances: 0,
             rng: PersonalityRNG::new(seed),
+            advances: 0,
         }
     }
 
-    /// 次のシード値を取得
+    /// 次の32bit乱数値を取得（上位32bit）
     /// 
     /// # Returns
-    /// 次のシード値
-    pub fn next_seed(&mut self) -> u64 {
+    /// 32bit乱数値
+    pub fn next_rand(&mut self) -> u32 {
         self.advances += 1;
-        self.rng.next_u64()
+        self.rng.next()
     }
 
-    /// 指定回数だけ乱数を消費
+    /// 指定回数だけ乱数を消費（Rand×n）
     /// 
     /// # Arguments
     /// * `count` - 消費する回数
     pub fn consume_random(&mut self, count: u32) {
-        self.rng.advance(count);
-        self.advances += count;
+        for _ in 0..count {
+            self.next_rand();
+        }
     }
 
     /// 現在の進行回数を取得
@@ -117,130 +150,150 @@ impl OffsetCalculator {
         self.rng.get_seed()
     }
 
-    /// TID/SID決定処理
-    /// 
-    /// # Returns
-    /// (TID, SID)のタプル
-    pub fn calculate_tid_sid(&mut self) -> Vec<u32> {
-        let tid = self.rng.next() & 0xFFFF;  // 下位16bit
-        let sid = self.rng.next() & 0xFFFF;  // 下位16bit
-        self.advances += 2;
-        vec![tid, sid]
-    }
-
-    /// ブラックシティ住人決定処理（BW用）
-    /// 
-    /// # Returns
-    /// 決定された住人数
-    pub fn determine_front_residents(&mut self) -> u32 {
-        // BW: ブラックシティの住人決定
-        // 簡略化された実装（実際はより複雑）
-        let resident_count = (self.rng.next() % 10) + 5; // 5-14人
-        self.advances += 1;
-        resident_count
-    }
-
-    /// ホワイトフォレスト住人決定処理（BW用）
-    /// 
-    /// # Returns
-    /// 決定された住人数
-    pub fn determine_back_residents(&mut self) -> u32 {
-        // BW: ホワイトフォレストの住人決定
-        // 簡略化された実装（実際はより複雑）
-        let resident_count = (self.rng.next() % 8) + 3; // 3-10人
-        self.advances += 1;
-        resident_count
-    }
-
-    /// Extra処理（BW2専用）
-    /// 重複値回避ループ
+    /// 計算器をリセット
     /// 
     /// # Arguments
-    /// * `target_value` - 回避したい値
-    /// * `max_attempts` - 最大試行回数
+    /// * `new_seed` - 新しいシード値
+    pub fn reset(&mut self, new_seed: u64) {
+        self.rng.reset(new_seed);
+        self.advances = 0;
+    }
+
+    /// TID/SID決定処理（仕様書準拠）
     /// 
     /// # Returns
-    /// PTResult
-    pub fn extra_process(&mut self, target_value: u32, max_attempts: u32) -> PTResult {
-        let mut attempts = 0;
-        let mut current_value;
+    /// TidSidResult
+    pub fn calculate_tid_sid(&mut self) -> TidSidResult {
+        let initial_advances = self.advances;
+        let rand_value = self.next_rand();
+        
+        // 仕様書の計算式: (R * 0xFFFFFFFF) >> 32
+        let tid_sid_combined = ((rand_value as u64 * 0xFFFFFFFF) >> 32) as u32;
+        let tid = (tid_sid_combined & 0xFFFF) as u16;
+        let sid = ((tid_sid_combined >> 16) & 0xFFFF) as u16;
+        
+        TidSidResult {
+            tid,
+            sid,
+            advances_used: self.advances - initial_advances,
+        }
+    }
+
+    /// 表住人決定処理（BW：固定10回乱数消費）
+    pub fn determine_front_residents(&mut self) {
+        self.consume_random(10);
+    }
+    
+    /// 裏住人決定処理（BW：固定3回乱数消費）
+    pub fn determine_back_residents(&mut self) {
+        self.consume_random(3);
+    }
+
+    /// 住人決定一括処理（BW専用）
+    pub fn determine_all_residents(&mut self) {
+        self.determine_front_residents();  // 表住人10回
+        self.determine_back_residents();   // 裏住人3回
+    }
+
+    /// Probability Table処理（仕様書準拠の6段階テーブル処理）
+    /// 簡略化されたPT処理：1-2回の乱数消費
+    pub fn probability_table_process(&mut self) {
+        // PT操作の6段階テーブル定義（仕様書準拠）
+        const PT_TABLES: [[u32; 5]; 6] = [
+            [50, 100, 100, 100, 100],  // L1
+            [50, 50, 100, 100, 100],   // L2
+            [30, 50, 100, 100, 100],   // L3
+            [25, 30, 50, 100, 100],    // L4
+            [20, 25, 33, 50, 100],     // L5
+            [100, 100, 100, 100, 100], // L6
+        ];
+
+        for level in 0..6 {  // L1からL6まで
+            for j in 0..5 {   // 各レベルで最大5つの閾値をチェック
+                if PT_TABLES[level][j] == 100 {
+                    // 確率が100なら、次のレベルへ
+                    break;
+                }
+                
+                let rand_value = self.next_rand();
+                // 仕様書の計算式: r = ((rand_value as u64 * 101) >> 32) as u32
+                let r = ((rand_value as u64 * 101) >> 32) as u32;
+                
+                if r <= PT_TABLES[level][j] {
+                    // 取得した確率がテーブルの値以下なら次のレベルへ
+                    break;
+                }
+            }
+        }
+    }
+    
+    /// PT操作×n回
+    pub fn probability_table_process_multiple(&mut self, count: u32) {
+        for _ in 0..count {
+            self.probability_table_process();
+        }
+    }
+
+    /// Extra処理（BW2専用：重複値回避ループ）
+    /// 3つの値（0-14範囲）がすべて異なるまでループ
+    pub fn extra_process(&mut self) -> ExtraResult {
+        let initial_advances = self.advances;
+        let mut value1;
+        let mut value2;
+        let mut value3;
         
         loop {
-            current_value = self.rng.next();
-            attempts += 1;
-            self.advances += 1;
+            // 3つの値を生成（仕様書の計算式）
+            let r1 = self.next_rand();
+            value1 = ((r1 as u64 * 15) >> 32) as u32;
             
-            if current_value != target_value || attempts >= max_attempts {
+            let r2 = self.next_rand();
+            value2 = ((r2 as u64 * 15) >> 32) as u32;
+            
+            let r3 = self.next_rand();
+            value3 = ((r3 as u64 * 15) >> 32) as u32;
+            
+            // 3つとも異なるかチェック
+            if value1 != value2 && value2 != value3 && value3 != value1 {
                 break;
             }
+            // 同じ値が含まれている場合は継続
         }
         
-        PTResult {
-            advances: attempts,
-            final_value: current_value,
-            success: current_value != target_value,
-        }
-    }
-
-    /// Probability Table処理（1回）
-    /// L1-L6の6段階テーブル処理
-    /// 
-    /// # Arguments
-    /// * `thresholds` - 確率閾値配列（6要素）
-    /// 
-    /// # Returns
-    /// PTResult
-    pub fn probability_table_process(&mut self, thresholds: &[u32]) -> PTResult {
-        if thresholds.len() != 6 {
-            return PTResult {
-                advances: 0,
-                final_value: 0,
-                success: false,
-            };
-        }
-        
-        let rand_value = self.rng.next();
-        self.advances += 1;
-        
-        // L1-L6の判定
-        for (level, &threshold) in thresholds.iter().enumerate() {
-            if rand_value < threshold {
-                return PTResult {
-                    advances: 1,
-                    final_value: level as u32,
-                    success: true,
-                };
-            }
-        }
-        
-        // どの段階にも該当しない場合
-        PTResult {
-            advances: 1,
-            final_value: 5, // L6として扱う
+        ExtraResult {
+            advances: self.advances - initial_advances,
             success: true,
+            value1,
+            value2,
+            value3,
         }
     }
 
-    /// Probability Table処理（複数回）
-    /// 
-    /// # Arguments
-    /// * `thresholds` - 確率閾値配列（6要素）
-    /// * `iterations` - 実行回数
-    /// 
-    /// # Returns
-    /// 各回の結果配列
-    pub fn probability_table_process_multiple(&mut self, thresholds: &[u32], iterations: u32) -> Vec<PTResult> {
-        let mut results = Vec::with_capacity(iterations as usize);
-        
-        for _ in 0..iterations {
-            let result = self.probability_table_process(thresholds);
-            results.push(result);
-        }
-        
-        results
+    /// チラーミィPID決定（BW）
+    fn generate_chiramii_pid(&mut self) -> u32 {
+        let rand_value = self.next_rand();
+        // BWではxor 0x00010000の分岐あり（実装詳細は要確認）
+        rand_value
+    }
+    
+    /// チラーミィID決定（BW：0固定）
+    fn generate_chiramii_id(&mut self) -> u32 {
+        self.next_rand(); // 乱数消費はあるが結果は0固定
+        0
+    }
+    
+    /// チラチーノPID決定（BW2）
+    fn generate_chirachino_pid(&mut self) -> u32 {
+        self.next_rand()
+    }
+    
+    /// チラチーノID決定（BW2：0固定）
+    fn generate_chirachino_id(&mut self) -> u32 {
+        self.next_rand(); // 乱数消費はあるが結果は0固定
+        0
     }
 
-    /// ゲーム初期化処理の総合実行
+    /// ゲーム初期化処理の総合実行（仕様書準拠）
     /// 
     /// # Arguments
     /// * `mode` - ゲームモード
@@ -251,94 +304,171 @@ impl OffsetCalculator {
         let initial_advances = self.advances;
         
         match mode {
-            GameMode::ContinueWithCGear => {
-                // 続きから（Cギア有効）の処理
-                self.consume_random(1); // Cギア関連の処理
+            GameMode::BwNewGameWithSave => {
+                // BW 始めから（セーブ有り）
+                self.consume_random(1);                    // Rand×1
+                self.probability_table_process_multiple(2); // PT×2
+                self.generate_chiramii_pid();              // チラーミィPID決定
+                self.generate_chiramii_id();               // チラーミィID決定
+                self.calculate_tid_sid();                  // TID/SID決定
+                self.probability_table_process_multiple(4); // PT×4
+                self.determine_all_residents();            // 住人決定13回
             },
-            GameMode::ContinueWithoutCGear => {
-                // 続きから（Cギア無効）の処理
-                // 最小限の処理として1回の乱数消費
-                self.consume_random(1);
+            
+            GameMode::BwNewGameNoSave => {
+                // BW 始めから（セーブ無し）
+                self.consume_random(1);                    // Rand×1
+                self.probability_table_process_multiple(3); // PT×3
+                self.generate_chiramii_pid();              // チラーミィPID決定
+                self.generate_chiramii_id();               // チラーミィID決定
+                self.calculate_tid_sid();                  // TID/SID決定
+                self.consume_random(1);                    // Rand×1
+                self.probability_table_process_multiple(4); // PT×4
+                self.determine_all_residents();            // 住人決定13回
             },
-            GameMode::NewGameWithCGear => {
-                // はじめから（Cギア有効）の処理
-                self.calculate_tid_sid();
-                self.determine_front_residents();
-                self.determine_back_residents();
-                self.consume_random(1); // Cギア関連の処理
+            
+            GameMode::BwContinue => {
+                // BW 続きから
+                self.consume_random(1);                    // Rand×1
+                self.probability_table_process_multiple(5); // PT×5
             },
-            GameMode::NewGameWithoutCGear => {
-                // はじめから（Cギア無効）の処理
-                self.calculate_tid_sid();
-                self.determine_front_residents();
-                self.determine_back_residents();
+            
+            GameMode::Bw2NewGameWithMemoryLinkSave => {
+                // BW2 始めから（思い出リンク済みセーブ有り）
+                self.consume_random(1);                    // Rand×1
+                self.probability_table_process_multiple(1); // PT×1
+                self.consume_random(2);                    // Rand×2
+                self.probability_table_process_multiple(1); // PT×1
+                self.consume_random(2);                    // Rand×2
+                self.generate_chirachino_pid();            // チラチーノPID決定
+                self.generate_chirachino_id();             // チラチーノID決定
+                self.calculate_tid_sid();                  // TID/SID決定
             },
-            GameMode::NewGameWithMemoryLinkWithCGear => {
-                // メモリリンク有効時の追加処理
-                self.calculate_tid_sid();
-                self.determine_front_residents();
-                self.determine_back_residents();
-                self.consume_random(2); // メモリリンク + Cギア
+            
+            GameMode::Bw2NewGameNoMemoryLinkSave => {
+                // BW2 始めから（思い出リンク無しセーブ有り）
+                self.consume_random(1);                    // Rand×1
+                self.probability_table_process_multiple(1); // PT×1
+                self.consume_random(3);                    // Rand×3
+                self.probability_table_process_multiple(1); // PT×1
+                self.consume_random(2);                    // Rand×2
+                self.generate_chirachino_pid();            // チラチーノPID決定
+                self.generate_chirachino_id();             // チラチーノID決定
+                self.calculate_tid_sid();                  // TID/SID決定
             },
-            GameMode::NewGameWithMemoryLinkWithoutCGear => {
-                // メモリリンク有効（Cギア無効）
-                self.calculate_tid_sid();
-                self.determine_front_residents();
-                self.determine_back_residents();
-                self.consume_random(1); // メモリリンクのみ
+            
+            GameMode::Bw2NewGameNoSave => {
+                // BW2 始めから（セーブ無し）
+                self.consume_random(1);                    // Rand×1
+                self.probability_table_process_multiple(1); // PT×1
+                self.consume_random(2);                    // Rand×2
+                self.probability_table_process_multiple(1); // PT×1
+                self.consume_random(4);                    // Rand×4
+                self.probability_table_process_multiple(1); // PT×1
+                self.consume_random(2);                    // Rand×2
+                self.generate_chirachino_pid();            // チラチーノPID決定
+                self.generate_chirachino_id();             // チラチーノID決定
+                self.calculate_tid_sid();                  // TID/SID決定
             },
-            GameMode::NewGameChallengeModeWithCGear => {
-                // チャレンジモード有効時の追加処理
-                self.calculate_tid_sid();
-                self.determine_front_residents();
-                self.determine_back_residents();
-                self.consume_random(3); // チャレンジモード + Cギア
+            
+            GameMode::Bw2ContinueWithMemoryLink => {
+                // BW2 続きから（思い出リンク済み）
+                self.consume_random(1);                    // Rand×1
+                self.probability_table_process_multiple(1); // PT×1
+                self.consume_random(2);                    // Rand×2
+                self.probability_table_process_multiple(4); // PT×4
+                self.extra_process();                      // Extra処理
             },
-            GameMode::NewGameChallengeModeWithoutCGear => {
-                // チャレンジモード有効（Cギア無効）
-                self.calculate_tid_sid();
-                self.determine_front_residents();
-                self.determine_back_residents();
-                self.consume_random(2); // チャレンジモードのみ
+            
+            GameMode::Bw2ContinueNoMemoryLink => {
+                // BW2 続きから（思い出リンク無し）
+                self.consume_random(1);                    // Rand×1
+                self.probability_table_process_multiple(1); // PT×1
+                self.consume_random(3);                    // Rand×3
+                self.probability_table_process_multiple(4); // PT×4
+                self.extra_process();                      // Extra処理
             },
         }
         
         self.advances - initial_advances
     }
+}
 
-    /// 計算器をリセット
-    /// 
-    /// # Arguments
-    /// * `new_seed` - 新しいシード値
-    pub fn reset(&mut self, new_seed: u64) {
-        self.rng.reset(new_seed);
-        self.advances = 0;
+/// オフセット計算統合API（仕様書準拠）
+#[wasm_bindgen]
+pub fn calculate_game_offset(initial_seed: u64, mode: GameMode) -> u32 {
+    let mut calculator = OffsetCalculator::new(initial_seed);
+    calculator.execute_game_initialization(mode)
+}
+
+/// TID/SID決定処理統合API（仕様書準拠）
+#[wasm_bindgen]
+pub fn calculate_tid_sid_from_seed(initial_seed: u64, mode: GameMode) -> TidSidResult {
+    let mut calculator = OffsetCalculator::new(initial_seed);
+    
+    // 指定されたモードでTID/SID決定直前まで進める
+    match mode {
+        GameMode::BwNewGameWithSave => {
+            calculator.consume_random(1);
+            calculator.probability_table_process_multiple(2);
+            calculator.generate_chiramii_pid();
+            calculator.generate_chiramii_id();
+        },
+        GameMode::BwNewGameNoSave => {
+            calculator.consume_random(1);
+            calculator.probability_table_process_multiple(3);
+            calculator.generate_chiramii_pid();
+            calculator.generate_chiramii_id();
+        },
+        GameMode::Bw2NewGameWithMemoryLinkSave => {
+            calculator.consume_random(1);
+            calculator.probability_table_process_multiple(1);
+            calculator.consume_random(2);
+            calculator.probability_table_process_multiple(1);
+            calculator.consume_random(2);
+            calculator.generate_chirachino_pid();
+            calculator.generate_chirachino_id();
+        },
+        GameMode::Bw2NewGameNoMemoryLinkSave => {
+            calculator.consume_random(1);
+            calculator.probability_table_process_multiple(1);
+            calculator.consume_random(3);
+            calculator.probability_table_process_multiple(1);
+            calculator.consume_random(2);
+            calculator.generate_chirachino_pid();
+            calculator.generate_chirachino_id();
+        },
+        GameMode::Bw2NewGameNoSave => {
+            calculator.consume_random(1);
+            calculator.probability_table_process_multiple(1);
+            calculator.consume_random(2);
+            calculator.probability_table_process_multiple(1);
+            calculator.consume_random(4);
+            calculator.probability_table_process_multiple(1);
+            calculator.consume_random(2);
+            calculator.generate_chirachino_pid();
+            calculator.generate_chirachino_id();
+        },
+        _ => {
+            // 「続きから」系のモードはTID/SID決定なし
+            return TidSidResult { tid: 0, sid: 0, advances_used: 0 };
+        }
     }
+    
+    // TID/SID決定を実行
+    calculator.calculate_tid_sid()
 }
 
 impl OffsetCalculator {
-    /// デフォルトのProbability Table閾値
-    /// 実際のゲームデータに基づく標準的な値
-    pub fn default_pt_thresholds() -> [u32; 6] {
+    /// PT操作テーブル定数を取得（外部から参照可能）
+    pub fn get_pt_tables() -> [[u32; 5]; 6] {
         [
-            0x1999999A, // L1: ~10%
-            0x33333333, // L2: ~20%
-            0x4CCCCCCD, // L3: ~30%
-            0x66666666, // L4: ~40%
-            0x80000000, // L5: ~50%
-            0xFFFFFFFF, // L6: 100%
-        ]
-    }
-
-    /// BW2専用のExtra処理閾値
-    pub fn bw2_extra_thresholds() -> [u32; 6] {
-        [
-            0x0CCCCCCD, // L1: ~5%
-            0x1999999A, // L2: ~10%
-            0x26666666, // L3: ~15%
-            0x33333333, // L4: ~20%
-            0x40000000, // L5: ~25%
-            0xFFFFFFFF, // L6: 100%
+            [50, 100, 100, 100, 100],  // L1
+            [50, 50, 100, 100, 100],   // L2
+            [30, 50, 100, 100, 100],   // L3
+            [25, 30, 50, 100, 100],    // L4
+            [20, 25, 33, 50, 100],     // L5
+            [100, 100, 100, 100, 100], // L6
         ]
     }
 }
@@ -347,195 +477,107 @@ impl OffsetCalculator {
 mod tests {
     use super::*;
 
+    // 実ツール出力結果に基づくテスト - BW1系統
     #[test]
-    fn test_offset_calculator_basic() {
-        let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
+    fn test_bw1_new_game_no_save_seed_0x12345678() {
+        let seed = 0x12345678;
         
-        // 初期状態確認
-        assert_eq!(calc.get_advances(), 0);
-        assert_eq!(calc.get_current_seed(), 0x123456789ABCDEF0);
+        let offset = calculate_game_offset(seed, GameMode::BwNewGameNoSave);
+        assert_eq!(offset, 29, "BW1 最初から（セーブデータなし）のオフセットが一致しません");
         
-        // 乱数消費
-        let seed1 = calc.next_seed();
-        assert_eq!(calc.get_advances(), 1);
-        assert_ne!(calc.get_current_seed(), 0x123456789ABCDEF0);
-        
-        let seed2 = calc.next_seed();
-        assert_eq!(calc.get_advances(), 2);
-        assert_ne!(seed1, seed2);
+        let tid_sid = calculate_tid_sid_from_seed(seed, GameMode::BwNewGameNoSave);
+        assert_eq!(tid_sid.tid, 5432, "BW1 最初から（セーブデータなし）のTIDが一致しません");
+        assert_eq!(tid_sid.sid, 12449, "BW1 最初から（セーブデータなし）のSIDが一致しません");
     }
 
     #[test]
-    fn test_consume_random() {
-        let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
+    fn test_bw1_new_game_with_save_seed_0x12345678() {
+        let seed = 0x12345678;
         
-        calc.consume_random(5);
-        assert_eq!(calc.get_advances(), 5);
+        let offset = calculate_game_offset(seed, GameMode::BwNewGameWithSave);
+        assert_eq!(offset, 21, "BW1 最初から（セーブデータあり）のオフセットが一致しません");
         
-        calc.consume_random(3);
-        assert_eq!(calc.get_advances(), 8);
+        let tid_sid = calculate_tid_sid_from_seed(seed, GameMode::BwNewGameWithSave);
+        assert_eq!(tid_sid.tid, 58399, "BW1 最初から（セーブデータあり）のTIDが一致しません");
+        assert_eq!(tid_sid.sid, 27333, "BW1 最初から（セーブデータあり）のSIDが一致しません");
     }
 
     #[test]
-    fn test_tid_sid_calculation() {
-        let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
+    fn test_bw1_continue_seed_0x12345678() {
+        let seed = 0x12345678;
         
-        let tid_sid = calc.calculate_tid_sid();
-        assert_eq!(tid_sid.len(), 2);
-        assert_eq!(calc.get_advances(), 2);
+        let offset = calculate_game_offset(seed, GameMode::BwContinue);
+        assert_eq!(offset, 49, "BW1 続きからのオフセットが一致しません");
         
-        // TID/SIDは16bit値
-        assert!(tid_sid[0] <= 0xFFFF);
-        assert!(tid_sid[1] <= 0xFFFF);
+        // 続きからではTID/SID決定なし
+        let tid_sid = calculate_tid_sid_from_seed(seed, GameMode::BwContinue);
+        assert_eq!(tid_sid.tid, 0);
+        assert_eq!(tid_sid.sid, 0);
+        assert_eq!(tid_sid.advances_used, 0);
+    }
+
+    // 実ツール出力結果に基づくテスト - BW2系統
+    #[test]
+    fn test_bw2_new_game_no_save_seed_0x90abcdef() {
+        let seed = 0x90ABCDEF;
+        
+        let offset = calculate_game_offset(seed, GameMode::Bw2NewGameNoSave);
+        assert_eq!(offset, 44, "BW2 最初から（セーブデータなし）のオフセットが一致しません");
+        
+        let tid_sid = calculate_tid_sid_from_seed(seed, GameMode::Bw2NewGameNoSave);
+        assert_eq!(tid_sid.tid, 910, "BW2 最初から（セーブデータなし）のTIDが一致しません");
+        assert_eq!(tid_sid.sid, 42056, "BW2 最初から（セーブデータなし）のSIDが一致しません");
     }
 
     #[test]
-    fn test_residents_determination() {
-        let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
+    fn test_bw2_new_game_no_memory_link_save_seed_0x90abcdef() {
+        let seed = 0x90ABCDEF;
         
-        let front = calc.determine_front_residents();
-        assert_eq!(calc.get_advances(), 1);
-        assert!(front >= 5 && front <= 14);
+        let offset = calculate_game_offset(seed, GameMode::Bw2NewGameNoMemoryLinkSave);
+        assert_eq!(offset, 29, "BW2 最初から（セーブデータあり、思い出リンクなし）のオフセットが一致しません");
         
-        let back = calc.determine_back_residents();
-        assert_eq!(calc.get_advances(), 2);
-        assert!(back >= 3 && back <= 10);
+        let tid_sid = calculate_tid_sid_from_seed(seed, GameMode::Bw2NewGameNoMemoryLinkSave);
+        assert_eq!(tid_sid.tid, 4043, "BW2 最初から（セーブデータあり、思い出リンクなし）のTIDが一致しません");
+        assert_eq!(tid_sid.sid, 13882, "BW2 最初から（セーブデータあり、思い出リンクなし）のSIDが一致しません");
     }
 
     #[test]
-    fn test_extra_process() {
-        let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
+    fn test_bw2_new_game_with_memory_link_save_seed_0x90abcdef() {
+        let seed = 0x90ABCDEF;
         
-        let result = calc.extra_process(0x12345678, 10);
-        assert!(result.advances <= 10);
-        assert!(result.advances > 0);
-        assert_eq!(calc.get_advances(), result.advances);
+        let offset = calculate_game_offset(seed, GameMode::Bw2NewGameWithMemoryLinkSave);
+        assert_eq!(offset, 29, "BW2 最初から（セーブデータあり、思い出リンクあり）のオフセットが一致しません");
+        
+        let tid_sid = calculate_tid_sid_from_seed(seed, GameMode::Bw2NewGameWithMemoryLinkSave);
+        assert_eq!(tid_sid.tid, 4043, "BW2 最初から（セーブデータあり、思い出リンクあり）のTIDが一致しません");
+        assert_eq!(tid_sid.sid, 13882, "BW2 最初から（セーブデータあり、思い出リンクあり）のSIDが一致しません");
     }
 
     #[test]
-    fn test_probability_table_process() {
-        let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
-        let thresholds = OffsetCalculator::default_pt_thresholds();
+    fn test_bw2_continue_no_memory_link_seed_0x90abcdef() {
+        let seed = 0x90ABCDEF;
         
-        let result = calc.probability_table_process(&thresholds);
-        assert_eq!(result.advances, 1);
-        assert!(result.success);
-        assert!(result.final_value <= 5);
-        assert_eq!(calc.get_advances(), 1);
+        let offset = calculate_game_offset(seed, GameMode::Bw2ContinueNoMemoryLink);
+        assert_eq!(offset, 55, "BW2 続きから（思い出リンクなし）のオフセットが一致しません");
+        
+        // 続きからではTID/SID決定なし
+        let tid_sid = calculate_tid_sid_from_seed(seed, GameMode::Bw2ContinueNoMemoryLink);
+        assert_eq!(tid_sid.tid, 0);
+        assert_eq!(tid_sid.sid, 0);
+        assert_eq!(tid_sid.advances_used, 0);
     }
 
     #[test]
-    fn test_probability_table_multiple() {
-        let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
-        let thresholds = OffsetCalculator::default_pt_thresholds();
+    fn test_bw2_continue_with_memory_link_seed_0x90abcdef() {
+        let seed = 0x90ABCDEF;
         
-        let results = calc.probability_table_process_multiple(&thresholds, 5);
-        assert_eq!(results.len(), 5);
-        assert_eq!(calc.get_advances(), 5);
+        let offset = calculate_game_offset(seed, GameMode::Bw2ContinueWithMemoryLink);
+        assert_eq!(offset, 55, "BW2 続きから（思い出リンクあり）のオフセットが一致しません");
         
-        for result in results {
-            assert_eq!(result.advances, 1);
-            assert!(result.success);
-            assert!(result.final_value <= 5);
-        }
-    }
-
-    #[test]
-    fn test_invalid_thresholds() {
-        let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
-        let invalid_thresholds = [0x11111111, 0x22222222]; // 長さが6でない
-        
-        let result = calc.probability_table_process(&invalid_thresholds);
-        assert!(!result.success);
-        assert_eq!(result.advances, 0);
-        assert_eq!(calc.get_advances(), 0);
-    }
-
-    #[test]
-    fn test_game_initialization_modes() {
-        let test_modes = [
-            GameMode::ContinueWithCGear,
-            GameMode::ContinueWithoutCGear,
-            GameMode::NewGameWithCGear,
-            GameMode::NewGameWithoutCGear,
-            GameMode::NewGameWithMemoryLinkWithCGear,
-            GameMode::NewGameWithMemoryLinkWithoutCGear,
-            GameMode::NewGameChallengeModeWithCGear,
-            GameMode::NewGameChallengeModeWithoutCGear,
-        ];
-
-        for mode in test_modes {
-            let mut calc = OffsetCalculator::new(0x123456789ABCDEF0);
-            let advances = calc.execute_game_initialization(mode);
-            
-            assert!(advances > 0, "Mode {:?} should consume some advances", mode);
-            assert_eq!(calc.get_advances(), advances);
-        }
-    }
-
-    #[test]
-    fn test_reset_functionality() {
-        let initial_seed = 0x123456789ABCDEF0;
-        let mut calc = OffsetCalculator::new(initial_seed);
-        
-        // 進行させる
-        calc.consume_random(10);
-        assert_eq!(calc.get_advances(), 10);
-        assert_ne!(calc.get_current_seed(), initial_seed);
-        
-        // リセット
-        calc.reset(initial_seed);
-        assert_eq!(calc.get_advances(), 0);
-        assert_eq!(calc.get_current_seed(), initial_seed);
-    }
-
-    #[test]
-    fn test_deterministic_behavior() {
-        let seed = 0x123456789ABCDEF0;
-        let mut calc1 = OffsetCalculator::new(seed);
-        let mut calc2 = OffsetCalculator::new(seed);
-        
-        // 同じ操作を実行
-        calc1.consume_random(5);
-        calc2.consume_random(5);
-        
-        assert_eq!(calc1.get_advances(), calc2.get_advances());
-        assert_eq!(calc1.get_current_seed(), calc2.get_current_seed());
-        
-        // 同じPT処理
-        let thresholds = OffsetCalculator::default_pt_thresholds();
-        let result1 = calc1.probability_table_process(&thresholds);
-        let result2 = calc2.probability_table_process(&thresholds);
-        
-        assert_eq!(result1.final_value, result2.final_value);
-        assert_eq!(result1.success, result2.success);
-    }
-
-    #[test]
-    fn test_default_thresholds() {
-        let thresholds = OffsetCalculator::default_pt_thresholds();
-        assert_eq!(thresholds.len(), 6);
-        
-        // 閾値が昇順であることを確認
-        for i in 1..thresholds.len() {
-            assert!(thresholds[i-1] <= thresholds[i]);
-        }
-        
-        // 最後の閾値は0xFFFFFFFF
-        assert_eq!(thresholds[5], 0xFFFFFFFF);
-    }
-
-    #[test]
-    fn test_bw2_extra_thresholds() {
-        let thresholds = OffsetCalculator::bw2_extra_thresholds();
-        assert_eq!(thresholds.len(), 6);
-        
-        // 閾値が昇順であることを確認
-        for i in 1..thresholds.len() {
-            assert!(thresholds[i-1] <= thresholds[i]);
-        }
-        
-        // 最後の閾値は0xFFFFFFFF
-        assert_eq!(thresholds[5], 0xFFFFFFFF);
+        // 続きからではTID/SID決定なし
+        let tid_sid = calculate_tid_sid_from_seed(seed, GameMode::Bw2ContinueWithMemoryLink);
+        assert_eq!(tid_sid.tid, 0);
+        assert_eq!(tid_sid.sid, 0);
+        assert_eq!(tid_sid.advances_used, 0);
     }
 }

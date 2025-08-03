@@ -445,7 +445,7 @@ mod tests {
             12345,
             54321,
             255, // シンクロなし
-            GameMode::ContinueWithoutCGear,
+            GameMode::BwContinue,
         )
     }
 
@@ -609,7 +609,7 @@ mod tests {
             11111,
             22222,
             15, // シンクロ性格
-            GameMode::NewGameWithCGear,
+            GameMode::BwNewGameWithSave,
         );
         
         assert_eq!(config.get_version(), GameVersion::BlackWhite2);
@@ -618,7 +618,7 @@ mod tests {
         assert_eq!(config.get_tid(), 11111);
         assert_eq!(config.get_sid(), 22222);
         assert_eq!(config.get_nature_sync(), 15);
-        assert_eq!(config.get_game_mode(), GameMode::NewGameWithCGear);
+        assert_eq!(config.get_game_mode(), GameMode::BwNewGameWithSave);
     }
 
     #[test]

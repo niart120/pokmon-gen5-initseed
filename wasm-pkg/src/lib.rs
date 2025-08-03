@@ -17,7 +17,7 @@ pub use datetime_codes::{TimeCodeGenerator, DateCodeGenerator};
 pub use integrated_search::{SearchResult, IntegratedSeedSearcher};
 pub use personality_rng::PersonalityRNG;
 pub use encounter_calculator::{EncounterCalculator, GameVersion, EncounterType};
-pub use offset_calculator::{OffsetCalculator, GameMode, PTResult};
+pub use offset_calculator::{OffsetCalculator, GameMode, TidSidResult, ExtraResult, calculate_game_offset, calculate_tid_sid_from_seed};
 pub use pid_shiny_checker::{PIDCalculator, ShinyChecker, ShinyType};
 pub use pokemon_generator::{PokemonGenerator, PokemonType, RawPokemonData, GenerationConfig};
 pub use utils::{EndianUtils, BitUtils, NumberUtils, ArrayUtils, ValidationUtils};
