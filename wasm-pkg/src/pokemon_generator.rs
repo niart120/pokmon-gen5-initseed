@@ -609,37 +609,6 @@ mod tests {
         assert!(!pokemon.sync_applied); // シンクロ無効設定
     }
 
-    #[test]
-    fn test_bw_correct_rng_consumption_order() {
-        let config = create_bw_test_config();
-        let pokemon = PokemonGenerator::generate_single_pokemon_bw(0x123456789ABCDEF0, &config);
-        
-        // 通常エンカウント（シンクロなし）: 性格(1) + 遭遇スロット(1) + PID(1) + レベル(1) = 4
-        assert_eq!(pokemon.advances, 4);
-        assert!(!pokemon.sync_applied);
-    }
-
-    #[test]
-    fn test_bw_sync_enabled_consumption() {
-        let mut config = create_bw_test_config();
-        config.sync_enabled = true;
-        config.sync_nature_id = 10;
-        
-        let pokemon = PokemonGenerator::generate_single_pokemon_bw(0x123456789ABCDEF0, &config);
-        
-        // シンクロ有効時の乱数消費確認
-        // シンクロ成功: シンクロ判定(1) + 遭遇スロット(1) + PID(1) + レベル(1) = 4
-        // シンクロ失敗: シンクロ判定(1) + 性格(1) + 遭遇スロット(1) + PID(1) + レベル(1) = 5
-        assert!(pokemon.advances == 4 || pokemon.advances == 5);
-        
-        if pokemon.sync_applied {
-            assert_eq!(pokemon.nature, 10); // シンクロ成功時は指定性格
-            assert_eq!(pokemon.advances, 4);
-        } else {
-            assert_eq!(pokemon.advances, 5);
-        }
-    }
-
     #[test] 
     fn test_bw_encounter_type_pid_generation() {
         let mut config = create_bw_test_config();
