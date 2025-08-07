@@ -147,7 +147,7 @@ impl PokemonGenerator {
         PokemonGenerator
     }
 
-    /// BW/BW2準拠 単体ポケモン生成
+    /// BW/BW2準拠 単体ポケモン生成（統括関数）
     /// 
     /// # Arguments
     /// * `seed` - 初期シード値
@@ -159,48 +159,280 @@ impl PokemonGenerator {
         seed: u64, 
         config: &BWGenerationConfig
     ) -> RawPokemonData {
+        match config.encounter_type {
+            // 固定シンボル
+            EncounterType::StaticSymbol => {
+                Self::generate_static_symbol(seed, config)
+            },
+            
+            // 徘徊
+            EncounterType::Roaming => {
+                Self::generate_roaming(seed, config)
+            },
+            
+            // イベント系（御三家・化石）
+            EncounterType::StaticStarter | EncounterType::StaticFossil | EncounterType::StaticEvent => {
+                Self::generate_event_pokemon(seed, config)
+            },
+            
+            // 野生系（草むら・洞窟）
+            EncounterType::Normal | EncounterType::ShakingGrass | 
+            EncounterType::DustCloud | EncounterType::PokemonShadow => {
+                Self::generate_wild_pokemon(seed, config)
+            },
+            
+            // なみのり系
+            EncounterType::Surfing | EncounterType::SurfingBubble => {
+                Self::generate_surfing_pokemon(seed, config)
+            },
+            
+            // 釣り系
+            EncounterType::Fishing | EncounterType::FishingBubble => {
+                Self::generate_fishing_pokemon(seed, config)
+            },
+        }
+    }
+
+    /// 固定シンボル生成
+    fn generate_static_symbol(seed: u64, config: &BWGenerationConfig) -> RawPokemonData {
         let mut rng = PersonalityRNG::new(seed);
-        let start_seed = seed;
-        let mut total_advances = 0;
         
-        // Step 1: シンクロ判定・性格決定
-        let (sync_applied, nature_id) = Self::resolve_sync_and_nature(
+        // シンクロ判定
+        let sync_success = Self::perform_sync_check(
             &mut rng, 
-            &mut total_advances, 
             config.encounter_type, 
-            config.sync_enabled, 
+            config.sync_enabled
+        );
+        
+        // PID生成（固定は XOR なし）
+        let pid = rng.next();
+        
+        // 性格生成・シンクロ適用
+        let (sync_applied, nature_id) = Self::generate_nature_with_sync(
+            &mut rng,
+            sync_success,
+            config.encounter_type,
+            config.sync_enabled,
             config.sync_nature_id
         );
         
-        // Step 2: 遭遇スロット決定
+        // 持ち物判定（固定シンボルは持ち物判定あり）
+        let _item_check = rng.next();
+        
+        // 距離計算で消費回数を算出
+        let advances = rng.distance_from(seed) as u32;
+        
+        Self::build_pokemon_data(
+            seed, advances, pid, nature_id, sync_applied, 
+            0, // 固定シンボルは遭遇スロット0
+            0, // レベル乱数なし
+            config
+        )
+    }
+
+    /// 徘徊生成
+    fn generate_roaming(seed: u64, config: &BWGenerationConfig) -> RawPokemonData {
+        let mut rng = PersonalityRNG::new(seed);
+        
+        // 徘徊はシンクロ無効
+        
+        // PID生成（固定は XOR なし）
+        let pid = rng.next();
+        
+        // 性格生成（徘徊はシンクロ無効なので通常性格のみ）
+        let nature_id = (rng.next() % 25) as u8;
+        
+        // 距離計算で消費回数を算出
+        let advances = rng.distance_from(seed) as u32;
+        
+        Self::build_pokemon_data(
+            seed, advances, pid, nature_id, false, // sync_applied = false
+            0, // 徘徊は遭遇スロット0
+            0, // レベル乱数なし
+            config
+        )
+    }
+
+    /// イベント系ポケモン生成（御三家・化石）
+    fn generate_event_pokemon(seed: u64, config: &BWGenerationConfig) -> RawPokemonData {
+        let mut rng = PersonalityRNG::new(seed);
+        
+        // イベント系はシンクロ無効
+        
+        // PID生成（固定は XOR なし）
+        let pid = rng.next();
+        
+        // 性格生成（イベント系はシンクロ無効なので通常性格のみ）
+        let nature_id = (rng.next() % 25) as u8;
+        
+        // 距離計算で消費回数を算出
+        let advances = rng.distance_from(seed) as u32;
+        
+        Self::build_pokemon_data(
+            seed, advances, pid, nature_id, false, // sync_applied = false
+            0, // イベント系は遭遇スロット0
+            0, // レベル乱数なし
+            config
+        )
+    }
+
+    /// 野生ポケモン生成（草むら・洞窟）
+    fn generate_wild_pokemon(seed: u64, config: &BWGenerationConfig) -> RawPokemonData {
+        let mut rng = PersonalityRNG::new(seed);
+        
+        // シンクロ判定
+        let sync_success = Self::perform_sync_check(
+            &mut rng, 
+            config.encounter_type, 
+            config.sync_enabled
+        );
+        
+        // 遭遇スロット決定
         let encounter_slot_value = EncounterCalculator::calculate_encounter_slot(
             config.version,
             config.encounter_type,
             rng.next()
         );
-        total_advances += 1;
         
-        // Step 3: PID生成（encounter_type依存）
-        let pid = if Self::is_wild_encounter(config.encounter_type) {
-            // 野生エンカウント: r1[n] ^ 0x00010000
-            let pid_base = rng.next();
-            total_advances += 1;
-            PIDCalculator::generate_wild_pid(pid_base)
-        } else {
-            // 固定・徘徊: r1[n] (XOR無し)
-            let pid_base = rng.next();
-            total_advances += 1;
-            PIDCalculator::generate_static_pid(pid_base)
-        };
+        // PID生成（野生は XOR あり）
+        let pid_base = rng.next();
+        let pid = PIDCalculator::generate_wild_pid(pid_base);
         
-        // Step 4: レベル乱数決定（encounter_type依存）
-        let level_rand_value = Self::calculate_level_rand_with_advances(
-            &mut rng, 
-            &mut total_advances, 
-            config.encounter_type
+        // 性格生成・シンクロ適用
+        let (sync_applied, nature_id) = Self::generate_nature_with_sync(
+            &mut rng,
+            sync_success,
+            config.encounter_type,
+            config.sync_enabled,
+            config.sync_nature_id
         );
         
-        // Step 5-7: その他計算
+        // 持ち物判定（土煙のみ）
+        if config.encounter_type == EncounterType::DustCloud {
+            let _item_check = rng.next();
+        }
+        
+        // 距離計算で消費回数を算出
+        let advances = rng.distance_from(seed) as u32;
+        
+        Self::build_pokemon_data(
+            seed, advances, pid, nature_id, sync_applied, 
+            encounter_slot_value,
+            0, // 野生は固定レベル（乱数値は未使用）
+            config
+        )
+    }
+
+    /// なみのりポケモン生成
+    fn generate_surfing_pokemon(seed: u64, config: &BWGenerationConfig) -> RawPokemonData {
+        let mut rng = PersonalityRNG::new(seed);
+        
+        // シンクロ判定
+        let sync_success = Self::perform_sync_check(
+            &mut rng, 
+            config.encounter_type, 
+            config.sync_enabled
+        );
+        
+        // 遭遇スロット決定
+        let encounter_slot_value = EncounterCalculator::calculate_encounter_slot(
+            config.version,
+            config.encounter_type,
+            rng.next()
+        );
+        
+        // レベル決定
+        let level_rand_value = rng.next();
+        
+        // PID生成（野生は XOR あり）
+        let pid_base = rng.next();
+        let pid = PIDCalculator::generate_wild_pid(pid_base);
+        
+        // 性格生成・シンクロ適用
+        let (sync_applied, nature_id) = Self::generate_nature_with_sync(
+            &mut rng,
+            sync_success,
+            config.encounter_type,
+            config.sync_enabled,
+            config.sync_nature_id
+        );
+        
+        // 持ち物判定（なみのりは持ち物判定あり）
+        let _item_check = rng.next();
+        
+        // 距離計算で消費回数を算出
+        let advances = rng.distance_from(seed) as u32;
+        
+        Self::build_pokemon_data(
+            seed, advances, pid, nature_id, sync_applied, 
+            encounter_slot_value,
+            level_rand_value,
+            config
+        )
+    }
+
+    /// 釣りポケモン生成
+    fn generate_fishing_pokemon(seed: u64, config: &BWGenerationConfig) -> RawPokemonData {
+        let mut rng = PersonalityRNG::new(seed);
+        
+        // シンクロ判定
+        let sync_success = Self::perform_sync_check(
+            &mut rng, 
+            config.encounter_type, 
+            config.sync_enabled
+        );
+        
+        // 釣り成功判定
+        let _fishing_success = rng.next();
+        
+        // 遭遇スロット決定
+        let encounter_slot_value = EncounterCalculator::calculate_encounter_slot(
+            config.version,
+            config.encounter_type,
+            rng.next()
+        );
+        
+        // レベル決定
+        let level_rand_value = rng.next();
+        
+        // PID生成（野生は XOR あり）
+        let pid_base = rng.next();
+        let pid = PIDCalculator::generate_wild_pid(pid_base);
+        
+        // 性格生成・シンクロ適用
+        let (sync_applied, nature_id) = Self::generate_nature_with_sync(
+            &mut rng,
+            sync_success,
+            config.encounter_type,
+            config.sync_enabled,
+            config.sync_nature_id
+        );
+        
+        // 持ち物判定（釣りは持ち物判定あり）
+        let _item_check = rng.next();
+        
+        // 距離計算で消費回数を算出
+        let advances = rng.distance_from(seed) as u32;
+        
+        Self::build_pokemon_data(
+            seed, advances, pid, nature_id, sync_applied, 
+            encounter_slot_value,
+            level_rand_value,
+            config
+        )
+    }
+
+    /// ポケモンデータ構築ヘルパー
+    fn build_pokemon_data(
+        seed: u64,
+        advances: u32,
+        pid: u32,
+        nature: u8,
+        sync_applied: bool,
+        encounter_slot_value: u8,
+        level_rand_value: u32,
+        config: &BWGenerationConfig,
+    ) -> RawPokemonData {
         let ability_slot = ((pid >> 16) & 1) as u8;
         let gender_value = (pid & 0xFF) as u8;
         
@@ -209,10 +441,10 @@ impl PokemonGenerator {
         let shiny_type = shiny_type_enum as u8;
         
         RawPokemonData {
-            seed: start_seed,
-            advances: total_advances,
+            seed,
+            advances,
             pid,
-            nature: nature_id,
+            nature,
             sync_applied,
             ability_slot,
             gender_value,
@@ -269,64 +501,63 @@ impl PokemonGenerator {
         )
     }
 
-    /// 内部使用：シンクロ判定・性格決定の統合処理（状態ベースmatch版）
+    /// 内部使用：シンクロ判定のみ実行
     /// 
     /// # Arguments
     /// * `rng` - 乱数生成器
-    /// * `advances` - 乱数消費回数
+    /// * `encounter_type` - 遭遇タイプ
+    /// * `sync_enabled` - シンクロ有効フラグ
+    /// 
+    /// # Returns
+    /// シンクロ成功フラグ（シンクロ無効エンカウントでは常にfalse）
+    fn perform_sync_check(
+        rng: &mut PersonalityRNG,
+        encounter_type: EncounterType,
+        sync_enabled: bool,
+    ) -> bool {
+        // シンクロ対応エンカウントかつシンクロ有効時のみ判定実行
+        if Self::supports_sync(encounter_type) && sync_enabled {
+            rng.sync_check()
+        } else if Self::supports_sync(encounter_type) {
+            // シンクロ対応エンカウントだがシンクロ無効の場合も乱数消費
+            rng.sync_check();
+            false // シンクロ無効なので常にfalse
+        } else {
+            // シンクロ無効エンカウント（御三家、化石、イベント、徘徊等）
+            false // 乱数消費もなし
+        }
+    }
+
+    /// 内部使用：PIDベース性格生成とシンクロ適用
+    /// 
+    /// # Arguments
+    /// * `rng` - 乱数生成器
+    /// * `sync_success` - シンクロ判定結果
     /// * `encounter_type` - 遭遇タイプ
     /// * `sync_enabled` - シンクロ有効フラグ
     /// * `sync_nature_id` - シンクロ性格ID
     /// 
     /// # Returns
-    /// (シンクロ適用フラグ, 性格ID)
-    fn resolve_sync_and_nature(
+    /// (シンクロ適用フラグ, 最終性格ID)
+    fn generate_nature_with_sync(
         rng: &mut PersonalityRNG,
-        advances: &mut u32,
+        sync_success: bool,
         encounter_type: EncounterType,
         sync_enabled: bool,
         sync_nature_id: u8,
     ) -> (bool, u8) {
-        // シンクロ処理状態を定義
-        #[derive(Debug)]
-        enum SyncState {
-            Disabled,        // シンクロ無効エンカウント
-            NotConfigured,   // シンクロ設定無効
-            Active,          // シンクロ判定実行
-        }
+        // シンクロ適用条件：シンクロ対応エンカウント && シンクロ有効 && シンクロ成功
+        let sync_applied = Self::supports_sync(encounter_type) && sync_enabled && sync_success;
         
-        let sync_state = match (Self::supports_sync(encounter_type), sync_enabled) {
-            (false, _) => SyncState::Disabled,
-            (true, false) => SyncState::NotConfigured,
-            (true, true) => SyncState::Active,
+        let final_nature = if sync_applied {
+            // シンクロ成功時は指定性格、乱数消費なし
+            sync_nature_id
+        } else {
+            // シンクロ失敗時またはシンクロ無効時は乱数から性格決定
+            (rng.next() % 25) as u8
         };
         
-        match sync_state {
-            SyncState::Disabled => {
-                // シンクロ無効: 通常の性格決定のみ
-                (false, Self::roll_nature(rng, advances))
-            }
-            SyncState::NotConfigured | SyncState::Active => {
-                // シンクロ有効エンカウント: 常にシンクロ判定→性格決定の両方を実行
-                let sync_success = rng.sync_check();
-                *advances += 1;
-                
-                if sync_success && matches!(sync_state, SyncState::Active) {
-                    // シンクロ成功 & 設定有効時のみ特性で上書き
-                    (true, sync_nature_id)
-                } else {
-                    // シンクロ失敗 or 設定無効時は通常の性格決定
-                    (false, Self::roll_nature(rng, advances))
-                }
-            }
-        }
-    }
-
-    /// 内部使用：性格決定（乱数消費込み）
-    fn roll_nature(rng: &mut PersonalityRNG, advances: &mut u32) -> u8 {
-        let nature = rng.nature_roll();
-        *advances += 1;
-        nature as u8
+        (sync_applied, final_nature)
     }
 
     /// 内部使用：EncounterType → u8 変換
@@ -345,37 +576,6 @@ impl PokemonGenerator {
             EncounterType::StaticFossil => 12,
             EncounterType::StaticEvent => 13,
             EncounterType::Roaming => 20,
-        }
-    }
-
-    /// 内部使用：レベル乱数処理（ドキュメント仕様準拠）
-    fn calculate_level_rand_with_advances(
-        rng: &mut PersonalityRNG,
-        advances: &mut u32,
-        encounter_type: EncounterType,
-    ) -> u32 {
-        match encounter_type {
-            // 固定レベル（乱数消費するが結果未使用）
-            EncounterType::Normal | EncounterType::ShakingGrass | 
-            EncounterType::DustCloud | EncounterType::PokemonShadow => {
-                let level_rand = rng.next();
-                *advances += 1;
-                level_rand  // プレースホルダー値
-            },
-            
-            // 可変レベル（乱数値を実際に使用）
-            EncounterType::Surfing | EncounterType::Fishing | 
-            EncounterType::SurfingBubble | EncounterType::FishingBubble => {
-                let level_rand = rng.next();
-                *advances += 1;
-                level_rand  // TypeScript側で実際のレベル計算に使用
-            },
-            
-            // 乱数消費なし
-            EncounterType::StaticSymbol | EncounterType::StaticStarter | 
-            EncounterType::StaticFossil | EncounterType::StaticEvent | EncounterType::Roaming => {
-                0  // 乱数消費なし
-            },
         }
     }
 }

@@ -95,6 +95,70 @@ impl PersonalityRNG {
     pub fn reset(&mut self, initial_seed: u64) {
         self.seed = initial_seed;
     }
+
+    /// 0x0からの進行度を計算
+    /// 
+    /// # Arguments
+    /// * `seed` - 計算対象のシード値
+    /// 
+    /// # Returns
+    /// 0x0からの進行度
+    pub fn get_index(seed: u64) -> u64 {
+        Self::calc_index(seed, 0x5D588B656C078965, 0x269EC3, 64)
+    }
+    
+    /// 2つのシード間の距離を計算
+    /// 
+    /// # Arguments
+    /// * `from_seed` - 開始シード
+    /// * `to_seed` - 終了シード
+    /// 
+    /// # Returns
+    /// from_seedからto_seedまでの距離
+    pub fn distance_between(from_seed: u64, to_seed: u64) -> u64 {
+        Self::get_index(to_seed) - Self::get_index(from_seed)
+    }
+    
+    /// 指定シードから現在のシードまでの距離
+    /// 
+    /// # Arguments
+    /// * `source_seed` - 開始シード
+    /// 
+    /// # Returns
+    /// source_seedから現在のシードまでの距離
+    pub fn distance_from(&self, source_seed: u64) -> u64 {
+        Self::distance_between(source_seed, self.seed)
+    }
+    
+    /// C#実装の移植：再帰的インデックス計算
+    /// 
+    /// # Arguments
+    /// * `seed` - 計算対象のシード
+    /// * `a` - 乗算定数
+    /// * `b` - 加算定数
+    /// * `order` - 再帰深度
+    /// 
+    /// # Returns
+    /// 計算されたインデックス
+    fn calc_index(seed: u64, a: u64, b: u64, order: u32) -> u64 {
+        if order == 0 {
+            0
+        } else if (seed & 1) == 0 {
+            Self::calc_index(
+                seed / 2, 
+                a.wrapping_mul(a), 
+                (a.wrapping_add(1)).wrapping_mul(b) / 2, 
+                order - 1
+            ).wrapping_mul(2)
+        } else {
+            Self::calc_index(
+                (a.wrapping_mul(seed).wrapping_add(b)) / 2, 
+                a.wrapping_mul(a), 
+                (a.wrapping_add(1)).wrapping_mul(b) / 2, 
+                order - 1
+            ).wrapping_mul(2).wrapping_sub(1)
+        }
+    }
 }
 
 impl PersonalityRNG {
@@ -271,5 +335,54 @@ mod tests {
         
         let jumped_seed = PersonalityRNG::jump_seed(seed, 10);
         assert_eq!(rng.current_seed(), jumped_seed);
+    }
+
+    #[test]
+    fn test_distance_calculation() {
+        let seed1 = 0x123456789ABCDEF0;
+        let mut rng = PersonalityRNG::new(seed1);
+        
+        // 初期状態では距離は0
+        assert_eq!(rng.distance_from(seed1), 0);
+        
+        // 1回進めた後の距離
+        rng.next();
+        assert_eq!(rng.distance_from(seed1), 1);
+        
+        // 5回進めた後の距離
+        for _ in 0..4 {
+            rng.next();
+        }
+        assert_eq!(rng.distance_from(seed1), 5);
+    }
+
+    #[test]
+    fn test_distance_between_static() {
+        let seed1 = 0x123456789ABCDEF0;
+        let mut rng = PersonalityRNG::new(seed1);
+        
+        // 5回進める
+        for _ in 0..5 {
+            rng.next();
+        }
+        let seed2 = rng.current_seed();
+        
+        // 静的メソッドでの距離計算
+        assert_eq!(PersonalityRNG::distance_between(seed1, seed2), 5);
+    }
+
+    #[test]
+    fn test_get_index_consistency() {
+        // 0からの距離計算の一貫性確認
+        let seed = 0x123456789ABCDEF0;
+        let index1 = PersonalityRNG::get_index(seed);
+        
+        // 同じシードからは同じインデックス
+        let index2 = PersonalityRNG::get_index(seed);
+        assert_eq!(index1, index2);
+        
+        // 距離計算との一貫性
+        let distance = PersonalityRNG::distance_between(0, seed);
+        assert_eq!(index1, distance);
     }
 }
