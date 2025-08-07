@@ -26,40 +26,114 @@ impl PIDCalculator {
         PIDCalculator
     }
 
-    /// 野生ポケモンのPID生成
-    /// r1[n] ^ 0x00010000 の計算
+    /// BW/BW2準拠 統一PID生成
+    /// 32bit乱数 ^ 0x10000 の計算（固定・野生共通）
     /// 
     /// # Arguments
     /// * `r1` - 乱数値1
     /// 
     /// # Returns
-    /// 生成されたPID
-    pub fn generate_wild_pid(r1: u32) -> u32 {
-        r1 ^ 0x00010000
+    /// 基本PID（ID補正前）
+    pub fn generate_base_pid(r1: u32) -> u32 {
+        r1 ^ 0x10000
     }
 
-    /// 固定シンボルポケモンのPID生成
-    /// r1[n] をそのまま使用
+    /// ID補正付きPID生成（内部使用）
+    /// 基本PID生成後、ID補正処理を適用
     /// 
     /// # Arguments
     /// * `r1` - 乱数値1
+    /// * `tid` - トレーナーID
+    /// * `sid` - シークレットID
+    /// * `apply_id_correction` - ID補正適用フラグ
     /// 
     /// # Returns
-    /// 生成されたPID
-    pub fn generate_static_pid(r1: u32) -> u32 {
-        r1
+    /// 最終PID（ID補正後）
+    fn generate_pid_with_correction(r1: u32, tid: u16, sid: u16, apply_id_correction: bool) -> u32 {
+        let base_pid = Self::generate_base_pid(r1);
+        
+        if apply_id_correction {
+            Self::apply_id_correction(base_pid, tid, sid)
+        } else {
+            base_pid
+        }
     }
 
-    /// 徘徊ポケモンのPID生成
-    /// r1[n] をそのまま使用（固定シンボルと同じ）
+    /// ID補正処理
+    /// 性格値下位 ^ トレーナーID ^ 裏ID の奇偶性で最上位bitを調整
+    /// 
+    /// # Arguments
+    /// * `pid` - 基本PID
+    /// * `tid` - トレーナーID
+    /// * `sid` - シークレットID
+    /// 
+    /// # Returns
+    /// ID補正後PID
+    pub fn apply_id_correction(pid: u32, tid: u16, sid: u16) -> u32 {
+        let pid_low = (pid & 0xFFFF) as u16;
+        let xor_result = pid_low ^ tid ^ sid;
+        
+        if (xor_result & 1) == 1 {
+            // 奇数の場合: 最上位bitを1に設定
+            pid | 0x80000000
+        } else {
+            // 偶数の場合: 最上位bitを0に設定
+            pid & 0x7FFFFFFF
+        }
+    }
+
+    /// BW/BW2準拠 野生ポケモンのPID生成
+    /// 32bit乱数 ^ 0x10000 + ID補正処理
+    /// 
+    /// # Arguments
+    /// * `r1` - 乱数値1
+    /// * `tid` - トレーナーID
+    /// * `sid` - シークレットID
+    /// 
+    /// # Returns
+    /// 生成されたPID（ID補正適用後）
+    pub fn generate_wild_pid(r1: u32, tid: u16, sid: u16) -> u32 {
+        Self::generate_pid_with_correction(r1, tid, sid, true)
+    }
+
+    /// BW/BW2準拠 固定シンボルポケモンのPID生成
+    /// 32bit乱数 ^ 0x10000 + ID補正処理
+    /// 
+    /// # Arguments
+    /// * `r1` - 乱数値1
+    /// * `tid` - トレーナーID
+    /// * `sid` - シークレットID
+    /// 
+    /// # Returns
+    /// 生成されたPID（ID補正適用後）
+    pub fn generate_static_pid(r1: u32, tid: u16, sid: u16) -> u32 {
+        Self::generate_pid_with_correction(r1, tid, sid, true)
+    }
+
+    /// BW/BW2準拠 徘徊ポケモンのPID生成
+    /// 32bit乱数 ^ 0x10000 + ID補正処理
+    /// 
+    /// # Arguments
+    /// * `r1` - 乱数値1
+    /// * `tid` - トレーナーID
+    /// * `sid` - シークレットID
+    /// 
+    /// # Returns
+    /// 生成されたPID（ID補正適用後）
+    pub fn generate_roaming_pid(r1: u32, tid: u16, sid: u16) -> u32 {
+        Self::generate_pid_with_correction(r1, tid, sid, true)
+    }
+
+    /// BW/BW2準拠 イベントポケモンのPID生成
+    /// 32bit乱数 ^ 0x10000（ID補正なし - 先頭特性無効）
     /// 
     /// # Arguments
     /// * `r1` - 乱数値1
     /// 
     /// # Returns
-    /// 生成されたPID
-    pub fn generate_roaming_pid(r1: u32) -> u32 {
-        r1
+    /// 生成されたPID（ID補正なし）
+    pub fn generate_event_pid(r1: u32) -> u32 {
+        r1 ^ 0x10000
     }
 
     /// ギフトポケモンのPID生成
@@ -256,23 +330,72 @@ mod tests {
     #[test]
     fn test_pid_generation_wild() {
         let r1 = 0x12345678;
-        let pid = PIDCalculator::generate_wild_pid(r1);
-        let expected = 0x12345678 ^ 0x00010000;
-        assert_eq!(pid, expected);
+        let tid = 12345;
+        let sid = 54321;
+        let pid = PIDCalculator::generate_wild_pid(r1, tid, sid);
+        
+        // 基本PID生成の確認
+        let expected_base = 0x12345678 ^ 0x00010000;
+        
+        // ID補正の確認
+        let pid_low = (expected_base & 0xFFFF) as u16;
+        let xor_result = pid_low ^ tid ^ sid;
+        
+        if (xor_result & 1) == 1 {
+            assert_eq!(pid, expected_base | 0x80000000);
+        } else {
+            assert_eq!(pid, expected_base & 0x7FFFFFFF);
+        }
     }
 
     #[test]
     fn test_pid_generation_static() {
         let r1 = 0x12345678;
-        let pid = PIDCalculator::generate_static_pid(r1);
-        assert_eq!(pid, r1);
+        let tid = 12345;
+        let sid = 54321;
+        let pid = PIDCalculator::generate_static_pid(r1, tid, sid);
+        
+        // 基本PID生成の確認（新仕様: 固定も ^ 0x10000 を適用）
+        let expected_base = 0x12345678 ^ 0x10000;
+        
+        // ID補正の確認
+        let pid_low = (expected_base & 0xFFFF) as u16;
+        let xor_result = pid_low ^ tid ^ sid;
+        
+        if (xor_result & 1) == 1 {
+            assert_eq!(pid, expected_base | 0x80000000);
+        } else {
+            assert_eq!(pid, expected_base & 0x7FFFFFFF);
+        }
     }
 
     #[test]
     fn test_pid_generation_roaming() {
         let r1 = 0x12345678;
-        let pid = PIDCalculator::generate_roaming_pid(r1);
-        assert_eq!(pid, r1);
+        let tid = 12345;
+        let sid = 54321;
+        let pid = PIDCalculator::generate_roaming_pid(r1, tid, sid);
+        
+        // 基本PID生成の確認（新仕様: 徘徊も ^ 0x10000 を適用）
+        let expected_base = 0x12345678 ^ 0x10000;
+        
+        // ID補正の確認
+        let pid_low = (expected_base & 0xFFFF) as u16;
+        let xor_result = pid_low ^ tid ^ sid;
+        
+        if (xor_result & 1) == 1 {
+            assert_eq!(pid, expected_base | 0x80000000);
+        } else {
+            assert_eq!(pid, expected_base & 0x7FFFFFFF);
+        }
+    }
+
+    #[test]
+    fn test_pid_generation_event() {
+        let r1 = 0x12345678;
+        let pid = PIDCalculator::generate_event_pid(r1);
+        let expected = 0x12345678 ^ 0x10000;  // イベント系は基本PIDのみ（ID補正なし）
+        assert_eq!(pid, expected);
     }
 
     #[test]
@@ -291,6 +414,26 @@ mod tests {
         let pid = PIDCalculator::generate_egg_pid(r1, r2);
         let expected = ((r1 & 0xFFFF0000) >> 16) | (r2 & 0xFFFF0000);
         assert_eq!(pid, expected);
+    }
+
+    #[test]
+    fn test_id_correction_function() {
+        let base_pid = 0x12345678;
+        let tid = 12345;
+        let sid = 54321;
+        
+        let corrected_pid = PIDCalculator::apply_id_correction(base_pid, tid, sid);
+        
+        let pid_low = (base_pid & 0xFFFF) as u16;
+        let xor_result = pid_low ^ tid ^ sid;
+        
+        if (xor_result & 1) == 1 {
+            // 奇数の場合: 最上位bitが1になる
+            assert!(corrected_pid & 0x80000000 != 0);
+        } else {
+            // 偶数の場合: 最上位bitが0になる
+            assert!(corrected_pid & 0x80000000 == 0);
+        }
     }
 
     #[test]

@@ -204,8 +204,13 @@ impl PokemonGenerator {
             config.sync_enabled
         );
         
-        // PID生成（固定は XOR なし）
-        let pid = rng.next();
+        // PID生成（BW/BW2統一仕様: 32bit乱数 ^ 0x10000 + ID補正）
+        let pid_base = rng.next();
+        let pid = PIDCalculator::generate_static_pid(
+            pid_base, 
+            config.tid, 
+            config.sid
+        );
         
         // 性格生成・シンクロ適用
         let (sync_applied, nature_id) = Self::generate_nature_with_sync(
@@ -236,8 +241,13 @@ impl PokemonGenerator {
         
         // 徘徊はシンクロ無効
         
-        // PID生成（固定は XOR なし）
-        let pid = rng.next();
+        // PID生成（BW/BW2統一仕様: 32bit乱数 ^ 0x10000 + ID補正）
+        let pid_base = rng.next();
+        let pid = PIDCalculator::generate_roaming_pid(
+            pid_base, 
+            config.tid, 
+            config.sid
+        );
         
         // 性格生成（徘徊はシンクロ無効なので通常性格のみ）
         let nature_id = Self::nature_roll(&mut rng);
@@ -259,8 +269,9 @@ impl PokemonGenerator {
         
         // イベント系はシンクロ無効
         
-        // PID生成（固定は XOR なし）
-        let pid = rng.next();
+        // PID生成（BW/BW2統一仕様: 32bit乱数 ^ 0x10000、ただしID補正なし）
+        let pid_base = rng.next();
+        let pid = PIDCalculator::generate_event_pid(pid_base);
         
         // 性格生成（イベント系はシンクロ無効なので通常性格のみ）
         let nature_id = Self::nature_roll(&mut rng);
@@ -293,10 +304,17 @@ impl PokemonGenerator {
             config.encounter_type,
             rng.next()
         );
+
+        // レベル決定(野生は空消費)
+        rng.next();
         
-        // PID生成（野生は XOR あり）
+        // PID生成（BW/BW2統一仕様: 32bit乱数 ^ 0x10000 + ID補正）
         let pid_base = rng.next();
-        let pid = PIDCalculator::generate_wild_pid(pid_base);
+        let pid = PIDCalculator::generate_wild_pid(
+            pid_base, 
+            config.tid, 
+            config.sid
+        );
         
         // 性格生成・シンクロ適用
         let (sync_applied, nature_id) = Self::generate_nature_with_sync(
@@ -344,9 +362,13 @@ impl PokemonGenerator {
         // レベル決定
         let level_rand_value = rng.next();
         
-        // PID生成（野生は XOR あり）
+        // PID生成（BW/BW2統一仕様: 32bit乱数 ^ 0x10000 + ID補正）
         let pid_base = rng.next();
-        let pid = PIDCalculator::generate_wild_pid(pid_base);
+        let pid = PIDCalculator::generate_wild_pid(
+            pid_base, 
+            config.tid, 
+            config.sid
+        );
         
         // 性格生成・シンクロ適用
         let (sync_applied, nature_id) = Self::generate_nature_with_sync(
@@ -395,9 +417,13 @@ impl PokemonGenerator {
         // レベル決定
         let level_rand_value = rng.next();
         
-        // PID生成（野生は XOR あり）
+        // PID生成（BW/BW2統一仕様: 32bit乱数 ^ 0x10000 + ID補正）
         let pid_base = rng.next();
-        let pid = PIDCalculator::generate_wild_pid(pid_base);
+        let pid = PIDCalculator::generate_wild_pid(
+            pid_base, 
+            config.tid, 
+            config.sid
+        );
         
         // 性格生成・シンクロ適用
         let (sync_applied, nature_id) = Self::generate_nature_with_sync(
@@ -488,16 +514,6 @@ impl PokemonGenerator {
             EncounterType::ShakingGrass | EncounterType::DustCloud | 
             EncounterType::PokemonShadow | EncounterType::SurfingBubble | 
             EncounterType::FishingBubble | EncounterType::StaticSymbol
-        )
-    }
-
-    /// 内部使用：野生エンカウント判定
-    fn is_wild_encounter(encounter_type: EncounterType) -> bool {
-        matches!(encounter_type, 
-            EncounterType::Normal | EncounterType::Surfing | EncounterType::Fishing |
-            EncounterType::ShakingGrass | EncounterType::DustCloud | 
-            EncounterType::PokemonShadow | EncounterType::SurfingBubble | 
-            EncounterType::FishingBubble
         )
     }
 
@@ -757,18 +773,6 @@ mod tests {
 
     #[test]
     fn test_bw_encounter_type_detection() {
-        // 野生エンカウント判定テスト
-        assert!(PokemonGenerator::is_wild_encounter(EncounterType::Normal));
-        assert!(PokemonGenerator::is_wild_encounter(EncounterType::Surfing));
-        assert!(PokemonGenerator::is_wild_encounter(EncounterType::FishingBubble));
-        
-        // 固定エンカウント判定テスト
-        assert!(!PokemonGenerator::is_wild_encounter(EncounterType::StaticSymbol));
-        assert!(!PokemonGenerator::is_wild_encounter(EncounterType::StaticStarter));
-        assert!(!PokemonGenerator::is_wild_encounter(EncounterType::StaticFossil));
-        assert!(!PokemonGenerator::is_wild_encounter(EncounterType::StaticEvent));
-        assert!(!PokemonGenerator::is_wild_encounter(EncounterType::Roaming));
-        
         // シンクロ対応判定テスト
         assert!(PokemonGenerator::supports_sync(EncounterType::Normal));
         assert!(PokemonGenerator::supports_sync(EncounterType::StaticSymbol)); // 固定シンボルはシンクロ有効

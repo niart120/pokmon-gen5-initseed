@@ -1,7 +1,7 @@
 /// オフセット計算と個体生成を統合したエンドツーエンドテスト
 
 use crate::pokemon_generator::{PokemonGenerator, BWGenerationConfig};
-use crate::offset_calculator::{OffsetCalculator, GameMode, calculate_game_offset};
+use crate::offset_calculator::{GameMode, calculate_game_offset};
 use crate::encounter_calculator::{GameVersion, EncounterType};
 use crate::personality_rng::PersonalityRNG;
 use crate::pid_shiny_checker::ShinyChecker;
@@ -15,7 +15,7 @@ fn test_integrated_generation_pattern1_bw2_continue_no_memory_link() {
     let game_mode = GameMode::Bw2ContinueNoMemoryLink;
     let encounter_type = EncounterType::Normal;
     let tid = 54321u16;
-    let sid = 12449u16;
+    let sid = 12345u16;
     
     // 期待値（実ツール検証結果）
     let expected_generation_seed = 0x181A996368932CFCu64;
@@ -24,7 +24,7 @@ fn test_integrated_generation_pattern1_bw2_continue_no_memory_link() {
     let expected_ability_slot = 0u8;
     let expected_gender_value = 0x10u8;
     let expected_encounter_slot = 0u8;
-    let _expected_is_shiny = false;
+    let expected_is_shiny = false;
     
     // Step 1: オフセット計算
     let offset = calculate_game_offset(initial_seed, game_mode);
@@ -58,17 +58,7 @@ fn test_integrated_generation_pattern1_bw2_continue_no_memory_link() {
     // Step 5: ポケモン生成実行
     let pokemon = PokemonGenerator::generate_single_pokemon_bw(generation_seed, &config);
     
-    // Debug output
-    println!("Pattern1 Debug: Generated PID: 0x{:08X}, Expected: 0x{:08X}", pokemon.get_pid(), expected_pid);
-    println!("Pattern1 Debug: Generated nature: {}, Expected: {}", pokemon.get_nature(), expected_nature);
-    println!("Pattern1 Debug: Generated ability slot: {}, Expected: {}", pokemon.get_ability_slot(), expected_ability_slot);
-    println!("Pattern1 Debug: Generated gender value: 0x{:02X}, Expected: 0x{:02X}", pokemon.get_gender_value(), expected_gender_value);
-    println!("Pattern1 Debug: Generated encounter slot: {}, Expected: {}", pokemon.get_encounter_slot_value(), expected_encounter_slot);
-    println!("Pattern1 Debug: Generated advances: {}", pokemon.get_advances());
-    println!("Pattern1 Debug: Sync applied: {}", pokemon.get_sync_applied());
-    
-    // Step 6: 検証（デバッグのため一時的にコメントアウト）
-    /*
+    // Step 6: 検証
     assert_eq!(
         pokemon.get_pid(), 
         expected_pid,
@@ -126,7 +116,6 @@ fn test_integrated_generation_pattern1_bw2_continue_no_memory_link() {
         0,  // Normal encounter type
         "Pattern1: エンカウントタイプが期待値と一致しません"
     );
-    */
     
     println!("✓ Pattern1 (BW2続きから思い出リンク無し + 通常エンカウント) デバッグ完了");
 }
@@ -140,7 +129,7 @@ fn test_integrated_generation_pattern2_bw_continue_surfing() {
     let game_mode = GameMode::BwContinue;
     let encounter_type = EncounterType::Surfing;
     let tid = 54321u16;
-    let sid = 12449u16;
+    let sid = 12345u16;
     
     // 期待値（実ツール検証結果）
     let expected_generation_seed = 0x30CB71FDDDA5E880u64;
@@ -149,7 +138,7 @@ fn test_integrated_generation_pattern2_bw_continue_surfing() {
     let expected_ability_slot = 1u8;
     let expected_gender_value = 0xF1u8;
     let expected_encounter_slot = 1u8;
-    let _expected_is_shiny = false;
+    let expected_is_shiny = false;
     
     // Step 1: オフセット計算
     let offset = calculate_game_offset(initial_seed, game_mode);
@@ -183,17 +172,7 @@ fn test_integrated_generation_pattern2_bw_continue_surfing() {
     // Step 5: ポケモン生成実行
     let pokemon = PokemonGenerator::generate_single_pokemon_bw(generation_seed, &config);
     
-    // Debug output
-    println!("Pattern2 Debug: Generated PID: 0x{:08X}, Expected: 0x{:08X}", pokemon.get_pid(), expected_pid);
-    println!("Pattern2 Debug: Generated nature: {}, Expected: {}", pokemon.get_nature(), expected_nature);
-    println!("Pattern2 Debug: Generated ability slot: {}, Expected: {}", pokemon.get_ability_slot(), expected_ability_slot);
-    println!("Pattern2 Debug: Generated gender value: 0x{:02X}, Expected: 0x{:02X}", pokemon.get_gender_value(), expected_gender_value);
-    println!("Pattern2 Debug: Generated encounter slot: {}, Expected: {}", pokemon.get_encounter_slot_value(), expected_encounter_slot);
-    println!("Pattern2 Debug: Generated advances: {}", pokemon.get_advances());
-    println!("Pattern2 Debug: Sync applied: {}", pokemon.get_sync_applied());
-    
     // Step 6: 検証（デバッグのため一時的にコメントアウト）
-    /*
     assert_eq!(
         pokemon.get_pid(), 
         expected_pid,
@@ -251,7 +230,6 @@ fn test_integrated_generation_pattern2_bw_continue_surfing() {
         1,  // Surfing encounter type
         "Pattern2: エンカウントタイプが期待値と一致しません"
     );
-    */
     
     println!("✓ Pattern2 (BW続きから + なみのりエンカウント) デバッグ完了");
 }
@@ -265,15 +243,15 @@ fn test_integrated_generation_pattern3_bw2_continue_with_memory_link_static() {
     let game_mode = GameMode::Bw2ContinueWithMemoryLink;
     let encounter_type = EncounterType::StaticSymbol;
     let tid = 54321u16;
-    let sid = 12449u16;
+    let sid = 12345u16;
     
     // 期待値（実ツール検証結果）
     let expected_generation_seed = 0xC8824BE7D559A178u64;
     let expected_pid = 0x59E0C098u32;
     let expected_nature = 15u8; // ひかえめ（Modest）
     let expected_gender_value = 0x98u8;
-    let _expected_is_shiny = false;
-    
+    let expected_is_shiny = false;
+
     // Step 1: オフセット計算
     let offset = calculate_game_offset(initial_seed, game_mode);
     println!("Pattern3 Debug: Initial seed: 0x{:016X}", initial_seed);
@@ -306,16 +284,7 @@ fn test_integrated_generation_pattern3_bw2_continue_with_memory_link_static() {
     // Step 5: ポケモン生成実行
     let pokemon = PokemonGenerator::generate_single_pokemon_bw(generation_seed, &config);
     
-    // Debug output
-    println!("Pattern3 Debug: Generated PID: 0x{:08X}, Expected: 0x{:08X}", pokemon.get_pid(), expected_pid);
-    println!("Pattern3 Debug: Generated nature: {}, Expected: {}", pokemon.get_nature(), expected_nature);
-    println!("Pattern3 Debug: Generated gender value: 0x{:02X}, Expected: 0x{:02X}", pokemon.get_gender_value(), expected_gender_value);
-    println!("Pattern3 Debug: Generated advances: {}", pokemon.get_advances());
-    println!("Pattern3 Debug: Sync applied: {}", pokemon.get_sync_applied());
-    println!("Pattern3 Debug: Encounter type: {} (StaticSymbol=10)", pokemon.get_encounter_type());
-    
     // Step 6: 検証（デバッグのため一時的にコメントアウト）
-    /*
     assert_eq!(
         pokemon.get_pid(), 
         expected_pid,
@@ -357,48 +326,90 @@ fn test_integrated_generation_pattern3_bw2_continue_with_memory_link_static() {
         10,  // StaticSymbol encounter type
         "Pattern3: エンカウントタイプが期待値と一致しません"
     );
-    */
     
     println!("✓ Pattern3 (BW2続きから思い出リンク有り + 固定シンボル) デバッグ完了");
 }
 
-/// 統合生成フローの詳細検証テスト
-/// 各計算段階の中間値も検証する
+/// パターン4: BW2続きから(思い出リンクなし) + ギフト(御三家)
+/// 実ツール検証結果との突合テスト
 #[test]
-fn test_integrated_generation_detailed_verification() {
-    let initial_seed = 0x11111u64;
+fn test_integrated_generation_pattern4_bw2_continue_no_memory_link_static_starter() {
+    // テスト設定
+    let initial_seed = 0xBBBBB;
     let game_mode = GameMode::Bw2ContinueNoMemoryLink;
+    let tid = 54321;
+    let sid = 12345;
+    let expected_generation_seed = 0x9D0FFB4952563CF0;
+    let expected_pid = 0xC4235DBEu32;
+    let expected_nature = 9; // のうてんき
+    let expected_gender_value = 0xBE;
     
-    // Step 1: オフセット計算の詳細検証
-    let mut calculator = OffsetCalculator::new(initial_seed);
-    let offset = calculator.execute_game_initialization(game_mode);
+    println!("\n===== Pattern 4: BW2続きから(思い出リンクなし) + ギフト(御三家) =====");
+    println!("初期シード: 0x{:X}", initial_seed);
+    println!("期待生成時seed: 0x{:016X}", expected_generation_seed);
+    println!("期待PID: 0x{:08X}", expected_pid);
+    println!("期待性格: {} (のうてんき)", expected_nature);
+    println!("期待性別値: 0x{:02X}", expected_gender_value);
     
-    // BW2続きから（思い出リンク無し）の期待オフセット値を確認
-    assert!(offset > 0, "オフセット値が計算されていません");
+    // Step 1: オフセット計算
+    let offset = calculate_game_offset(initial_seed, game_mode);
+    println!("Pattern4 Debug: Initial seed: 0x{:016X}", initial_seed);
+    println!("Pattern4 Debug: Calculated offset: {}", offset);
     
-    // Step 2: PersonalityRNGのジャンプ機能検証
-    let jumped_seed = PersonalityRNG::jump_seed(initial_seed, offset as u64);
-    assert_ne!(jumped_seed, initial_seed, "シードジャンプが正常に実行されていません");
+    // Step 2: オフセット後のシード値計算
+    let generation_seed = PersonalityRNG::jump_seed(initial_seed, offset as u64);
+    println!("Pattern4 Debug: Generation seed: 0x{:016X}", generation_seed);
+    println!("Pattern4 Debug: Expected seed: 0x{:016X}", expected_generation_seed);
     
-    // Step 3: 同じシードから同じ結果が生成されることを確認（決定性）
-    let config = BWGenerationConfig::new(
-        GameVersion::BlackWhite2,
-        EncounterType::Normal,
-        54321,
-        12449,
-        false,
-        0,
+    // Step 3: 計算されたシード値が期待値と一致することを確認
+    assert_eq!(
+        generation_seed, 
+        expected_generation_seed,
+        "Pattern4: 生成時のシード値が期待値と一致しません。calculated: 0x{:016X}, expected: 0x{:016X}",
+        generation_seed,
+        expected_generation_seed
     );
     
-    let pokemon1 = PokemonGenerator::generate_single_pokemon_bw(jumped_seed, &config);
-    let pokemon2 = PokemonGenerator::generate_single_pokemon_bw(jumped_seed, &config);
+    // Step 4: ポケモン生成設定
+    let config = BWGenerationConfig::new(
+        GameVersion::BlackWhite2,
+        EncounterType::StaticStarter,
+        tid,
+        sid,
+        false, // シンクロ無効
+        0,     // シンクロ性格（未使用）
+    );
     
-    assert_eq!(pokemon1.get_pid(), pokemon2.get_pid(), "同じシードから異なるPIDが生成されました");
-    assert_eq!(pokemon1.get_nature(), pokemon2.get_nature(), "同じシードから異なる性格が生成されました");
-    assert_eq!(pokemon1.get_advances(), pokemon2.get_advances(), "同じシードから異なる進行数が生成されました");
+    // Step 5: ポケモン生成実行
+    let pokemon = PokemonGenerator::generate_single_pokemon_bw(generation_seed, &config);
     
-    println!("✓ 統合生成フローの詳細検証完了");
+    // Step 6: 検証
+    assert_eq!(
+        pokemon.get_pid(), 
+        expected_pid,
+        "Pattern4: PIDが期待値と一致しません。calculated: 0x{:08X}, expected: 0x{:08X}",
+        pokemon.get_pid(),
+        expected_pid
+    );
+    
+    assert_eq!(
+        pokemon.get_nature(), 
+        expected_nature,
+        "Pattern4: 性格が期待値と一致しません。calculated: {}, expected: {} (のうてんき)",
+        pokemon.get_nature(),
+        expected_nature
+    );
+    
+    assert_eq!(
+        pokemon.get_gender_value(), 
+        expected_gender_value,
+        "Pattern4: 性別値が期待値と一致しません。calculated: 0x{:02X}, expected: 0x{:02X}",
+        pokemon.get_gender_value(),
+        expected_gender_value
+    );
+    
 }
+
 
 /// 複数パターンの統合テスト（バッチ処理）
 #[test]
@@ -429,7 +440,7 @@ fn test_integrated_generation_multiple_patterns() {
             },
             *encounter_type,
             54321,
-            12449,
+            12345,
             false,
             0,
         );
@@ -523,94 +534,4 @@ fn test_integrated_generation_shiny_verification() {
     }
     
     println!("✓ 色違い判定の統合テスト完了");
-}
-
-/// パターン4: BW2続きから(思い出リンクなし) + ギフト(御三家)
-/// 実ツール検証結果との突合テスト
-#[test]
-fn test_pattern_4_bw2_continue_no_memory_link_static_starter() {
-    // テスト設定
-    let initial_seed = 0xBBBBB;
-    let game_mode = GameMode::Bw2ContinueNoMemoryLink;
-    let tid = 54321;
-    let sid = 12449;
-    let expected_generation_seed = 0x9D0FFB4952563CF0;
-    let expected_pid = 0xC4235DBEu32;
-    let expected_nature = 9; // のうてんき
-    let expected_gender_value = 0x23;
-    
-    println!("\n===== Pattern 4: BW2続きから(思い出リンクなし) + ギフト(御三家) =====");
-    println!("初期シード: 0x{:X}", initial_seed);
-    println!("期待生成時seed: 0x{:016X}", expected_generation_seed);
-    println!("期待PID: 0x{:08X}", expected_pid);
-    println!("期待性格: {} (のうてんき)", expected_nature);
-    println!("期待性別値: 0x{:02X}", expected_gender_value);
-    
-    // Step 1: オフセット計算
-    let offset = calculate_game_offset(initial_seed, game_mode);
-    println!("Pattern4 Debug: Initial seed: 0x{:016X}", initial_seed);
-    println!("Pattern4 Debug: Calculated offset: {}", offset);
-    
-    // Step 2: オフセット後のシード値計算
-    let generation_seed = PersonalityRNG::jump_seed(initial_seed, offset as u64);
-    println!("Pattern4 Debug: Generation seed: 0x{:016X}", generation_seed);
-    println!("Pattern4 Debug: Expected seed: 0x{:016X}", expected_generation_seed);
-    
-    // Step 3: 計算されたシード値が期待値と一致することを確認
-    assert_eq!(
-        generation_seed, 
-        expected_generation_seed,
-        "Pattern4: 生成時のシード値が期待値と一致しません。calculated: 0x{:016X}, expected: 0x{:016X}",
-        generation_seed,
-        expected_generation_seed
-    );
-    
-    // Step 4: ポケモン生成設定
-    let config = BWGenerationConfig::new(
-        GameVersion::BlackWhite2,
-        EncounterType::StaticStarter,
-        tid,
-        sid,
-        false, // シンクロ無効
-        0,     // シンクロ性格（未使用）
-    );
-    
-    // Step 5: ポケモン生成実行
-    let pokemon = PokemonGenerator::generate_single_pokemon_bw(generation_seed, &config);
-    
-    // Debug output
-    println!("Pattern4 Debug: Generated PID: 0x{:08X}, Expected: 0x{:08X}", pokemon.get_pid(), expected_pid);
-    println!("Pattern4 Debug: Generated nature: {}, Expected: {}", pokemon.get_nature(), expected_nature);
-    println!("Pattern4 Debug: Generated gender value: 0x{:02X}, Expected: 0x{:02X}", pokemon.get_gender_value(), expected_gender_value);
-    println!("Pattern4 Debug: Generated advances: {}", pokemon.get_advances());
-    println!("Pattern4 Debug: Sync applied: {}", pokemon.get_sync_applied());
-    
-    // Step 6: 検証（デバッグのため一時的にコメントアウト）
-    /*
-    assert_eq!(
-        pokemon.get_pid(), 
-        expected_pid,
-        "Pattern4: PIDが期待値と一致しません。calculated: 0x{:08X}, expected: 0x{:08X}",
-        pokemon.get_pid(),
-        expected_pid
-    );
-    
-    assert_eq!(
-        pokemon.get_nature(), 
-        expected_nature,
-        "Pattern4: 性格が期待値と一致しません。calculated: {}, expected: {} (のうてんき)",
-        pokemon.get_nature(),
-        expected_nature
-    );
-    
-    assert_eq!(
-        pokemon.get_gender_value(), 
-        expected_gender_value,
-        "Pattern4: 性別値が期待値と一致しません。calculated: 0x{:02X}, expected: 0x{:02X}",
-        pokemon.get_gender_value(),
-        expected_gender_value
-    );
-    */
-    
-    println!("✓ Pattern4: デバッグ出力完了");
 }
