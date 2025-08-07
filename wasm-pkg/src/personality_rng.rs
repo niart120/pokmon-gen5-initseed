@@ -40,26 +40,6 @@ impl PersonalityRNG {
         self.seed
     }
 
-    /// シンクロ判定用乱数生成
-    /// (r1[n] * 2) >> 32 == 0 の計算
-    /// 
-    /// # Returns
-    /// シンクロ判定結果（true: シンクロ成功, false: シンクロ失敗）
-    pub fn sync_check(&mut self) -> bool {
-        let rand = self.next();
-        ((rand as u64 * 2) >> 32) == 0
-    }
-
-    /// 性格決定用乱数生成
-    /// (r1[n] * 25) >> 32 の計算
-    /// 
-    /// # Returns
-    /// 性格（0-24）
-    pub fn nature_roll(&mut self) -> u32 {
-        let r1 = self.next();
-        ((r1 as u64 * 25) >> 32) as u32
-    }
-
     /// 現在のシード値を取得
     /// 
     /// # Returns
@@ -239,29 +219,6 @@ mod tests {
         
         assert_eq!(actual_value, expected_value);
         assert_eq!(rng.current_seed(), expected_seed);
-    }
-
-    #[test]
-    fn test_nature_roll_range() {
-        let mut rng = PersonalityRNG::new(0x123456789ABCDEF0);
-        
-        // 性格値が正しい範囲内にあることを確認
-        for _ in 0..100 {
-            let nature = rng.nature_roll();
-            assert!(nature < 25, "Nature value {} should be less than 25", nature);
-        }
-    }
-
-    #[test]
-    fn test_sync_check_range() {
-        let mut rng = PersonalityRNG::new(0x123456789ABCDEF0);
-        
-        // シンクロ判定値が0または1であることを確認
-        for _ in 0..100 {
-            let sync = rng.sync_check();
-            // sync_check()は現在boolを返すため、trueまたはfalseであることを確認
-            assert!(sync == true || sync == false, "Sync value should be true or false");
-        }
     }
 
     #[test]

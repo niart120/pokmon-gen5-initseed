@@ -240,7 +240,7 @@ impl PokemonGenerator {
         let pid = rng.next();
         
         // 性格生成（徘徊はシンクロ無効なので通常性格のみ）
-        let nature_id = (rng.next() % 25) as u8;
+        let nature_id = Self::nature_roll(&mut rng);
         
         // 距離計算で消費回数を算出
         let advances = rng.distance_from(seed) as u32;
@@ -263,7 +263,7 @@ impl PokemonGenerator {
         let pid = rng.next();
         
         // 性格生成（イベント系はシンクロ無効なので通常性格のみ）
-        let nature_id = (rng.next() % 25) as u8;
+        let nature_id = Self::nature_roll(&mut rng);
         
         // 距離計算で消費回数を算出
         let advances = rng.distance_from(seed) as u32;
@@ -501,6 +501,32 @@ impl PokemonGenerator {
         )
     }
 
+    /// 内部使用：シンクロ判定処理
+    /// PersonalityRNGから移管：ゲーム固有ロジックをPokemonGeneratorに集約
+    /// 
+    /// # Arguments
+    /// * `rng` - 乱数生成器
+    /// 
+    /// # Returns
+    /// シンクロ判定結果（true: シンクロ成功, false: シンクロ失敗）
+    fn sync_check(rng: &mut PersonalityRNG) -> bool {
+        let rand = rng.next();
+        ((rand as u64 * 2) >> 32) == 0
+    }
+
+    /// 内部使用：性格決定処理
+    /// PersonalityRNGから移管：ゲーム固有ロジックをPokemonGeneratorに集約
+    /// 
+    /// # Arguments
+    /// * `rng` - 乱数生成器
+    /// 
+    /// # Returns
+    /// 性格ID（0-24）
+    fn nature_roll(rng: &mut PersonalityRNG) -> u8 {
+        let r1 = rng.next();
+        ((r1 as u64 * 25) >> 32) as u8
+    }
+
     /// 内部使用：シンクロ判定のみ実行
     /// 
     /// # Arguments
@@ -517,10 +543,10 @@ impl PokemonGenerator {
     ) -> bool {
         // シンクロ対応エンカウントかつシンクロ有効時のみ判定実行
         if Self::supports_sync(encounter_type) && sync_enabled {
-            rng.sync_check()
+            Self::sync_check(rng)
         } else if Self::supports_sync(encounter_type) {
             // シンクロ対応エンカウントだがシンクロ無効の場合も乱数消費
-            rng.sync_check();
+            Self::sync_check(rng);
             false // シンクロ無効なので常にfalse
         } else {
             // シンクロ無効エンカウント（御三家、化石、イベント、徘徊等）
@@ -549,12 +575,15 @@ impl PokemonGenerator {
         // シンクロ適用条件：シンクロ対応エンカウント && シンクロ有効 && シンクロ成功
         let sync_applied = Self::supports_sync(encounter_type) && sync_enabled && sync_success;
         
+        // 乱数消費は常に発生（シンクロ成功時も失敗時も）
+        let rng_nature = Self::nature_roll(rng);
+        
         let final_nature = if sync_applied {
-            // シンクロ成功時は指定性格、乱数消費なし
+            // シンクロ成功時は乱数結果を無視してシンクロ性格を適用
             sync_nature_id
         } else {
-            // シンクロ失敗時またはシンクロ無効時は乱数から性格決定
-            (rng.next() % 25) as u8
+            // シンクロ失敗時またはシンクロ無効時は乱数結果を使用
+            rng_nature
         };
         
         (sync_applied, final_nature)
