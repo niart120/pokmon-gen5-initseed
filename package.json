@@ -98,7 +98,7 @@
         "@types/react": "^19.0.10",
         "@types/react-dom": "^19.0.4",
         "@vitejs/plugin-react": "^4.3.4",
-        "@vitejs/plugin-react-swc": "^3.10.1",
+        "@vitejs/plugin-react-swc": "^4.0.0",
         "@vitest/ui": "^3.2.4",
         "copyfiles": "^2.4.1",
         "cross-env": "^7.0.3",
