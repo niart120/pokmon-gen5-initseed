@@ -25,6 +25,7 @@ impl PersonalityRNG {
     /// 
     /// # Returns
     /// 上位32bitの乱数値
+    #[inline]
     pub fn next(&mut self) -> u32 {
         // BW仕様線形合同法
         self.seed = self.seed.wrapping_mul(0x5D588B656C078965).wrapping_add(0x269EC3);
@@ -35,6 +36,7 @@ impl PersonalityRNG {
     /// 
     /// # Returns
     /// 64bit乱数値（内部状態そのもの）
+    #[inline]
     pub fn next_u64(&mut self) -> u64 {
         self.seed = self.seed.wrapping_mul(0x5D588B656C078965).wrapping_add(0x269EC3);
         self.seed
@@ -179,6 +181,18 @@ impl PersonalityRNG {
             current_seed = current_seed.wrapping_mul(0x5D588B656C078965).wrapping_add(0x269EC3);
         }
         current_seed
+    }
+
+    /// 内部使用用：シードを1ステップだけ進める純関数
+    /// 
+    /// # Arguments
+    /// * `seed` - 現在のシード
+    /// 
+    /// # Returns
+    /// 1ステップ進めた後のシード
+    #[inline]
+    pub fn next_seed(seed: u64) -> u64 {
+        seed.wrapping_mul(0x5D588B656C078965).wrapping_add(0x269EC3)
     }
 }
 
@@ -341,5 +355,15 @@ mod tests {
         // 距離計算との一貫性
         let distance = PersonalityRNG::distance_between(0, seed);
         assert_eq!(index1, distance);
+    }
+
+    #[test]
+    fn test_next_seed_function() {
+        let s0 = 0x123456789ABCDEF0u64;
+        let s1_from_func = PersonalityRNG::next_seed(s0);
+        let mut rng = PersonalityRNG::new(s0);
+        let _ = rng.next(); // advance 1
+        let s1_from_rng = rng.current_seed();
+        assert_eq!(s1_from_func, s1_from_rng);
     }
 }

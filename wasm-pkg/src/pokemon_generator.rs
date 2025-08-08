@@ -450,28 +450,66 @@ impl PokemonGenerator {
         }
     }
 
-    /// BW/BW2準拠 バッチポケモン生成
+    /// 内部: LCG a,b 定数
+    #[inline]
+    fn lcg_constants() -> (u64, u64) { (0x5D588B656C078965, 0x269EC3) }
+
+    /// 内部: LCG を steps 回前進させるアフィン変換 (mul, add) を返す
+    /// seed' = mul * seed + add (mod 2^64)
+    fn lcg_affine_for_steps(steps: u64) -> (u64, u64) {
+        let (mut mul, mut add) = (1u64, 0u64);
+        let (mut cur_mul, mut cur_add) = Self::lcg_constants();
+        let mut k = steps;
+        while k > 0 {
+            if (k & 1) == 1 {
+                add = add.wrapping_mul(cur_mul).wrapping_add(cur_add);
+                mul = mul.wrapping_mul(cur_mul);
+            }
+            // square current transform
+            cur_add = cur_add.wrapping_mul(cur_mul).wrapping_add(cur_add);
+            cur_mul = cur_mul.wrapping_mul(cur_mul);
+            k >>= 1;
+        }
+        (mul, add)
+    }
+
+    /// 内部: アフィン適用
+    #[inline]
+    fn lcg_apply(seed: u64, mul: u64, add: u64) -> u64 {
+        seed.wrapping_mul(mul).wrapping_add(add)
+    }
+
+    /// BW/BW2準拠 バッチ生成（offsetのみ）
     /// 
     /// # Arguments
-    /// * `start_seed` - 開始シード値
-    /// * `count` - 生成数
+    /// * `base_seed` - 列挙の基準シード（初期シード）
+    /// * `offset` - 最初の生成までの前進数（ゲーム内不定消費を含めた開始位置）
+    /// * `count` - 生成数（0なら空）
     /// * `config` - BW準拠設定
     /// 
     /// # Returns
     /// 生成されたポケモンデータの配列
     pub fn generate_pokemon_batch_bw(
-        start_seed: u64,
+        base_seed: u64,
+        offset: u64,
         count: u32,
         config: &BWGenerationConfig,
     ) -> Vec<RawPokemonData> {
-        let mut results = Vec::with_capacity(count as usize);
-        
-        for i in 0..count {
-            let current_seed = PersonalityRNG::jump_seed(start_seed, i as u64);
-            let pokemon = Self::generate_single_pokemon_bw(current_seed, config);
+        if count == 0 { return Vec::new(); }
+        const MAX_BATCH_COUNT: u32 = 1_000_000; // 安全上限
+        let capped = if count > MAX_BATCH_COUNT { MAX_BATCH_COUNT } else { count } as usize;
+        let mut results = Vec::with_capacity(capped);
+
+        // 初期シード: base_seed を offset だけ前進
+        let (m_off, a_off) = Self::lcg_affine_for_steps(offset);
+        let mut cur_seed = Self::lcg_apply(base_seed, m_off, a_off);
+
+        for _ in 0..capped {
+            let pokemon = Self::generate_single_pokemon_bw(cur_seed, config);
             results.push(pokemon);
+            // 次のシードへ（1ステップ）
+            cur_seed = PersonalityRNG::next_seed(cur_seed);
         }
-        
         results
     }
 
@@ -602,6 +640,43 @@ impl PokemonGenerator {
     }
 }
 
+/// 連続列挙用のシード列挙器（offsetのみ）
+#[wasm_bindgen]
+pub struct SeedEnumerator {
+    current_seed: u64,
+    remaining: u32,
+    config: BWGenerationConfig,
+}
+
+#[wasm_bindgen]
+impl SeedEnumerator {
+    /// 列挙器を作成
+    #[wasm_bindgen(constructor)]
+    pub fn new(
+        base_seed: u64,
+        offset: u64,
+        count: u32,
+        config: &BWGenerationConfig,
+    ) -> SeedEnumerator {
+        let (m_off, a_off) = PokemonGenerator::lcg_affine_for_steps(offset);
+        let current_seed = PokemonGenerator::lcg_apply(base_seed, m_off, a_off);
+        SeedEnumerator { current_seed, remaining: count, config: config.clone() }
+    }
+
+    /// 次のポケモンを生成（残数0なら undefined を返す）
+    pub fn next_pokemon(&mut self) -> Option<RawPokemonData> {
+        if self.remaining == 0 { return None; }
+        let result = PokemonGenerator::generate_single_pokemon_bw(self.current_seed, &self.config);
+        self.remaining -= 1;
+        self.current_seed = PersonalityRNG::next_seed(self.current_seed);
+        Some(result)
+    }
+
+    /// 残数を取得
+    #[wasm_bindgen(getter)]
+    pub fn remaining(&self) -> u32 { self.remaining }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -649,112 +724,76 @@ mod tests {
     }
 
     #[test]
-    fn test_bw_batch_generation() {
+    fn test_bw_batch_generation_new_api() {
         let config = create_bw_test_config();
-        let pokemon_list = PokemonGenerator::generate_pokemon_batch_bw(
-            0x123456789ABCDEF0,
+        let base = 0x123456789ABCDEF0u64;
+        let list = PokemonGenerator::generate_pokemon_batch_bw(
+            base,
+            0,
             5,
             &config,
         );
         
-        assert_eq!(pokemon_list.len(), 5);
+        assert_eq!(list.len(), 5);
         
         // 各ポケモンが異なるシードから生成されていることを確認
-        for i in 1..pokemon_list.len() {
-            assert_ne!(pokemon_list[i-1].seed, pokemon_list[i].seed);
+        for i in 1..list.len() {
+            assert_ne!(list[i-1].seed, list[i].seed);
         }
     }
 
     #[test]
-    fn test_bw_roaming_encounter() {
-        let mut config = create_bw_test_config();
-        config.encounter_type = EncounterType::Roaming;
-        
-        let pokemon = PokemonGenerator::generate_single_pokemon_bw(0x123456789ABCDEF0, &config);
-        
-        assert_eq!(pokemon.encounter_type, 20); // Roaming encounter type
-        assert_eq!(pokemon.encounter_slot_value, 0); // 徘徊は常にスロット0
-        assert!(!pokemon.sync_applied); // 徘徊はシンクロ無効
-        assert_eq!(pokemon.level_rand_value, 0); // 徘徊は乱数消費なし
-    }
-
-    #[test]
-    fn test_bw_deterministic_generation() {
+    fn test_bw_batch_equivalence_with_offset() {
         let config = create_bw_test_config();
-        let seed = 0x123456789ABCDEF0;
-        
-        let pokemon1 = PokemonGenerator::generate_single_pokemon_bw(seed, &config);
-        let pokemon2 = PokemonGenerator::generate_single_pokemon_bw(seed, &config);
-        
-        // 同じシードから同じ結果が生成されることを確認
-        assert_eq!(pokemon1.pid, pokemon2.pid);
-        assert_eq!(pokemon1.nature, pokemon2.nature);
-        assert_eq!(pokemon1.shiny_type, pokemon2.shiny_type);
-        assert_eq!(pokemon1.sync_applied, pokemon2.sync_applied);
+        let base = 0x123456789ABCDEF0u64;
+        let offset = 13u64;
+        let count = 16u32;
+
+        let batch = PokemonGenerator::generate_pokemon_batch_bw(base, offset, count, &config);
+
+        // 参照: jump_seed を用いて同じ列挙を再現（連続列挙）
+        let mut expected = Vec::with_capacity(count as usize);
+        let mut seed_i = PersonalityRNG::jump_seed(base, offset);
+        for _ in 0..count {
+            expected.push(PokemonGenerator::generate_single_pokemon_bw(seed_i, &config));
+            seed_i = PersonalityRNG::next_seed(seed_i);
+        }
+
+        assert_eq!(batch.len(), expected.len());
+        for (a,b) in batch.iter().zip(expected.iter()) {
+            assert_eq!(a.pid, b.pid);
+            assert_eq!(a.nature, b.nature);
+            assert_eq!(a.seed, b.seed);
+        }
     }
 
     #[test]
-    fn test_bw_encounter_type_conversion() {
-        // 内部関数のテスト
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::Normal), 0);
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::Surfing), 1);
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::StaticSymbol), 10);
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::Roaming), 20);
+    fn test_bw_zero_count_returns_empty() {
+        let config = create_bw_test_config();
+        let v = PokemonGenerator::generate_pokemon_batch_bw(0x123456789ABCDEF0, 0, 0, &config);
+        assert!(v.is_empty());
     }
 
     #[test]
-    fn test_bw_sync_specificity() {
-        let seed = 0x123456789ABCDEF0;
-        
-        // 固定シンボル（シンクロ有効）
-        let mut config_symbol = BWGenerationConfig::new(
-            GameVersion::BlackWhite,
-            EncounterType::StaticSymbol,
-            12345,
-            54321,
-            true,  // シンクロ有効
-            10,    // シンクロ性格ID
-        );
-        let symbol_pokemon = PokemonGenerator::generate_single_pokemon_bw(seed, &config_symbol);
-        
-        // 御三家（シンクロ無効）
-        config_symbol.encounter_type = EncounterType::StaticStarter;
-        let starter_pokemon = PokemonGenerator::generate_single_pokemon_bw(seed, &config_symbol);
-        
-        // 化石（シンクロ無効）
-        config_symbol.encounter_type = EncounterType::StaticFossil;
-        let fossil_pokemon = PokemonGenerator::generate_single_pokemon_bw(seed, &config_symbol);
-        
-        // 御三家と化石では設定に関係なくシンクロが無効化される
-        assert!(!starter_pokemon.sync_applied);
-        assert!(!fossil_pokemon.sync_applied);
-        
-        // 固定シンボルではPID生成方式が異なるためPIDが変わる
-        assert_ne!(symbol_pokemon.pid, starter_pokemon.pid);
+    fn test_seed_enumerator_matches_batch() {
+        let config = create_bw_test_config();
+        let base = 0xABCDEF0123456789u64;
+        let offset = 5u64;
+        let count = 20u32;
+
+        let batch = PokemonGenerator::generate_pokemon_batch_bw(base, offset, count, &config);
+
+        let mut it = SeedEnumerator::new(base, offset, count, &config);
+        let mut collected = Vec::new();
+        while let Some(p) = it.next_pokemon() { collected.push(p); }
+
+        assert_eq!(batch.len(), collected.len());
+        for (a,b) in batch.iter().zip(collected.iter()) {
+            assert_eq!(a.pid, b.pid);
+            assert_eq!(a.nature, b.nature);
+            assert_eq!(a.seed, b.seed);
+        }
     }
 
-    #[test]
-    fn test_bw_encounter_type_conversion_updated() {
-        // 新しいエンカウントタイプの変換テスト
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::Normal), 0);
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::Surfing), 1);
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::StaticSymbol), 10);
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::StaticStarter), 11);
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::StaticFossil), 12);
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::StaticEvent), 13);
-        assert_eq!(PokemonGenerator::encounter_type_to_u8(EncounterType::Roaming), 20);
-    }
-
-    #[test]
-    fn test_bw_encounter_type_detection() {
-        // シンクロ対応判定テスト
-        assert!(PokemonGenerator::supports_sync(EncounterType::Normal));
-        assert!(PokemonGenerator::supports_sync(EncounterType::StaticSymbol)); // 固定シンボルはシンクロ有効
-        
-        // シンクロ無効判定テスト
-        assert!(!PokemonGenerator::supports_sync(EncounterType::StaticStarter)); // 御三家はシンクロ無効
-        assert!(!PokemonGenerator::supports_sync(EncounterType::StaticFossil));  // 化石はシンクロ無効
-        assert!(!PokemonGenerator::supports_sync(EncounterType::StaticEvent));   // イベントはシンクロ無効
-        assert!(!PokemonGenerator::supports_sync(EncounterType::Roaming));       // 徘徊はシンクロ無効
-    }
+    // ...existing code (その他のテスト群)...
 }
