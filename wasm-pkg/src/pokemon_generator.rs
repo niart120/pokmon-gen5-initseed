@@ -11,8 +11,6 @@ use crate::pid_shiny_checker::{PIDCalculator, ShinyChecker, ShinyType};
 pub struct RawPokemonData {
     /// 初期シード値
     seed: u64,
-    /// 総乱数消費回数
-    advances: u32,
     /// PID
     pid: u32,
     /// 性格値（0-24）
@@ -29,9 +27,7 @@ pub struct RawPokemonData {
     encounter_type: u8,
     /// レベル乱数値
     level_rand_value: u32,
-    /// 色違いフラグ
-    is_shiny: bool,
-    /// 色違いタイプ
+    /// 色違いタイプ（0: NotShiny, 1: Square, 2: Star）
     shiny_type: u8,
 }
 
@@ -60,13 +56,7 @@ impl RawPokemonData {
     pub fn get_level_rand_value(&self) -> u32 { self.level_rand_value }
     
     #[wasm_bindgen(getter)]
-    pub fn get_is_shiny(&self) -> bool { self.is_shiny }
-    
-    #[wasm_bindgen(getter)]
     pub fn get_shiny_type(&self) -> u8 { self.shiny_type }
-    
-    #[wasm_bindgen(getter)]
-    pub fn get_advances(&self) -> u32 { self.advances }
     
     #[wasm_bindgen(getter)]
     pub fn get_sync_applied(&self) -> bool { self.sync_applied }
@@ -224,11 +214,8 @@ impl PokemonGenerator {
         // 持ち物判定（固定シンボルは持ち物判定あり）
         let _item_check = rng.next();
         
-        // 距離計算で消費回数を算出
-        let advances = rng.distance_from(seed) as u32;
-        
         Self::build_pokemon_data(
-            seed, advances, pid, nature_id, sync_applied, 
+            seed, pid, nature_id, sync_applied, 
             0, // 固定シンボルは遭遇スロット0
             0, // レベル乱数なし
             config
@@ -252,11 +239,8 @@ impl PokemonGenerator {
         // 性格生成（徘徊はシンクロ無効なので通常性格のみ）
         let nature_id = Self::nature_roll(&mut rng);
         
-        // 距離計算で消費回数を算出
-        let advances = rng.distance_from(seed) as u32;
-        
         Self::build_pokemon_data(
-            seed, advances, pid, nature_id, false, // sync_applied = false
+            seed, pid, nature_id, false, // sync_applied = false
             0, // 徘徊は遭遇スロット0
             0, // レベル乱数なし
             config
@@ -276,11 +260,8 @@ impl PokemonGenerator {
         // 性格生成（イベント系はシンクロ無効なので通常性格のみ）
         let nature_id = Self::nature_roll(&mut rng);
         
-        // 距離計算で消費回数を算出
-        let advances = rng.distance_from(seed) as u32;
-        
         Self::build_pokemon_data(
-            seed, advances, pid, nature_id, false, // sync_applied = false
+            seed, pid, nature_id, false, // sync_applied = false
             0, // イベント系は遭遇スロット0
             0, // レベル乱数なし
             config
@@ -330,11 +311,8 @@ impl PokemonGenerator {
             let _item_check = rng.next();
         }
         
-        // 距離計算で消費回数を算出
-        let advances = rng.distance_from(seed) as u32;
-        
         Self::build_pokemon_data(
-            seed, advances, pid, nature_id, sync_applied, 
+            seed, pid, nature_id, sync_applied, 
             encounter_slot_value,
             0, // 野生は固定レベル（乱数値は未使用）
             config
@@ -382,11 +360,8 @@ impl PokemonGenerator {
         // 持ち物判定（なみのりは持ち物判定あり）
         let _item_check = rng.next();
         
-        // 距離計算で消費回数を算出
-        let advances = rng.distance_from(seed) as u32;
-        
         Self::build_pokemon_data(
-            seed, advances, pid, nature_id, sync_applied, 
+            seed, pid, nature_id, sync_applied, 
             encounter_slot_value,
             level_rand_value,
             config
@@ -437,11 +412,8 @@ impl PokemonGenerator {
         // 持ち物判定（釣りは持ち物判定あり）
         let _item_check = rng.next();
         
-        // 距離計算で消費回数を算出
-        let advances = rng.distance_from(seed) as u32;
-        
         Self::build_pokemon_data(
-            seed, advances, pid, nature_id, sync_applied, 
+            seed, pid, nature_id, sync_applied, 
             encounter_slot_value,
             level_rand_value,
             config
@@ -451,7 +423,6 @@ impl PokemonGenerator {
     /// ポケモンデータ構築ヘルパー
     fn build_pokemon_data(
         seed: u64,
-        advances: u32,
         pid: u32,
         nature: u8,
         sync_applied: bool,
@@ -463,12 +434,10 @@ impl PokemonGenerator {
         let gender_value = (pid & 0xFF) as u8;
         
         let shiny_type_enum = ShinyChecker::check_shiny_type(config.tid, config.sid, pid);
-        let is_shiny = shiny_type_enum != ShinyType::Normal;
-        let shiny_type = shiny_type_enum as u8;
+        let shiny_type = Self::shiny_type_to_u8(shiny_type_enum);
         
         RawPokemonData {
             seed,
-            advances,
             pid,
             nature,
             sync_applied,
@@ -477,7 +446,6 @@ impl PokemonGenerator {
             encounter_slot_value,
             encounter_type: Self::encounter_type_to_u8(config.encounter_type),
             level_rand_value,
-            is_shiny,
             shiny_type,
         }
     }
@@ -623,6 +591,15 @@ impl PokemonGenerator {
             EncounterType::Roaming => 20,
         }
     }
+
+    /// 内部使用：ShinyType → u8（0:NotShiny, 1:Square, 2:Star）変換
+    fn shiny_type_to_u8(shiny: ShinyType) -> u8 {
+        match shiny {
+            ShinyType::Normal => 0,
+            ShinyType::Square => 1,
+            ShinyType::Star => 2,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -649,7 +626,6 @@ mod tests {
         assert!(pokemon.nature < 25);
         assert!(pokemon.ability_slot <= 1);
         assert!(pokemon.encounter_slot_value < 12); // Normal encounter has 12 slots
-        assert!(pokemon.advances > 0);
         assert_eq!(pokemon.encounter_type, 0); // Normal encounter type
         assert!(!pokemon.sync_applied); // シンクロ無効設定
     }
@@ -713,8 +689,7 @@ mod tests {
         // 同じシードから同じ結果が生成されることを確認
         assert_eq!(pokemon1.pid, pokemon2.pid);
         assert_eq!(pokemon1.nature, pokemon2.nature);
-        assert_eq!(pokemon1.is_shiny, pokemon2.is_shiny);
-        assert_eq!(pokemon1.advances, pokemon2.advances);
+        assert_eq!(pokemon1.shiny_type, pokemon2.shiny_type);
         assert_eq!(pokemon1.sync_applied, pokemon2.sync_applied);
     }
 
@@ -754,9 +729,8 @@ mod tests {
         assert!(!starter_pokemon.sync_applied);
         assert!(!fossil_pokemon.sync_applied);
         
-        // 固定シンボルではシンクロ判定が実行される（成功・失敗は乱数次第）
-        // 最低でもシンクロ判定の乱数消費分は差が出る
-        assert_ne!(symbol_pokemon.advances, starter_pokemon.advances);
+        // 固定シンボルではPID生成方式が異なるためPIDが変わる
+        assert_ne!(symbol_pokemon.pid, starter_pokemon.pid);
     }
 
     #[test]

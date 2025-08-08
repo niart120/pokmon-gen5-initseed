@@ -100,10 +100,10 @@ fn test_integrated_generation_pattern1_bw2_continue_no_memory_link() {
     );
     
     assert_eq!(
-        pokemon.get_is_shiny(), 
+        pokemon.get_shiny_type() != 0,
         expected_is_shiny,
-        "Pattern1: 色違いフラグが期待値と一致しません。calculated: {}, expected: {}",
-        pokemon.get_is_shiny(),
+        "Pattern1: 色違い種別が期待値と一致しません。calculated type: {}, expected is_shiny: {}",
+        pokemon.get_shiny_type(),
         expected_is_shiny
     );
     
@@ -214,10 +214,10 @@ fn test_integrated_generation_pattern2_bw_continue_surfing() {
     );
     
     assert_eq!(
-        pokemon.get_is_shiny(), 
+        pokemon.get_shiny_type() != 0,
         expected_is_shiny,
-        "Pattern2: 色違いフラグが期待値と一致しません。calculated: {}, expected: {}",
-        pokemon.get_is_shiny(),
+        "Pattern2: 色違い種別が期待値と一致しません。calculated type: {}, expected is_shiny: {}",
+        pokemon.get_shiny_type(),
         expected_is_shiny
     );
     
@@ -310,10 +310,10 @@ fn test_integrated_generation_pattern3_bw2_continue_with_memory_link_static() {
     );
     
     assert_eq!(
-        pokemon.get_is_shiny(), 
+        pokemon.get_shiny_type() != 0, 
         expected_is_shiny,
-        "Pattern3: 色違いフラグが期待値と一致しません。calculated: {}, expected: {}",
-        pokemon.get_is_shiny(),
+        "Pattern3: 色違い種別が期待値と一致しません。calculated type: {}, expected is_shiny: {}",
+        pokemon.get_shiny_type(),
         expected_is_shiny
     );
     
@@ -475,10 +475,9 @@ fn test_integrated_generation_edge_cases() {
     
     let pokemon = PokemonGenerator::generate_single_pokemon_bw(generation_seed, &config);
     
-    // ゼロシードでも正常な値が生成されることを確認
+    // ゼロシードでも正常な値が生成されることを確認（advances関連の検証は削除）
     assert!(pokemon.get_nature() < 25, "ゼロシード: 無効な性格値");
     assert!(pokemon.get_ability_slot() <= 1, "ゼロシード: 無効な特性スロット");
-    assert!(pokemon.get_advances() > 0, "ゼロシード: 乱数消費がありません");
     
     // 最大シードでの生成テスト
     let max_seed = u64::MAX;
@@ -487,10 +486,9 @@ fn test_integrated_generation_edge_cases() {
     
     let pokemon_max = PokemonGenerator::generate_single_pokemon_bw(generation_seed_max, &config);
     
-    // 最大シードでも正常な値が生成されることを確認
+    // 最大シードでも正常な値が生成されることを確認（advances関連の検証は削除）
     assert!(pokemon_max.get_nature() < 25, "最大シード: 無効な性格値");
     assert!(pokemon_max.get_ability_slot() <= 1, "最大シード: 無効な特性スロット");
-    assert!(pokemon_max.get_advances() > 0, "最大シード: 乱数消費がありません");
     
     println!("✓ エッジケースの統合テスト完了");
 }
@@ -515,16 +513,8 @@ fn test_integrated_generation_shiny_verification() {
         
         // ShinyCheckerでの直接検証
         let shiny_type = ShinyChecker::check_shiny_type(config.get_tid(), config.get_sid(), pokemon.get_pid());
-        let expected_is_shiny = shiny_type != crate::pid_shiny_checker::ShinyType::Normal;
         
-        assert_eq!(
-            pokemon.get_is_shiny(),
-            expected_is_shiny,
-            "Seed offset {}: 色違い判定が一致しません。PID: 0x{:08X}",
-            seed_offset,
-            pokemon.get_pid()
-        );
-        
+        // 期待する色違いタイプと一致
         assert_eq!(
             pokemon.get_shiny_type(),
             shiny_type as u8,
