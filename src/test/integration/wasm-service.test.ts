@@ -431,7 +431,8 @@ describe('WASM Service Integration Tests', () => {
 
         const results = await wasmService.searchWithConditions(
           conditions,
-          [0x12345678, 0x9ABCDEF0]
+          [0x12345678, 0x9ABCDEF0],
+          [0x12345678, 0x9ABCDEF0, 0x11111111, 0x22222222, 0x33333333] // nazo values
         );
 
         expect(Array.isArray(results)).toBe(true);
@@ -467,7 +468,8 @@ describe('WASM Service Integration Tests', () => {
 
         const results = await wasmService.searchWithConditions(
           conditions,
-          [0x12345678]
+          [0x12345678],
+          [0xAABBCCDD, 0xEEFF0011, 0x22334455, 0x66778899, 0xAABBCCDD] // nazo values
         );
 
         expect(Array.isArray(results)).toBe(true);
@@ -554,6 +556,66 @@ describe('WASM Service Integration Tests', () => {
       
       expect(searcher).toBeDefined();
       searcher.free();
+    });
+  });
+
+  describe('Integration with real game scenarios', () => {
+    it('should handle BW game mode conversion correctly', () => {
+      // Test various BW scenarios
+      expect(EnumConverter.configToGameMode('B', true, true)).toBe(WasmGameMode.BwNewGameWithSave);
+      expect(EnumConverter.configToGameMode('W', false, true)).toBe(WasmGameMode.BwNewGameNoSave);
+      expect(EnumConverter.configToGameMode('B', true, false)).toBe(WasmGameMode.BwContinue);
+    });
+
+    it('should handle BW2 memory link scenarios correctly', () => {
+      // Test BW2 with memory link
+      expect(EnumConverter.configToGameMode('B2', true, true, true)).toBe(WasmGameMode.Bw2NewGameWithMemoryLinkSave);
+      expect(EnumConverter.configToGameMode('W2', true, true, false)).toBe(WasmGameMode.Bw2NewGameNoMemoryLinkSave);
+      expect(EnumConverter.configToGameMode('B2', true, false, true)).toBe(WasmGameMode.Bw2ContinueWithMemoryLink);
+      expect(EnumConverter.configToGameMode('W2', true, false, false)).toBe(WasmGameMode.Bw2ContinueNoMemoryLink);
+    });
+
+    it('should validate realistic MAC addresses', () => {
+      // Common Nintendo DS MAC address patterns
+      const nintendoMAC = [0x00, 0x09, 0xBF, 0x12, 0x34, 0x56];
+      const result = ParameterValidator.validateMacAddress(nintendoMAC);
+      expect(Array.from(result)).toEqual(nintendoMAC);
+    });
+
+    it('should handle realistic timer0/vcount ranges', () => {
+      // Common DS timer0 values
+      const timer0Range = ParameterValidator.validateRange(0x1000, 0x1FFF, 'timer0');
+      expect(timer0Range.min).toBe(0x1000);
+      expect(timer0Range.max).toBe(0x1FFF);
+
+      // Common vcount values  
+      const vcountRange = ParameterValidator.validateRange(0x80, 0xFF, 'vcount');
+      expect(vcountRange.min).toBe(0x80);
+      expect(vcountRange.max).toBe(0xFF);
+    });
+
+    it('should prevent excessive computation with large ranges', () => {
+      expect(() => ParameterValidator.validateRange(0, 100000, 'timer0'))
+        .toThrow(ValidationError);
+      expect(() => ParameterValidator.validateRange(0, 1000, 'vcount'))
+        .toThrow(ValidationError);
+    });
+
+    it('should handle leap year date validation correctly', () => {
+      // Valid leap year
+      expect(() => ParameterValidator.validateDateTime(2024, 2, 29, 12, 30, 45))
+        .not.toThrow();
+        
+      // Invalid leap year
+      expect(() => ParameterValidator.validateDateTime(2023, 2, 29, 12, 30, 45))
+        .toThrow(ValidationError);
+    });
+
+    it('should validate realistic seed ranges', () => {
+      // Typical seed values from gen 5
+      const realisticSeeds = [0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210];
+      const result = ParameterValidator.validateTargetSeeds(realisticSeeds);
+      expect(Array.from(result)).toEqual(realisticSeeds);
     });
   });
 });

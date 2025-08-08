@@ -508,7 +508,8 @@ export class WasmService {
    */
   async searchWithConditions(
     conditions: SearchConditions,
-    targetSeeds: number[]
+    targetSeeds: number[],
+    nazo?: number[]
   ): Promise<any[]> {
     await this.initialize();
 
@@ -517,10 +518,13 @@ export class WasmService {
       const hardware = EnumConverter.validateHardware(conditions.hardware);
       const validatedKeyInput = ParameterValidator.validateKeyInput(conditions.keyInput);
 
+      // Use provided nazo or fallback
+      const nazovalues = nazo || [0, 0, 0, 0, 0];
+
       // Create searcher
       const searcher = this.createSearcher(
         conditions.macAddress,
-        Array.from(conditions.nazo || [0, 0, 0, 0, 0]), // Fallback for nazo
+        nazovalues,
         conditions.hardware,
         validatedKeyInput
       );
