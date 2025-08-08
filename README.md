@@ -27,7 +27,22 @@
 - **バックグラウンド処理**: Web Workers + 並列処理対応
 - **パフォーマンス監視**: 本番用軽量監視 + 開発用詳細分析
 
-## 開発・ビルド
+### WebAssembly計算エンジン（WASM実装を正とする）
+
+本アプリケーションの計算処理は以下のRust WebAssemblyモジュールで実装されています：
+
+- **IntegratedSeedSearcher**: 統合シード探索API（メイン検索エンジン）
+- **PersonalityRNG**: BW/BW2仕様64bit線形合同法乱数生成器
+- **EncounterCalculator**: 遭遇スロット計算エンジン（BW/BW2別対応）
+- **OffsetCalculator**: ゲーム初期化処理とオフセット計算
+- **PIDCalculator & ShinyChecker**: PID生成と色違い判定
+- **PokemonGenerator**: 統合ポケモン生成エンジン
+
+**注記**: 計算精度と仕様の正確性についてはWebAssembly（Rust）実装を正として扱います。TypeScript実装との乖離が生じた場合は、WASM実装に従います。
+
+## 開発・ビルド・テスト
+
+### 基本コマンド
 
 ```bash
 # 依存関係のインストール
@@ -35,6 +50,9 @@ npm install
 
 # 開発サーバー起動
 npm run dev
+
+# 開発サーバー起動（軽量モード・E2Eテスト用）
+npm run dev:agent
 
 # WebAssemblyビルド
 npm run build:wasm
@@ -44,19 +62,52 @@ npm run build
 
 # GitHub Pagesデプロイ
 npm run deploy
+```
 
-# テスト実行
+### テスト・検証手順
+
+#### 基本テスト実行
+
+```bash
+# TypeScriptテスト実行
 npm run test
 
-# Rustテスト実行
+# Rustテスト実行（WASM単体）
 npm run test:rust
 
-# Rustブラウザテスト実行
+# Rustブラウザテスト実行（WASM統合）
 npm run test:rust:browser
 
-# 全テスト実行
+# 全テスト実行（推奨）
 npm run test:all
 ```
+
+#### 開発・検証用テストページ
+
+テストページでの詳細な動作確認・パフォーマンス測定：
+
+```bash
+# 開発サーバー起動後、ブラウザで以下にアクセス
+
+# 開発テスト（個別機能・パフォーマンステスト）
+http://localhost:5173/test-development.html
+
+# 統合テスト（システム全体・ワークフローテスト）  
+http://localhost:5173/test-integration.html
+
+# 並列処理テスト（WebWorker・並列処理検証）
+http://localhost:5173/test-parallel.html
+```
+
+### 品質保証
+
+本プロジェクトは包括的なテスト環境により品質を保証しています：
+
+- **WASM単体テスト**: Rust Cargoテスト（95テスト以上）
+- **TypeScript単体テスト**: Vitestベース
+- **統合テスト**: WebAssembly-TypeScript連携テスト
+- **ブラウザテスト**: wasm-packによる実環境テスト
+- **E2Eテスト**: Playwright-MCPによる自動化テスト
 
 ## テスト環境
 
@@ -137,6 +188,109 @@ WebAssembly SIMD128命令を活用した4並列SHA-1処理により大幅な性�
 3. 探索日時範囲を指定
 4. 目標Seedリストを入力
 5. 探索開始で高速検索を実行
+
+## WebAssembly API仕様
+
+### メイン検索API
+
+#### `IntegratedSeedSearcher`
+統合シード探索システムのメインAPI：
+
+```typescript
+// 基本的な使用例
+const searcher = new IntegratedSeedSearcher(
+  version, region, hardware, 
+  macAddress, keyInput
+);
+
+const results = searcher.search_seeds_integrated_simd(
+  startDateTime, endDateTime,
+  timer0Min, timer0Max,
+  vcountMin, vcountMax,
+  targetSeeds
+);
+```
+
+### ポケモン生成API
+
+#### `PokemonGenerator`
+BW/BW2準拠のポケモン生成エンジン：
+
+```typescript
+const generator = new PokemonGenerator();
+const config = new BWGenerationConfig(
+  GameVersion.BlackWhite2,
+  EncounterType.Normal,
+  tid, sid, syncEnabled, syncNatureId
+);
+
+const pokemon = generator.generate_single_pokemon_bw(seed, config);
+```
+
+#### `PersonalityRNG`
+BW仕様64bit線形合同法乱数生成器：
+
+```typescript
+const rng = new PersonalityRNG(initialSeed);
+const randomValue = rng.next(); // 32bit乱数値取得
+rng.advance(10); // 10回進める
+```
+
+#### `EncounterCalculator`
+遭遇スロット計算エンジン：
+
+```typescript
+const calculator = new EncounterCalculator();
+const slotIndex = calculator.calculate_encounter_slot(
+  randomValue, 
+  GameVersion.BlackWhite2, 
+  EncounterType.Normal
+);
+```
+
+#### `OffsetCalculator`
+ゲーム初期化処理：
+
+```typescript
+const calculator = new OffsetCalculator();
+const offset = calculator.calculate_offset(GameMode.Bw2ContinueNoMemoryLink);
+const tidSid = calculator.calculate_tid_sid(seed, gameMode);
+```
+
+#### `PIDCalculator` & `ShinyChecker`
+PID生成と色違い判定：
+
+```typescript
+const pidCalc = new PIDCalculator();
+const shinyChecker = new ShinyChecker();
+
+const pid = pidCalc.generate_wild_pid(randomValue);
+const isShiny = shinyChecker.is_shiny(pid, tid, sid);
+const shinyType = shinyChecker.get_shiny_type(pid, tid, sid);
+```
+
+### データソース・出典
+
+#### エンカウントデータ
+
+本アプリケーションで使用するポケモンエンカウントデータは以下のソースを参照しています：
+
+- **Bulbapedia**: https://bulbapedia.bulbagarden.net/
+  - BW/BW2エンカウントテーブル、確率分布
+  - 取得日: 2025年1月（実装時点）
+  
+- **Serebii.net**: https://serebii.net/
+  - 固定シンボル、配布ポケモン情報
+  - 取得日: 2025年1月（実装時点）
+
+- **ポケモン公式データ**: 
+  - 種族値、タイプ、特性等の基本データ
+
+- **コミュニティ解析データ**:
+  - BW/BW2乱数アルゴリズム仕様
+  - エンカウント処理の詳細実装
+
+**注記**: エンカウントデータの正確性については、WebAssembly（Rust）実装で定義された確率分布・計算ロジックを正として扱います。外部データソースとの乖離が生じた場合は、実装コードの動作を優先します。
 
 ## E2Eテスト
 
