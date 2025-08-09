@@ -83,6 +83,20 @@ export function HelpPanel() {
             </p>
           </div>
         </div>
+
+        <Separator />
+
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Credits & Notices</h3>
+          <div className="text-sm space-y-1">
+            <p>
+              Encounter data source: <a href="https://pokebook.jp/" target="_blank" rel="noreferrer" className="underline">ポケモンの友 (Pokebook)</a>
+            </p>
+            <p>
+              This is an unofficial tool and is provided without warranty. Data may contain errors; please verify with in-game results.
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

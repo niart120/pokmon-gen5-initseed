@@ -26,7 +26,8 @@
         "test:all": "npm run test:rust && npm run test:rust:browser && npm run test",
         "test:e2e": "node scripts/run-e2e-consistency-test.js",
         "test:performance": "node scripts/performance-comparison.js",
-        "copy:wasm": "node scripts/copy-wasm-files.js"
+        "copy:wasm": "node scripts/copy-wasm-files.js",
+        "scrape:encounters": "node scripts/scrape-encounters.js"
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
@@ -89,7 +90,7 @@
         "uuid": "^11.1.0",
         "vaul": "^1.1.2",
         "zod": "^4.0.15",
-        "zustand": "^5.0.6"
+        "zustand": "^5.0.7"
     },
     "devDependencies": {
         "@eslint/js": "^9.32.0",
@@ -100,6 +101,7 @@
         "@vitejs/plugin-react": "^4.3.4",
         "@vitejs/plugin-react-swc": "^4.0.0",
         "@vitest/ui": "^3.2.4",
+        "cheerio": "^1.0.0-rc.12",
         "copyfiles": "^2.4.1",
         "cross-env": "^7.0.3",
         "eslint": "^9.28.0",

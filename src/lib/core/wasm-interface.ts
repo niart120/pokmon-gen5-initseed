@@ -3,9 +3,9 @@
  * This module provides high-performance calculation functions using Rust + WebAssembly
  */
 
-// WebAssembly module interface - 統合検索のみ
+// WebAssembly module interface - 統合検索とポケモン生成API
 interface WasmModule {
-  // 統合検索機能（実際に使用される）
+  // 統合検索機能（従来実装）
   IntegratedSeedSearcher: new (
     mac: Uint8Array,
     nazo: Uint32Array,
@@ -29,6 +29,24 @@ interface WasmModule {
     ): any[];
     free(): void;
   };
+
+  // 追加: ポケモン生成API
+  BWGenerationConfig: new (
+    version: number, // GameVersion
+    encounter_type: number, // EncounterType
+    tid: number,
+    sid: number,
+    sync_enabled: boolean,
+    sync_nature_id: number
+  ) => { free(): void };
+  PokemonGenerator: {
+    generate_single_pokemon_bw(seed: bigint, config: any): any;
+    generate_pokemon_batch_bw(start_seed: bigint, count: number, config: any): any[];
+  };
+
+  // 追加: 列挙（数値）
+  EncounterType: { [k: string]: number };
+  GameVersion: { [k: string]: number };
 }
 
 let wasmModule: WasmModule | null = null;
@@ -54,7 +72,11 @@ export async function initWasm(): Promise<WasmModule> {
       
       wasmModule = {
         IntegratedSeedSearcher: module.IntegratedSeedSearcher,
-      };
+        BWGenerationConfig: module.BWGenerationConfig,
+        PokemonGenerator: module.PokemonGenerator,
+        EncounterType: module.EncounterType,
+        GameVersion: module.GameVersion,
+      } as unknown as WasmModule;
       
       return wasmModule;
     } catch (error) {
