@@ -154,6 +154,11 @@ npm run dev
 - [E2Eテスト実行手順](docs/E2E_TESTING_WITH_PLAYWRIGHT_MCP.md)
 - [Playwright-MCPスクリプト集](docs/PLAYWRIGHT_MCP_SCRIPTS.md)
 
+## データ出典とクレジット
+
+- 遭遇データの主な出典: <a href="https://pokebook.jp/" target="_blank" rel="noreferrer">ポケモンの友 (Pokebook)</a>
+- 本ツールは非公式であり、いかなる保証も行いません。データには誤りが含まれる可能性があります。ゲーム内結果での検証を推奨します。
+
 ## ライセンス
 
 MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照

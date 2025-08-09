@@ -6,6 +6,15 @@ function normalizeLocationKey(location: string): string {
   return location.trim().replace(/[\u3000\s]+/g, '').replace(/[‐‑‒–—−\-_.]/g, '');
 }
 
+// 英語名→日本語キーの簡易エイリアス
+function applyLocationAlias(input: string): string {
+  const s = input.trim();
+  // Route N → N番道路
+  const m = s.match(/^route\s*(\d+)$/i);
+  if (m) return `${parseInt(m[1], 10)}番道路`;
+  return s;
+}
+
 const methodName = (method: EncounterType): EncounterMethod => (EncounterType[method] as EncounterMethod);
 
 export type EncounterRegistry = Record<string, { displayName: string; slots: EncounterSlotJson[] }>
@@ -34,7 +43,8 @@ export function ensureEncounterRegistryLoaded(): void {
 export function getEncounterFromRegistry(version: ROMVersion, location: string, method: EncounterType) {
   ensureEncounterRegistryLoaded();
   const key = `${version}_${methodName(method)}`;
-  const loc = normalizeLocationKey(location);
+  // 入力ロケーションに英語→日本語の簡易エイリアスを適用してから正規化
+  const loc = normalizeLocationKey(applyLocationAlias(location));
   const hit = registry![key]?.[loc];
   return hit ?? null;
 }
