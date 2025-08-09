@@ -19,13 +19,13 @@ import {
   getEncounterTable, 
   getEncounterSlot, 
   calculateLevel, 
-  getDefaultEncounterTable,
+  // getDefaultEncounterTable, // removed: JSON datasets only, no fallback
   type EncounterTable 
 } from '../../data/encounter-tables';
 import { 
   getPokemonSpecies, 
-  getSpeciesAbility,
-  type PokemonSpecies 
+  getSpeciesAbility
+  // type PokemonSpecies // removed: import type from types module when needed
 } from '../../data/pokemon-species';
 
 /**
@@ -103,8 +103,6 @@ export class PokemonIntegrationService {
       const encounterInfo = this.resolveEncounterInfo(rawData, config);
       if (encounterInfo.table) {
         encounterTableFound = true;
-      } else {
-        warnings.push(`Encounter table not found for type ${rawData.encounterType}, using default`);
       }
 
       // Step 2: Get species information
@@ -204,13 +202,17 @@ export class PokemonIntegrationService {
     rawData: RawPokemonData,
     config: IntegrationConfig
   ): { table: EncounterTable; details: EncounterDetails } {
-    // Try to find specific encounter table
+    // Lookup encounter table strictly from JSON datasets
     const location = config.defaultLocation || 'Unknown Location';
-    let table = getEncounterTable(config.version, location, rawData.encounterType);
+    const table = getEncounterTable(config.version, location, rawData.encounterType);
 
     if (!table) {
-      // Fall back to default encounter table for the encounter type
-      table = getDefaultEncounterTable(rawData.encounterType);
+      // JSON-only policy: do not fallback to any TS defaults
+      throw new IntegrationError(
+        `Encounter table not found for ${config.version} ${location} type ${rawData.encounterType}`,
+        'MISSING_ENCOUNTER_TABLE',
+        { version: config.version, location, encounterType: rawData.encounterType }
+      );
     }
 
     // Create encounter details
@@ -257,8 +259,8 @@ export class PokemonIntegrationService {
    * Check if encounter type supports synchronize
    */
   private isSynchronizeCompatibleEncounter(encounterType: number): boolean {
-    // Synchronize works on wild encounters but not on static/event Pokemon
-    const syncCompatibleTypes = [0, 1, 2, 3, 4, 5, 6, 7, 10]; // Normal, Surfing, Fishing, etc.
+    // Synchronize works on wild encounters only (exclude static/event/roaming)
+    const syncCompatibleTypes = [0, 1, 2, 3, 4, 5, 6, 7];
     return syncCompatibleTypes.includes(encounterType);
   }
 

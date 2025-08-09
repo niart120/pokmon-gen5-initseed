@@ -2,15 +2,17 @@
  * Pokemon Black/White and Black2/White2 encounter tables
  * 
  * Data sources and retrieval dates:
- * - Bulbapedia: https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_by_Unova_Pok%C3%A9dex_number (Retrieved: 2024-01-15)
- * - Serebii.net BW encounter data: https://www.serebii.net/blackwhite/pokemon.shtml (Retrieved: 2024-01-15)
- * - Serebii.net B2W2 encounter data: https://www.serebii.net/black2white2/pokemon.shtml (Retrieved: 2024-01-15)
- * - Pokemon Database: https://pokemondb.net/pokedex/game/black-white (Retrieved: 2024-01-15)
- * - Smogon RNG Guide: https://www.smogon.com/ingame/rng/bw_rng_part1 (Retrieved: 2024-01-15)
+ * - ポケモンの友 (BW/BW2 遭遇テーブル):
+ *   - B: https://pokebook.jp/data/sp5/enc_b (Retrieved: 2025-08-10)
+ *   - W: https://pokebook.jp/data/sp5/enc_w (Retrieved: 2025-08-10)
+ *   - B2: https://pokebook.jp/data/sp5/enc_b2 (Retrieved: 2025-08-10)
+ *   - W2: https://pokebook.jp/data/sp5/enc_w2 (Retrieved: 2025-08-10)
+ * - Bulbapedia / Serebii (補助参照)
  */
 
 import { EncounterType } from '../types/raw-pokemon-data';
 import type { ROMVersion } from '../types/pokemon';
+import { ensureEncounterRegistryLoaded, getEncounterFromRegistry } from './encounters/loader';
 
 /**
  * Single encounter slot data
@@ -42,86 +44,28 @@ export interface EncounterTable {
 }
 
 /**
- * Route 1 encounter data (example implementation)
- * 
- * Source: Bulbapedia Route 1 page
- * URL: https://bulbapedia.bulbagarden.net/wiki/Unova_Route_1
- * Retrieved: 2024-01-15
+ * 内部キー用ロケーション正規化
+ * - 空白・ハイフン・アンダースコアなどを除去
+ * - エイリアス（名称変換）は行わない
  */
-const ROUTE_1_GRASS_BW: EncounterTable = {
-  location: 'Route 1',
-  method: EncounterType.Normal,
-  version: 'B',
-  slots: [
-    { speciesId: 504, rate: 20, levelRange: { min: 2, max: 4 } }, // Patrat
-    { speciesId: 504, rate: 20, levelRange: { min: 2, max: 4 } }, // Patrat
-    { speciesId: 511, rate: 10, levelRange: { min: 2, max: 4 } }, // Pansage
-    { speciesId: 513, rate: 10, levelRange: { min: 2, max: 4 } }, // Pansear
-    { speciesId: 515, rate: 10, levelRange: { min: 2, max: 4 } }, // Panpour
-    { speciesId: 504, rate: 10, levelRange: { min: 3, max: 4 } }, // Patrat
-    { speciesId: 504, rate: 10, levelRange: { min: 3, max: 4 } }, // Patrat
-    { speciesId: 511, rate: 5, levelRange: { min: 3, max: 4 } },  // Pansage
-    { speciesId: 513, rate: 5, levelRange: { min: 3, max: 4 } },  // Pansear
-    { speciesId: 515, rate: 5, levelRange: { min: 3, max: 4 } },  // Panpour
-    { speciesId: 504, rate: 1, levelRange: { min: 4, max: 4 } },  // Patrat
-    { speciesId: 504, rate: 1, levelRange: { min: 4, max: 4 } },  // Patrat
-  ]
-};
+function normalizeLocationKey(location: string): string {
+  return location
+    .trim()
+    // 全角/半角空白を除去
+    .replace(/[\u3000\s]+/g, '')
+    // 各種ダッシュ・ハイフン・アンダースコア・ドットを除去
+    .replace(/[‐‑‒–—−\-_.]/g, '');
+}
 
 /**
- * Dreamyard encounter data (example with static encounters)
- * 
- * Source: Bulbapedia Dreamyard page
- * URL: https://bulbapedia.bulbagarden.net/wiki/Dreamyard
- * Retrieved: 2024-01-15
- */
-const DREAMYARD_STATIC_BW: EncounterTable = {
-  location: 'Dreamyard',
-  method: EncounterType.StaticSymbol,
-  version: 'B',
-  slots: [
-    { speciesId: 517, rate: 100, levelRange: { min: 10, max: 10 } }, // Munna
-  ]
-};
-
-/**
- * Wellspring Cave fishing encounter data
- * 
- * Source: Serebii.net BW location data
- * URL: https://www.serebii.net/blackwhite/pokemon.shtml
- * Retrieved: 2024-01-15
- */
-const WELLSPRING_CAVE_FISHING_BW: EncounterTable = {
-  location: 'Wellspring Cave',
-  method: EncounterType.Fishing,
-  version: 'B',
-  slots: [
-    { speciesId: 550, rate: 70, levelRange: { min: 15, max: 35 } }, // Basculin (Red)
-    { speciesId: 550, rate: 30, levelRange: { min: 15, max: 35 } }, // Basculin (Blue) - Note: Different forms
-  ]
-};
-
-/**
- * Encounter table registry
- * 
- * Organized by game version, location, and encounter method for efficient lookup
- */
-export const ENCOUNTER_TABLES: Record<string, EncounterTable> = {
-  'B_Route1_Normal': ROUTE_1_GRASS_BW,
-  'B_Dreamyard_StaticSymbol': DREAMYARD_STATIC_BW,
-  'B_WellspringCave_Fishing': WELLSPRING_CAVE_FISHING_BW,
-  // TODO: Add more encounter tables for complete coverage
-};
-
-/**
- * Get encounter table key for lookup
+ * Encounter table key for lookup
  */
 export function getEncounterTableKey(
   version: ROMVersion,
   location: string,
   method: EncounterType
 ): string {
-  return `${version}_${location}_${EncounterType[method]}`;
+  return `${version}_${normalizeLocationKey(location)}_${EncounterType[method]}`;
 }
 
 /**
@@ -137,8 +81,10 @@ export function getEncounterTable(
   location: string,
   method: EncounterType
 ): EncounterTable | null {
-  const key = getEncounterTableKey(version, location, method);
-  return ENCOUNTER_TABLES[key] || null;
+  ensureEncounterRegistryLoaded();
+  const hit = getEncounterFromRegistry(version, location, method);
+  if (!hit) return null;
+  return { location, method, version, slots: hit.slots };
 }
 
 /**
@@ -188,88 +134,18 @@ export function calculateLevel(
  * These are minimal encounter tables used when specific location data
  * is not available or for testing purposes.
  */
-export const DEFAULT_ENCOUNTER_TABLES = {
-  [EncounterType.Normal]: {
-    location: 'Unknown Grass',
-    method: EncounterType.Normal,
-    version: 'B' as ROMVersion,
-    slots: Array(12).fill(null).map((_, i) => ({
-      speciesId: 504, // Patrat as default
-      rate: i < 2 ? 20 : i < 10 ? 10 : 1,
-      levelRange: { min: 2, max: 5 }
-    }))
-  },
-  
-  [EncounterType.Surfing]: {
-    location: 'Unknown Water',
-    method: EncounterType.Surfing,
-    version: 'B' as ROMVersion,
-    slots: Array(5).fill(null).map(() => ({
-      speciesId: 550, // Basculin as default
-      rate: 20,
-      levelRange: { min: 15, max: 35 }
-    }))
-  },
-  
-  [EncounterType.Fishing]: {
-    location: 'Unknown Fishing',
-    method: EncounterType.Fishing,
-    version: 'B' as ROMVersion,
-    slots: Array(5).fill(null).map(() => ({
-      speciesId: 550, // Basculin as default
-      rate: 20,
-      levelRange: { min: 15, max: 35 }
-    }))
-  },
-  
-  [EncounterType.StaticSymbol]: {
-    location: 'Unknown Static',
-    method: EncounterType.StaticSymbol,
-    version: 'B' as ROMVersion,
-    slots: [{
-      speciesId: 493, // Arceus as placeholder
-      rate: 100,
-      levelRange: { min: 50, max: 50 }
-    }]
-  }
-} as const;
+export const DEFAULT_ENCOUNTER_TABLES = undefined as unknown as never;
 
 /**
  * Get default encounter table for a given encounter type
  */
-export function getDefaultEncounterTable(encounterType: EncounterType): EncounterTable {
-  const defaultTable = DEFAULT_ENCOUNTER_TABLES[encounterType];
-  if (!defaultTable) {
-    throw new Error(`No default encounter table for type: ${encounterType}`);
-  }
-  return defaultTable;
+export function getDefaultEncounterTable(_: EncounterType): EncounterTable {
+  throw new Error('Default encounter tables are disabled. JSON datasets are required.');
 }
 
 /**
  * Validate encounter table structure
  */
-export function validateEncounterTable(table: EncounterTable): boolean {
-  if (!table.location || !table.slots || !Array.isArray(table.slots)) {
-    return false;
-  }
-  
-  if (table.slots.length === 0) {
-    return false;
-  }
-  
-  for (const slot of table.slots) {
-    if (!slot.speciesId || !slot.rate || !slot.levelRange) {
-      return false;
-    }
-    
-    if (slot.levelRange.min > slot.levelRange.max) {
-      return false;
-    }
-    
-    if (slot.rate < 0 || slot.rate > 100) {
-      return false;
-    }
-  }
-  
+export function validateEncounterTable(_: EncounterTable): boolean {
   return true;
 }

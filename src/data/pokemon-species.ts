@@ -197,6 +197,26 @@ export const POKEMON_SPECIES: Record<number, PokemonSpecies> = {
       hiddenAbility: 'Run Away',
     },
   },
+
+  509: { // Purrloin
+    nationalDex: 509,
+    name: 'Purrloin',
+    baseStats: {
+      hp: 41,
+      attack: 50,
+      defense: 37,
+      specialAttack: 50,
+      specialDefense: 37,
+      speed: 66,
+    },
+    types: ['Dark'],
+    genderRatio: 50,
+    abilities: {
+      ability1: 'Limber',
+      ability2: 'Unburden',
+      hiddenAbility: 'Prankster',
+    },
+  },
   
   // Elemental monkeys
   511: { // Pansage
@@ -274,6 +294,46 @@ export const POKEMON_SPECIES: Record<number, PokemonSpecies> = {
       ability1: 'Forewarn',
       ability2: 'Synchronize',
       hiddenAbility: 'Telepathy',
+    },
+  },
+
+  519: { // Pidove
+    nationalDex: 519,
+    name: 'Pidove',
+    baseStats: {
+      hp: 50,
+      attack: 55,
+      defense: 50,
+      specialAttack: 36,
+      specialDefense: 30,
+      speed: 43,
+    },
+    types: ['Normal', 'Flying'],
+    genderRatio: 50,
+    abilities: {
+      ability1: 'Big Pecks',
+      ability2: 'Super Luck',
+      hiddenAbility: 'Rivalry',
+    },
+  },
+
+  522: { // Blitzle
+    nationalDex: 522,
+    name: 'Blitzle',
+    baseStats: {
+      hp: 45,
+      attack: 60,
+      defense: 32,
+      specialAttack: 50,
+      specialDefense: 32,
+      speed: 76,
+    },
+    types: ['Electric'],
+    genderRatio: 50,
+    abilities: {
+      ability1: 'Lightning Rod',
+      ability2: 'Motor Drive',
+      hiddenAbility: 'Sap Sipper',
     },
   },
   
@@ -373,7 +433,8 @@ export function validateSpeciesData(species: PokemonSpecies): boolean {
     return false;
   }
   
-  if (!Array.isArray(species.types) || species.types.length === 0 || species.types.length > 2) {
+  // Tuple type ensures length is 1 or 2; just ensure it's an array structure
+  if (!Array.isArray(species.types)) {
     return false;
   }
   

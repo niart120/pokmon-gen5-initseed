@@ -4,11 +4,11 @@
  * This service provides a high-level interface to the WASM pokemon generation
  * functionality with proper TypeScript integration, validation, and error handling.
  * 
- * Architecture principle: Uses IntegratedSeedSearcher only (no direct WASM function calls)
+ * Architecture principle: Use direct PokemonGenerator for deterministic generation
  */
 
 import { initWasm, getWasm, isWasmReady } from '../core/wasm-interface';
-import type { SearchConditions, ROMVersion, ROMRegion, Hardware } from '../../types/pokemon';
+import type { ROMVersion, ROMRegion, Hardware } from '../../types/pokemon';
 import { parseRawPokemonData, type RawPokemonData } from '../../types/raw-pokemon-data';
 
 /**
@@ -128,50 +128,28 @@ export class WasmPokemonService {
 
     try {
       const wasm = getWasm();
-      
-      // Convert parameters for WASM
-      const macBytes = this.validateAndConvertMacAddress(request.config.macAddress);
-      const nazoArray = this.getNazoValues(request.config.version, request.config.region);
-      
-      // Create IntegratedSeedSearcher instance
-      const searcher = new wasm.IntegratedSeedSearcher(
-        macBytes,
-        nazoArray,
-        request.config.hardware,
-        request.config.keyInput,
-        request.config.frame
+
+      // Build BWGenerationConfig (use Normal encounter as default)
+      const bwConfig = new wasm.BWGenerationConfig(
+        this.toGameVersion(request.config.version),
+        wasm.EncounterType.Normal,
+        request.config.tid,
+        request.config.sid,
+        request.config.syncEnabled,
+        request.config.syncNatureId
       );
 
       try {
-        // For single Pokemon generation, we use a minimal search range
-        // that targets the specific seed we want
-        const targetSeeds = new Uint32Array([Number(request.seed & 0xFFFFFFFFn)]);
-        
-        // Search around the target seed (1 second range should be sufficient)
-        const results = searcher.search_seeds_integrated_simd(
-          2000, 1, 1, 0, 0, 0, // Year, month, day, hour, minute, second
-          1, // 1 second range
-          0, 0, // Timer0 range (not relevant for single generation)
-          0, 0, // VCount range (not relevant for single generation)
-          targetSeeds
+        const wasmRaw = wasm.PokemonGenerator.generate_single_pokemon_bw(
+          BigInt.asUintN(64, request.seed),
+          bwConfig
         );
-
-        if (!results || results.length === 0) {
-          throw new WasmServiceError(
-            'No Pokemon generated from WASM',
-            'NO_RESULTS',
-          );
-        }
-
-        // Parse the first result
-        const rawData = parseRawPokemonData(results[0]);
-        
+        const rawData = parseRawPokemonData(wasmRaw);
         const endTime = performance.now();
         console.log(`WASM single Pokemon generation completed in ${endTime - startTime}ms`);
-        
         return rawData;
       } finally {
-        searcher.free();
+        bwConfig.free();
       }
     } catch (error) {
       throw new WasmServiceError(
@@ -192,8 +170,9 @@ export class WasmPokemonService {
     this.validateInitialized();
     this.validateGenerationRequest(request);
 
-    const count = request.count || 1;
-    const offset = request.offset || 0;
+    // Use nullish coalescing to preserve 0 as an explicit (invalid) value
+    const count = request.count ?? 1;
+    const offset = request.offset ?? 0;
 
     if (count <= 0 || count > 10000) {
       throw new WasmServiceError(
@@ -206,51 +185,35 @@ export class WasmPokemonService {
 
     try {
       const wasm = getWasm();
-      
-      // Convert parameters for WASM
-      const macBytes = this.validateAndConvertMacAddress(request.config.macAddress);
-      const nazoArray = this.getNazoValues(request.config.version, request.config.region);
-      
-      // Create IntegratedSeedSearcher instance
-      const searcher = new wasm.IntegratedSeedSearcher(
-        macBytes,
-        nazoArray,
-        request.config.hardware,
-        request.config.keyInput,
-        request.config.frame
+      const bwConfig = new wasm.BWGenerationConfig(
+        this.toGameVersion(request.config.version),
+        wasm.EncounterType.Normal,
+        request.config.tid,
+        request.config.sid,
+        request.config.syncEnabled,
+        request.config.syncNatureId
       );
 
       try {
-        // For batch generation, create target seeds array
-        const targetSeeds = new Uint32Array(count);
-        for (let i = 0; i < count; i++) {
-          targetSeeds[i] = Number((request.seed + BigInt(offset + i)) & 0xFFFFFFFFn);
-        }
-        
-        // Use a larger search range for batch operations
-        const results = searcher.search_seeds_integrated_simd(
-          2000, 1, 1, 0, 0, 0, // Year, month, day, hour, minute, second
-          Math.max(60, count), // Search range in seconds
-          0, 65535, // Full Timer0 range
-          0, 262, // Full VCount range
-          targetSeeds
+        // 連続する内部シードから count 件生成（offsetは開始シードに加味）
+        const startSeed = BigInt.asUintN(64, request.seed + BigInt(offset));
+        const wasmList = wasm.PokemonGenerator.generate_pokemon_batch_bw(
+          startSeed,
+          count,
+          bwConfig
         );
 
-        if (!results || results.length === 0) {
+        if (!wasmList || wasmList.length === 0) {
           throw new WasmServiceError(
             'No Pokemon generated from WASM batch operation',
             'NO_BATCH_RESULTS'
           );
         }
 
-        // Parse all results
-        const pokemon = results.map(result => parseRawPokemonData(result));
-        
+        const pokemon = wasmList.map(item => parseRawPokemonData(item));
         const endTime = performance.now();
         const generationTime = endTime - startTime;
-        
-        console.log(`WASM batch generation of ${pokemon.length} Pokemon completed in ${generationTime}ms`);
-        
+
         return {
           pokemon,
           stats: {
@@ -260,7 +223,7 @@ export class WasmPokemonService {
           },
         };
       } finally {
-        searcher.free();
+        bwConfig.free();
       }
     } catch (error) {
       throw new WasmServiceError(
@@ -325,6 +288,9 @@ export class WasmPokemonService {
         'INVALID_KEY_INPUT'
       );
     }
+
+    // MACは現状未使用だが形式チェックは残す
+    this.validateAndConvertMacAddress(config.macAddress);
   }
 
   /**
@@ -351,29 +317,20 @@ export class WasmPokemonService {
   }
 
   /**
-   * Get NAZO values for game version and region
+   * Map ROMVersion ('B' | 'W' | 'B2' | 'W2') to GameVersion enum value
    */
-  private getNazoValues(version: ROMVersion, region: ROMRegion): Uint32Array {
-    // This is a simplified implementation - in a real implementation,
-    // these values would come from a comprehensive ROM parameters database
-    const nazoMap: Record<string, number[]> = {
-      'B_JPN': [0x02215F10, 0x02215F2C, 0x02215F2C, 0x02215F78, 0x02215F78],
-      'W_JPN': [0x02215F10, 0x02215F2C, 0x02215F2C, 0x02215F78, 0x02215F78],
-      'B2_JPN': [0x02215F10, 0x02215F2C, 0x02215F2C, 0x02215F78, 0x02215F78],
-      'W2_JPN': [0x02215F10, 0x02215F2C, 0x02215F2C, 0x02215F78, 0x02215F78],
-      // Add more version/region combinations as needed
-    };
-
-    const key = `${version}_${region}`;
-    const nazoValues = nazoMap[key];
-
-    if (!nazoValues) {
-      // Fallback to default values
-      console.warn(`No NAZO values found for ${key}, using defaults`);
-      return new Uint32Array([0x02215F10, 0x02215F2C, 0x02215F2C, 0x02215F78, 0x02215F78]);
+  private toGameVersion(version: ROMVersion): number {
+    const wasm = getWasm();
+    switch (version) {
+      case 'B':
+      case 'W':
+        return wasm.GameVersion.BlackWhite ?? wasm.GameVersion["BlackWhite"] ?? 0;
+      case 'B2':
+      case 'W2':
+        return wasm.GameVersion.BlackWhite2 ?? wasm.GameVersion["BlackWhite2"] ?? 1;
+      default:
+        return wasm.GameVersion.BlackWhite ?? 0;
     }
-
-    return new Uint32Array(nazoValues);
   }
 
   /**

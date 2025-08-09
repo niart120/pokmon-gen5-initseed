@@ -1,0 +1,4218 @@
+{
+  "version": "B",
+  "method": "ShakingGrass",
+  "source": {
+    "name": "Pokebook",
+    "url": "https://pokebook.jp/data/sp5/enc_b",
+    "retrievedAt": "2025-08-10"
+  },
+  "locations": {
+    "夢の跡地": {
+      "displayName": "夢の跡地",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 8,
+            "max": 8
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 8,
+            "max": 8
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 9,
+            "max": 9
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 9,
+            "max": 9
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 10,
+            "max": 10
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 518,
+          "rate": 4,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 518,
+          "rate": 1,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        }
+      ]
+    },
+    "ヤグルマの森": {
+      "displayName": "ヤグルマの森",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 12,
+            "max": 12
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 12,
+            "max": 12
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 13,
+            "max": 13
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 13,
+            "max": 13
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 14,
+            "max": 14
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 538,
+          "rate": 4,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 538,
+          "rate": 1,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 14,
+            "max": 14
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 511,
+          "rate": 10,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 513,
+          "rate": 10,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 515,
+          "rate": 10,
+          "levelRange": {
+            "min": 15,
+            "max": 15
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 17,
+            "max": 17
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 17,
+            "max": 17
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 17,
+            "max": 17
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 17,
+            "max": 17
+          }
+        },
+        {
+          "speciesId": 547,
+          "rate": 4,
+          "levelRange": {
+            "min": 17,
+            "max": 17
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 17,
+            "max": 17
+          }
+        },
+        {
+          "speciesId": 547,
+          "rate": 1,
+          "levelRange": {
+            "min": 17,
+            "max": 17
+          }
+        }
+      ]
+    },
+    "冷凍コンテナ": {
+      "displayName": "冷凍コンテナ",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 21,
+            "max": 21
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 21,
+            "max": 21
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 573,
+          "rate": 4,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 508,
+          "rate": 4,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 573,
+          "rate": 1,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 508,
+          "rate": 1,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        }
+      ]
+    },
+    "リュウラセンの塔(春)": {
+      "displayName": "リュウラセンの塔(春)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 32,
+            "max": 32
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 32,
+            "max": 32
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        }
+      ]
+    },
+    "リュウラセンの塔(夏)": {
+      "displayName": "リュウラセンの塔(夏)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 32,
+            "max": 32
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 32,
+            "max": 32
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        }
+      ]
+    },
+    "リュウラセンの塔(秋)": {
+      "displayName": "リュウラセンの塔(秋)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 32,
+            "max": 32
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 32,
+            "max": 32
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        }
+      ]
+    },
+    "リュウラセンの塔(冬)": {
+      "displayName": "リュウラセンの塔(冬)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 32,
+            "max": 32
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 32,
+            "max": 32
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        }
+      ]
+    },
+    "ジャイアントホール": {
+      "displayName": "ジャイアントホール",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 49,
+            "max": 49
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 169,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 465,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 169,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 465,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 52,
+            "max": 52
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 52,
+            "max": 52
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 53,
+            "max": 53
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 53,
+            "max": 53
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 54,
+            "max": 54
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 55,
+            "max": 55
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 55,
+            "max": 55
+          }
+        },
+        {
+          "speciesId": 473,
+          "rate": 5,
+          "levelRange": {
+            "min": 55,
+            "max": 55
+          }
+        },
+        {
+          "speciesId": 36,
+          "rate": 4,
+          "levelRange": {
+            "min": 55,
+            "max": 55
+          }
+        },
+        {
+          "speciesId": 376,
+          "rate": 4,
+          "levelRange": {
+            "min": 55,
+            "max": 55
+          }
+        },
+        {
+          "speciesId": 36,
+          "rate": 1,
+          "levelRange": {
+            "min": 55,
+            "max": 55
+          }
+        },
+        {
+          "speciesId": 376,
+          "rate": 1,
+          "levelRange": {
+            "min": 55,
+            "max": 55
+          }
+        }
+      ]
+    },
+    "P2ラボ": {
+      "displayName": "P2ラボ",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 28,
+            "max": 28
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 28,
+            "max": 28
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 508,
+          "rate": 4,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 508,
+          "rate": 1,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        }
+      ]
+    },
+    "ホドモエの跳ね橋": {
+      "displayName": "ホドモエの跳ね橋",
+      "slots": [
+        {
+          "speciesId": 580,
+          "rate": 20,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 20,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 10,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 10,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 10,
+          "levelRange": {
+            "min": 24,
+            "max": 24
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 10,
+          "levelRange": {
+            "min": 24,
+            "max": 24
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 5,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 5,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 4,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 4,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 1,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 580,
+          "rate": 1,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        }
+      ]
+    },
+    "ビレッジブリッジ": {
+      "displayName": "ビレッジブリッジ",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 49,
+            "max": 49
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        }
+      ]
+    },
+    "ワンダーブリッジ": {
+      "displayName": "ワンダーブリッジ",
+      "slots": [
+        {
+          "speciesId": 581,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 10,
+          "levelRange": {
+            "min": 49,
+            "max": 49
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 10,
+          "levelRange": {
+            "min": 49,
+            "max": 49
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 581,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        }
+      ]
+    },
+    "1番道路": {
+      "displayName": "1番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 2,
+            "max": 2
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 2,
+            "max": 2
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 3,
+            "max": 3
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 3,
+            "max": 3
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 4,
+            "max": 4
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 4,
+            "max": 4
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 4,
+            "max": 4
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 4,
+            "max": 4
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 4,
+            "max": 4
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 4,
+            "max": 4
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 4,
+            "max": 4
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 4,
+            "max": 4
+          }
+        }
+      ]
+    },
+    "2番道路": {
+      "displayName": "2番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 4,
+            "max": 4
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 4,
+            "max": 4
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 5,
+            "max": 5
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 5,
+            "max": 5
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 6,
+            "max": 6
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 7,
+            "max": 7
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 7,
+            "max": 7
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 7,
+            "max": 7
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 7,
+            "max": 7
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 7,
+            "max": 7
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 7,
+            "max": 7
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 7,
+            "max": 7
+          }
+        }
+      ]
+    },
+    "3番道路": {
+      "displayName": "3番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 8,
+            "max": 8
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 8,
+            "max": 8
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 9,
+            "max": 9
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 9,
+            "max": 9
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 10,
+            "max": 10
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 11,
+            "max": 11
+          }
+        }
+      ]
+    },
+    "5番道路": {
+      "displayName": "5番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 19,
+            "max": 19
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 19,
+            "max": 19
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 21,
+            "max": 21
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 573,
+          "rate": 4,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 573,
+          "rate": 1,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        }
+      ]
+    },
+    "6番道路(春)": {
+      "displayName": "6番道路(春)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 24,
+            "max": 24
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 542,
+          "rate": 4,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 542,
+          "rate": 1,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        }
+      ]
+    },
+    "6番道路(夏)": {
+      "displayName": "6番道路(夏)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 24,
+            "max": 24
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 542,
+          "rate": 4,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 542,
+          "rate": 1,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        }
+      ]
+    },
+    "6番道路(秋)": {
+      "displayName": "6番道路(秋)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 24,
+            "max": 24
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 542,
+          "rate": 4,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 542,
+          "rate": 1,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        }
+      ]
+    },
+    "6番道路(冬)": {
+      "displayName": "6番道路(冬)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 23,
+            "max": 23
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 24,
+            "max": 24
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 542,
+          "rate": 4,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        },
+        {
+          "speciesId": 542,
+          "rate": 1,
+          "levelRange": {
+            "min": 25,
+            "max": 25
+          }
+        }
+      ]
+    },
+    "7番道路(春)": {
+      "displayName": "7番道路(春)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 26,
+            "max": 26
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 26,
+            "max": 26
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 27,
+            "max": 27
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 27,
+            "max": 27
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 28,
+            "max": 28
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        }
+      ]
+    },
+    "7番道路(夏)": {
+      "displayName": "7番道路(夏)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 26,
+            "max": 26
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 26,
+            "max": 26
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 27,
+            "max": 27
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 27,
+            "max": 27
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 28,
+            "max": 28
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        }
+      ]
+    },
+    "7番道路(秋)": {
+      "displayName": "7番道路(秋)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 26,
+            "max": 26
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 26,
+            "max": 26
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 27,
+            "max": 27
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 27,
+            "max": 27
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 28,
+            "max": 28
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 4,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 1,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        }
+      ]
+    },
+    "7番道路(冬)": {
+      "displayName": "7番道路(冬)",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 26,
+            "max": 26
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 26,
+            "max": 26
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 27,
+            "max": 27
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 27,
+            "max": 27
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 28,
+            "max": 28
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        }
+      ]
+    },
+    "9番道路": {
+      "displayName": "9番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 32,
+            "max": 32
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 32,
+            "max": 32
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        },
+        {
+          "speciesId": 573,
+          "rate": 4,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        },
+        {
+          "speciesId": 576,
+          "rate": 4,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        },
+        {
+          "speciesId": 573,
+          "rate": 1,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        },
+        {
+          "speciesId": 576,
+          "rate": 1,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        }
+      ]
+    },
+    "10番道路": {
+      "displayName": "10番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 35,
+            "max": 35
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 508,
+          "rate": 4,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 538,
+          "rate": 4,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 508,
+          "rate": 1,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 538,
+          "rate": 1,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 33,
+            "max": 33
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 34,
+            "max": 34
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 35,
+            "max": 35
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 508,
+          "rate": 4,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 538,
+          "rate": 4,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 508,
+          "rate": 1,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        },
+        {
+          "speciesId": 538,
+          "rate": 1,
+          "levelRange": {
+            "min": 36,
+            "max": 36
+          }
+        }
+      ]
+    },
+    "11番道路": {
+      "displayName": "11番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 49,
+            "max": 49
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 472,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 472,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        }
+      ]
+    },
+    "12番道路": {
+      "displayName": "12番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 49,
+            "max": 49
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 15,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 416,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 192,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 416,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 192,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        }
+      ]
+    },
+    "13番道路": {
+      "displayName": "13番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 49,
+            "max": 49
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 169,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 465,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 169,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 465,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        }
+      ]
+    },
+    "14番道路": {
+      "displayName": "14番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 49,
+            "max": 49
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 40,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 40,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        }
+      ]
+    },
+    "ほうじょうの社": {
+      "displayName": "ほうじょうの社",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 49,
+            "max": 49
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 430,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 547,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 38,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 38,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        }
+      ]
+    },
+    "15番道路": {
+      "displayName": "15番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 47,
+            "max": 47
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 48,
+            "max": 48
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 49,
+            "max": 49
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 538,
+          "rate": 5,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 472,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 248,
+          "rate": 4,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 472,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        },
+        {
+          "speciesId": 248,
+          "rate": 1,
+          "levelRange": {
+            "min": 50,
+            "max": 50
+          }
+        }
+      ]
+    },
+    "16番道路": {
+      "displayName": "16番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 19,
+            "max": 19
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 19,
+            "max": 19
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 21,
+            "max": 21
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 573,
+          "rate": 4,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 573,
+          "rate": 1,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        }
+      ]
+    },
+    "迷いの森": {
+      "displayName": "迷いの森",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 19,
+            "max": 19
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 587,
+          "rate": 10,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 511,
+          "rate": 10,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 513,
+          "rate": 10,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 515,
+          "rate": 10,
+          "levelRange": {
+            "min": 20,
+            "max": 20
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 21,
+            "max": 21
+          }
+        },
+        {
+          "speciesId": 521,
+          "rate": 5,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 542,
+          "rate": 4,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 547,
+          "rate": 4,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 542,
+          "rate": 1,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        },
+        {
+          "speciesId": 547,
+          "rate": 1,
+          "levelRange": {
+            "min": 22,
+            "max": 22
+          }
+        }
+      ]
+    },
+    "18番道路": {
+      "displayName": "18番道路",
+      "slots": [
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 28,
+            "max": 28
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 20,
+          "levelRange": {
+            "min": 28,
+            "max": 28
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 29,
+            "max": 29
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 30,
+            "max": 30
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 10,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 5,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 4,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 538,
+          "rate": 4,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 531,
+          "rate": 1,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        },
+        {
+          "speciesId": 538,
+          "rate": 1,
+          "levelRange": {
+            "min": 31,
+            "max": 31
+          }
+        }
+      ]
+    }
+  }
+}

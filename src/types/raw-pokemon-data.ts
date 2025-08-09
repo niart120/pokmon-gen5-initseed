@@ -37,6 +37,11 @@ export interface RawPokemonData {
 }
 
 /**
+ * Human-readable shiny status type
+ */
+export type ShinyStatusName = 'Normal' | 'Square Shiny' | 'Star Shiny';
+
+/**
  * Enhanced Pokemon data with detailed information
  * 
  * This represents the final Pokemon data after combining raw WASM output
@@ -56,7 +61,7 @@ export interface EnhancedPokemonData extends RawPokemonData {
   /** Human-readable nature name */
   natureName: string;
   /** Human-readable shiny status */
-  shinyStatus: 'Normal' | 'Square Shiny' | 'Star Shiny';
+  shinyStatus: ShinyStatusName;
 }
 
 /**
@@ -169,31 +174,38 @@ export function parseRawPokemonData(wasmData: any): RawPokemonData {
     throw new Error('WASM data is null or undefined');
   }
 
-  // Validate required properties exist
-  const requiredProps = [
-    'get_seed', 'get_pid', 'get_nature', 'get_ability_slot',
-    'get_gender_value', 'get_encounter_slot_value', 'get_level_rand_value',
-    'get_shiny_type', 'get_sync_applied', 'get_encounter_type'
-  ];
-
-  for (const prop of requiredProps) {
-    if (typeof wasmData[prop] !== 'function') {
-      throw new Error(`Missing required property or method: ${prop}`);
+  // getter関数/プロパティ両対応のフィールド取得ヘルパ
+  const readField = (obj: any, key: string) => {
+    const val = typeof obj[key] === 'function' ? obj[key]() : obj[key];
+    if (val === undefined) {
+      throw new Error(`Missing required property or method: ${key}`);
     }
-  }
+    return val;
+  };
 
   try {
+    const seedVal = readField(wasmData, 'get_seed');
+    const pid = readField(wasmData, 'get_pid');
+    const nature = readField(wasmData, 'get_nature');
+    const syncApplied = readField(wasmData, 'get_sync_applied');
+    const abilitySlot = readField(wasmData, 'get_ability_slot');
+    const genderValue = readField(wasmData, 'get_gender_value');
+    const encounterSlotValue = readField(wasmData, 'get_encounter_slot_value');
+    const encounterType = readField(wasmData, 'get_encounter_type');
+    const levelRandValue = readField(wasmData, 'get_level_rand_value');
+    const shinyType = readField(wasmData, 'get_shiny_type');
+
     return {
-      seed: BigInt(wasmData.get_seed()),
-      pid: wasmData.get_pid(),
-      nature: wasmData.get_nature(),
-      syncApplied: wasmData.get_sync_applied(),
-      abilitySlot: wasmData.get_ability_slot(),
-      genderValue: wasmData.get_gender_value(),
-      encounterSlotValue: wasmData.get_encounter_slot_value(),
-      encounterType: wasmData.get_encounter_type(),
-      levelRandValue: wasmData.get_level_rand_value(),
-      shinyType: wasmData.get_shiny_type(),
+      seed: typeof seedVal === 'bigint' ? seedVal : BigInt(seedVal),
+      pid: Number(pid),
+      nature: Number(nature),
+      syncApplied: Boolean(syncApplied),
+      abilitySlot: Number(abilitySlot),
+      genderValue: Number(genderValue),
+      encounterSlotValue: Number(encounterSlotValue),
+      encounterType: Number(encounterType),
+      levelRandValue: Number(levelRandValue),
+      shinyType: Number(shinyType),
     };
   } catch (error) {
     throw new Error(`Failed to parse WASM pokemon data: ${error}`);
@@ -213,7 +225,7 @@ export function getNatureName(natureId: number): string {
 /**
  * Get human-readable shiny status from shiny type
  */
-export function getShinyStatusName(shinyType: number): string {
+export function getShinyStatusName(shinyType: number): ShinyStatusName {
   switch (shinyType) {
     case ShinyType.Normal:
       return 'Normal';
